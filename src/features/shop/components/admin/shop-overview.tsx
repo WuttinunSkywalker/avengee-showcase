@@ -9,6 +9,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Skeleton } from "@/components/ui/skeleton"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
+import { splitPartialDay, splitTooltipItems } from "@/lib/chart"
 import { formatBahtCompact, formatChange, formatNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useShopAdminData } from "../../hooks/use-shop-admin-data"
@@ -20,7 +21,10 @@ import { bangkokDate, bangkokTime } from "../../lib/tracking"
 import { CoffeeBag } from "../coffee-bag"
 import { FulfilmentBadge } from "./status-badge"
 
-const chartConfig = { revenue: { label: "Revenue", color: "var(--chart-1)" } } satisfies ChartConfig
+const chartConfig = {
+  complete: { label: "Revenue", color: "var(--chart-1)" },
+  partial: { label: "Today so far", color: "var(--chart-1)" },
+} satisfies ChartConfig
 
 export function ShopOverview() {
   const locale = useLocale()
@@ -43,7 +47,9 @@ export function ShopOverview() {
 
   const { now, orders, statuses } = data
   const kpis = shopKpis(orders, statuses, now)
-  const series = revenueByDay(orders, statuses, now)
+  // Today is still running: drawn dashed so its small total doesn't read as a crash.
+  const series = splitPartialDay(revenueByDay(orders, statuses, now), (day) => day.revenue)
+  const today = bangkokDate(now)
   const plan = roastPlan(orders, statuses)
   const alerts = stockAlerts(data.products)
   const roastDate = bangkokDate(nextRoastDate(now))
@@ -83,17 +89,28 @@ export function ShopOverview() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="aspect-auto h-64 w-full" role="img" aria-label={t.overview.chartAria}>
-              <AreaChart data={series} margin={{ left: 4, right: 8, top: 8 }}>
+              <AreaChart data={series} margin={{ left: 4, right: 20, top: 8 }}>
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} minTickGap={28} tickFormatter={(value: string) => formatDayMonth(value, locale)} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={28}
+                  tickFormatter={(value: string) => (value === today ? t.overview.today : formatDayMonth(value, locale))}
+                />
                 <YAxis tickLine={false} axisLine={false} width={52} tickFormatter={(value: number) => formatBahtCompact(value)} />
                 <ChartTooltip
                   cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-                  content={
+                  content={({ active, payload, label }) => (
                     <ChartTooltipContent
+                      active={active}
+                      label={label}
+                      payload={splitTooltipItems(payload)}
                       labelFormatter={(_, payload) => {
-                        const date = payload?.[0]?.payload?.date as string | undefined
-                        return date ? formatLongDate(date, locale) : ""
+                        const day = payload?.[0]?.payload as { date?: string; today?: boolean } | undefined
+                        if (!day?.date) return ""
+                        return day.today ? t.overview.todaySoFar(formatLongDate(day.date, locale)) : formatLongDate(day.date, locale)
                       }}
                       formatter={(value, _name, item) => (
                         <div className="flex w-full justify-between gap-6">
@@ -102,9 +119,29 @@ export function ShopOverview() {
                         </div>
                       )}
                     />
-                  }
+                  )}
                 />
-                <Area dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={2} fill="var(--color-revenue)" fillOpacity={0.1} isAnimationActive={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)" }} />
+                <Area
+                  dataKey="complete"
+                  type="monotone"
+                  stroke="var(--color-complete)"
+                  strokeWidth={2}
+                  fill="var(--color-complete)"
+                  fillOpacity={0.1}
+                  isAnimationActive={false}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)" }}
+                />
+                <Area
+                  dataKey="partial"
+                  type="monotone"
+                  stroke="var(--color-partial)"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  fill="var(--color-partial)"
+                  fillOpacity={0.04}
+                  isAnimationActive={false}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)", fill: "var(--card)" }}
+                />
               </AreaChart>
             </ChartContainer>
           </CardContent>

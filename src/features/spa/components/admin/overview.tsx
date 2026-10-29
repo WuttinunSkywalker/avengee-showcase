@@ -16,6 +16,7 @@ import { formatBaht, formatBahtCompact, formatChange, formatNumber, formatPercen
 import { addDays, formatDayMonth, formatLongDate, formatMinutes, formatShortDate } from "../../lib/time"
 import { isActiveBooking, type Booking } from "../../lib/types"
 import { useSpaI18n } from "../../i18n/use-spa-i18n"
+import { splitPartialDay, splitTooltipItems } from "@/lib/chart"
 import { StatusBadge, TherapistAvatar } from "../shared"
 import { TodaySchedule } from "./today-schedule"
 
@@ -166,13 +167,17 @@ function KpiTile({
 }
 
 const revenueConfig = {
-  revenue: { label: "Revenue", color: "var(--chart-1)" },
+  complete: { label: "Revenue", color: "var(--chart-1)" },
+  partial: { label: "Today so far", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-function RevenueChart({ data }: { data: ReturnType<typeof revenueByDay> }) {
+function RevenueChart({ data: days }: { data: ReturnType<typeof revenueByDay> }) {
   const { locale, t } = useSpaI18n()
-  const total = data.reduce((sum, day) => sum + day.revenue, 0)
-  const best = data.reduce((max, day) => (day.revenue > max.revenue ? day : max), data[0])
+  const total = days.reduce((sum, day) => sum + day.revenue, 0)
+  // Best day among finished days; today is still filling up and drawn dashed.
+  const best = days.slice(0, -1).reduce((max, day) => (day.revenue > max.revenue ? day : max), days[0])
+  const data = splitPartialDay(days, (day) => day.revenue)
+  const today = days.at(-1)!.date
 
   return (
     <Card>
@@ -182,7 +187,7 @@ function RevenueChart({ data }: { data: ReturnType<typeof revenueByDay> }) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={revenueConfig} className="aspect-auto h-64 w-full" role="img" aria-label={t.admin.revenueAria}>
-          <AreaChart data={data} margin={{ left: 4, right: 8, top: 8 }}>
+          <AreaChart data={data} margin={{ left: 4, right: 20, top: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -190,21 +195,20 @@ function RevenueChart({ data }: { data: ReturnType<typeof revenueByDay> }) {
               axisLine={false}
               tickMargin={8}
               minTickGap={28}
-              tickFormatter={(value: string) => formatDayMonth(value, locale)}
+              tickFormatter={(value: string) => (value === today ? t.admin.today : formatDayMonth(value, locale))}
             />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              width={52}
-              tickFormatter={(value: number) => formatBahtCompact(value)}
-            />
+            <YAxis tickLine={false} axisLine={false} width={52} tickFormatter={(value: number) => formatBahtCompact(value)} />
             <ChartTooltip
               cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-              content={
+              content={({ active, payload, label }) => (
                 <ChartTooltipContent
+                  active={active}
+                  label={label}
+                  payload={splitTooltipItems(payload)}
                   labelFormatter={(_, payload) => {
-                    const date = payload?.[0]?.payload?.date as string | undefined
-                    return date ? formatLongDate(date, locale) : ""
+                    const day = payload?.[0]?.payload as { date?: string; today?: boolean } | undefined
+                    if (!day?.date) return ""
+                    return day.today ? t.admin.todaySoFar(formatLongDate(day.date, locale)) : formatLongDate(day.date, locale)
                   }}
                   formatter={(value, _name, item) => (
                     <div className="flex w-full justify-between gap-6">
@@ -213,17 +217,28 @@ function RevenueChart({ data }: { data: ReturnType<typeof revenueByDay> }) {
                     </div>
                   )}
                 />
-              }
+              )}
             />
             <Area
-              dataKey="revenue"
+              dataKey="complete"
               type="monotone"
-              stroke="var(--color-revenue)"
+              stroke="var(--color-complete)"
               strokeWidth={2}
-              fill="var(--color-revenue)"
+              fill="var(--color-complete)"
               fillOpacity={0.1}
               isAnimationActive={false}
               activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)" }}
+            />
+            <Area
+              dataKey="partial"
+              type="monotone"
+              stroke="var(--color-partial)"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              fill="var(--color-partial)"
+              fillOpacity={0.04}
+              isAnimationActive={false}
+              activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)", fill: "var(--card)" }}
             />
           </AreaChart>
         </ChartContainer>

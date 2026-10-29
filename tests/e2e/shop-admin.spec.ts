@@ -39,7 +39,11 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await expect(page.getByText("Wednesday 4 November 2026. Figures cover the last 30 days.")).toBeVisible()
     await expect(page.getByText("Revenue, 30 days")).toBeVisible()
     await expect(page.getByText("Waiting to ship")).toBeVisible()
-    await expect(page.getByRole("img", { name: "Daily revenue for the last 30 days" })).toBeVisible()
+    const chart = page.getByRole("img", { name: "Daily revenue for the last 30 days" })
+    await expect(chart).toBeVisible()
+    // Today is still running: a dashed segment, labelled on the axis
+    await expect(chart.locator('.recharts-area-curve[stroke-dasharray="4 4"]')).toHaveCount(1)
+    await expect(chart.getByText("Today", { exact: true })).toBeVisible()
     await expect(page.getByText("Beans to roast on Tuesday 10 November 2026, for paid orders.")).toBeVisible()
     await expect(page.getByTestId("roast-plan").getByRole("listitem").first()).toContainText(/\d+\.\d kg/)
     await expect(page.getByTestId("stock-alerts")).toContainText("Sold out")

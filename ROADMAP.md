@@ -37,7 +37,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Admin customers at `/[lang]/shop/admin/customers`: customer count, returning share, average spend; search by name, email or phone; sort by spend, recency or orders; regulars marked; customer sheet with contact, address, favourite coffee and order history linking to each order; order sheet links back. Seeded orders now come from a pool of 300 customers (regulars, occasional, one-off; many Thai names in Thai script) with fixed addresses
 - [x] Live stock per device: orders placed here draw stock down (cancelling puts it back) and admin restocks/counts reach the product page, catalogue and cart (`useLiveProducts`); e2e buys the last bags, cancels, restocks
 - [x] Home page and "pairs well with" product cards follow live stock (`LiveProductCard`); checkout checks the cart against live stock, blocks payment and offers "Update My Cart" when a size ran low or sold out
-- [ ] Daily revenue chart ends on today, which is only partly over, so the last point always dips; mark it "today so far" or end at yesterday
+- [x] Daily revenue charts (Kaffa and Baan Lamai) draw today as a dashed segment labelled "Today", with a "so far" tooltip, so the partial day no longer reads as a crash (`src/lib/chart.ts`)
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
 
 ## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)

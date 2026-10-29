@@ -8,7 +8,10 @@ test.describe("staff admin", () => {
     for (const label of ["Bookings today", "Revenue, 30 days", "Room occupancy, 7 days", "Average spend"]) {
       await expect(page.getByText(label)).toBeVisible()
     }
-    await expect(page.getByLabel("Daily revenue for the last 30 days")).toBeVisible()
+    const chart = page.getByLabel("Daily revenue for the last 30 days")
+    await expect(chart).toBeVisible()
+    await expect(chart.locator('.recharts-area-curve[stroke-dasharray="4 4"]')).toHaveCount(1)
+    await expect(chart.getByText("Today", { exact: true })).toBeVisible()
     await expect(page.getByRole("table", { name: "Today's schedule by therapist" })).toBeVisible()
     await expect(page.getByText("Coming up next")).toBeVisible()
     expectNoConsoleErrors(consoleErrors)
