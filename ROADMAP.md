@@ -20,7 +20,11 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Next showcase: Sorn Studio (single-page site, `/[lang]/studio`)
 
-- [ ] One-page architect portfolio (split into slices: brand + hero + gallery with lightbox; services + process; contact form with validation and success state; portal card live with screenshots, share card, icons): hero, project gallery with lightbox, services, process, contact form with validation and success state
+- [x] Brand (Manrope + Bai Jamjuree, concrete paper and drafting ink, roof-and-ground mark), hero with a self-drawing elevation on a titled sheet, gallery of 8 projects with type filter, lightbox with elevation / plan / section drawn as SVG from each project's numbers, URL-synced (?project=&view=), arrow keys, Thai with Buddhist-era years
+- [ ] Services and process sections
+- [ ] Contact form with validation and a success state (brief, budget band, timeline; sent to the studio's LINE / email)
+- [ ] Portal card live: screenshots with tour screens, share card, icon + apple icon, sitemap entries
+- [ ] Drawings: dark-mode check; plans for upper floors; a site plan with sun path for each project
 
 ## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
 

@@ -1,0 +1,131 @@
+import type { Locale } from "@/i18n/config"
+import type { ProjectType, Room } from "../data/projects"
+import type { DrawingView } from "../components/project-drawing"
+
+const en = {
+  skip: "Skip to content",
+  nav: { work: "Work", contact: "Contact", label: "Main", menu: "Menu" },
+  tagline: "Architecture for the tropics",
+  hero: {
+    title: "Houses that stay cool without trying.",
+    body: "Sorn Studio is a small architecture practice in Bangkok. We design homes, cafés and shophouse renovations for a hot, wet climate: deep eaves, shaded walls and rooms the breeze can cross.",
+    record: (count: number, since: number) => `${count} buildings since ${since}, from Chiang Dao to Hua Hin.`,
+    primary: "See Our Work",
+    secondary: "Start a Project",
+    sheet: { project: "Project", drawing: "Drawing", scale: "Scale", sheet: "Sheet" },
+  },
+  work: {
+    title: "Selected work",
+    intro: "Every project is drawn from the climate first: where the sun comes from, where the wind blows, and where the rain needs to go.",
+    filterLabel: "Show projects",
+    filter: { all: "All", house: "Houses", hospitality: "Cafés & stays", renovation: "Renovations" } satisfies Record<"all" | ProjectType, string>,
+    open: (name: string) => `Open ${name}`,
+    area: (m2: number) => `${m2} m²`,
+    empty: "No projects of this kind yet.",
+  },
+  lightbox: {
+    views: { elevation: "Elevation", plan: "Plan", section: "Section" } satisfies Record<DrawingView, string>,
+    viewsLabel: "Drawing",
+    previous: "Previous project",
+    next: "Next project",
+    close: "Close",
+    counter: (n: number, total: number) => `${n} of ${total}`,
+    details: { location: "Location", year: "Completed", area: "Built area", type: "Type" },
+    type: { house: "House", hospitality: "Café & hospitality", renovation: "Renovation" } satisfies Record<ProjectType, string>,
+    drawingTitle: (name: string, view: string) => `${name}, ${view}`,
+    keys: "Use the arrow keys to move between projects.",
+  },
+  drawing: {
+    rooms: {
+      living: "Living",
+      kitchen: "Kitchen",
+      bed: "Bedroom",
+      bath: "Bath",
+      court: "Courtyard",
+      study: "Study",
+      shop: "Shop",
+      cafe: "Café",
+      terrace: "Terrace",
+      pool: "Pool",
+      clinic: "Treatment",
+      waiting: "Waiting",
+      garage: "Carport",
+      stair: "Stair",
+    } satisfies Record<Room, string>,
+    north: "North",
+    sun: "Sun at noon",
+    breeze: "Breeze",
+  },
+  footer: {
+    rights: "All rights reserved.",
+    contact: "Contact",
+    visit: "Studio",
+    line: "LINE",
+  },
+}
+
+export type StudioMessages = typeof en
+
+const th: StudioMessages = {
+  skip: "ข้ามไปที่เนื้อหา",
+  nav: { work: "ผลงาน", contact: "ติดต่อ", label: "เมนูหลัก", menu: "เมนู" },
+  tagline: "สถาปัตยกรรมสำหรับเมืองร้อน",
+  hero: {
+    title: "บ้านที่เย็นสบาย โดยไม่ต้องเปิดแอร์ทั้งวัน",
+    body: "Sorn Studio เป็นสำนักงานสถาปนิกเล็ก ๆ ในกรุงเทพฯ เราออกแบบบ้าน ร้านกาแฟ และรีโนเวตตึกแถวให้อยู่สบายในอากาศร้อนชื้น ชายคาลึก ผนังโดนแดดน้อย และลมพัดผ่านได้ทุกห้อง",
+    record: (count, since) => `สร้างเสร็จแล้ว ${count} หลังตั้งแต่ปี ${since + 543} ตั้งแต่เชียงดาวไปจนถึงหัวหิน`,
+    primary: "ดูผลงาน",
+    secondary: "เริ่มคุยโปรเจกต์",
+    sheet: { project: "โครงการ", drawing: "แบบ", scale: "มาตราส่วน", sheet: "แผ่นที่" },
+  },
+  work: {
+    title: "ผลงานที่ผ่านมา",
+    intro: "ทุกโปรเจกต์เริ่มคิดจากสภาพอากาศก่อน แดดมาทางไหน ลมพัดจากทิศไหน และน้ำฝนควรไหลไปทางใด",
+    filterLabel: "เลือกประเภทผลงาน",
+    filter: { all: "ทั้งหมด", house: "บ้าน", hospitality: "ร้านกาแฟและที่พัก", renovation: "รีโนเวต" },
+    open: (name) => `ดู ${name}`,
+    area: (m2) => `${m2} ตร.ม.`,
+    empty: "ยังไม่มีผลงานประเภทนี้",
+  },
+  lightbox: {
+    views: { elevation: "รูปด้าน", plan: "แปลนพื้น", section: "รูปตัด" },
+    viewsLabel: "แบบ",
+    previous: "โปรเจกต์ก่อนหน้า",
+    next: "โปรเจกต์ถัดไป",
+    close: "ปิด",
+    counter: (n, total) => `${n} จาก ${total}`,
+    details: { location: "ที่ตั้ง", year: "สร้างเสร็จ", area: "พื้นที่ใช้สอย", type: "ประเภท" },
+    type: { house: "บ้านพักอาศัย", hospitality: "ร้านกาแฟและที่พัก", renovation: "รีโนเวต" },
+    drawingTitle: (name, view) => `${name} ${view}`,
+    keys: "กดลูกศรซ้ายขวาเพื่อดูโปรเจกต์อื่น",
+  },
+  drawing: {
+    rooms: {
+      living: "นั่งเล่น",
+      kitchen: "ครัว",
+      bed: "ห้องนอน",
+      bath: "ห้องน้ำ",
+      court: "คอร์ต",
+      study: "ห้องทำงาน",
+      shop: "หน้าร้าน",
+      cafe: "คาเฟ่",
+      terrace: "ระเบียง",
+      pool: "สระว่ายน้ำ",
+      clinic: "ห้องทำฟัน",
+      waiting: "ห้องรอ",
+      garage: "ที่จอดรถ",
+      stair: "บันได",
+    },
+    north: "ทิศเหนือ",
+    sun: "แดดเที่ยง",
+    breeze: "ทางลม",
+  },
+  footer: {
+    rights: "สงวนลิขสิทธิ์",
+    contact: "ติดต่อ",
+    visit: "สตูดิโอ",
+    line: "LINE",
+  },
+}
+
+export const studioMessages: Record<Locale, StudioMessages> = { en, th }

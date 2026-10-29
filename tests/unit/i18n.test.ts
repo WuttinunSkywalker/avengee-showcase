@@ -3,6 +3,7 @@ import { isLocale, localePath, negotiateLocale, switchLocalePath } from "@/i18n/
 import { spaMessages } from "@/features/spa/i18n/messages"
 import { portalMessages } from "@/features/portal/messages"
 import { shopMessages } from "@/features/shop/i18n/messages"
+import { studioMessages } from "@/features/studio/i18n/messages"
 import { formatDayMonth, formatLongDate, formatMonthShort, formatShortDate, formatWeekday } from "@/lib/dates"
 import { formatDuration } from "@/features/spa/lib/time"
 import { services, addOns } from "@/features/spa/data/services"
@@ -84,6 +85,8 @@ describe("translations", () => {
   it("Thai shop messages cover every English key", () => {
     expect(leafPaths(shopMessages.th).sort()).toEqual(leafPaths(shopMessages.en).sort())
     expect(shopMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
+    expect(leafPaths(studioMessages.th).sort()).toEqual(leafPaths(studioMessages.en).sort())
+    expect(studioMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
   })
 
   it("has no empty strings", () => {

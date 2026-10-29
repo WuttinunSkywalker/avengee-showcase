@@ -390,6 +390,69 @@
   }
 }
 /*
+ * Sorn Studio. Cool concrete paper, green-black drafting ink, one leaf-green
+ * accent. Drawings use --line, --shade and --glass so they follow dark mode.
+ */
+:root:has([data-app="studio"]:not([style*="display: none"], [style*="display: none"] *)),
+.theme-studio {
+  --font-display: var(--font-manrope), var(--font-bai-jamjuree), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-manrope), var(--font-bai-jamjuree), ui-sans-serif, system-ui, sans-serif;
+  --background: #eef0ec;
+  --foreground: #1a1f1c;
+  --card: #f6f7f4;
+  --card-foreground: #1a1f1c;
+  --popover: #f6f7f4;
+  --popover-foreground: #1a1f1c;
+  --primary: #1a1f1c;
+  --primary-foreground: #f6f7f4;
+  --secondary: #e2e5df;
+  --secondary-foreground: #1a1f1c;
+  --muted: #e2e5df;
+  --muted-foreground: #545d57;
+  --accent: #e2e5df;
+  --accent-foreground: #1a1f1c;
+  --destructive: #a6382b;
+  --border: #c9cec8;
+  --input: #b9bfb8;
+  --ring: #2e6a4e;
+  --signal: #2e6a4e;
+  --signal-foreground: #ffffff;
+  --leaf: #2e6a4e;
+  --success: #2e6a4e;
+  --line: #1a1f1c;
+  --shade: #d6dbd4;
+  --glass: #c3d3cc;
+  --radius: 0.25rem;
+}
+
+:root.dark:has([data-app="studio"]:not([style*="display: none"], [style*="display: none"] *)),
+.dark .theme-studio {
+  --background: #141815;
+  --foreground: #e6e9e4;
+  --card: #1b201c;
+  --card-foreground: #e6e9e4;
+  --popover: #1b201c;
+  --popover-foreground: #e6e9e4;
+  --primary: #e6e9e4;
+  --primary-foreground: #141815;
+  --secondary: #242a25;
+  --secondary-foreground: #e6e9e4;
+  --muted: #242a25;
+  --muted-foreground: #a3ada6;
+  --accent: #242a25;
+  --accent-foreground: #e6e9e4;
+  --border: #323a34;
+  --input: #3d463f;
+  --ring: #7cc4a0;
+  --signal: #7cc4a0;
+  --leaf: #7cc4a0;
+  --success: #7cc4a0;
+  --line: #d9ded7;
+  --shade: #262d28;
+  --glass: #2f4a3f;
+}
+
+/*
  * Portal motion. One short intro on load, then scroll-linked reveals that
  * follow the scrollbar (CSS scroll-driven animations, no JavaScript).
  * Browsers without view timelines, and visitors who ask for reduced motion,
@@ -534,5 +597,45 @@
 @keyframes draw-y {
   from {
     transform: scaleY(0);
+  }
+}
+
+/*
+ * Sorn Studio drawings trace themselves in: every .ink line has pathLength 1,
+ * so a dash of 1 animated from offset 1 to 0 draws it end to end. Fills and
+ * notes fade in once the linework is down. Off for reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .drawing-animate .ink {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+      ink-draw 1.5s cubic-bezier(0.45, 0, 0.2, 1) forwards,
+      studio-fill 0.9s ease-out backwards;
+    animation-delay: calc(var(--d, 0) * 1ms + 250ms), 1.4s;
+  }
+  .drawing-animate .wash,
+  .drawing-animate .drawing-note {
+    animation: studio-fade 0.9s ease-out backwards;
+    animation-delay: 1.5s;
+  }
+}
+
+@keyframes ink-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Fills only: the outline keeps drawing while the colour waits. */
+@keyframes studio-fill {
+  from {
+    fill-opacity: 0;
+  }
+}
+
+@keyframes studio-fade {
+  from {
+    opacity: 0;
   }
 }

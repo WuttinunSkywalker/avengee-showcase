@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import {
   Anuphan,
   Archivo,
+  Bai_Jamjuree,
   Bricolage_Grotesque,
   Figtree,
   Geist,
@@ -10,6 +11,7 @@ import {
   IBM_Plex_Sans_Thai_Looped,
   Instrument_Sans,
   Kanit,
+  Manrope,
   Noto_Serif_Thai,
   Young_Serif,
 } from "next/font/google"
@@ -51,7 +53,31 @@ const plexThai = IBM_Plex_Sans_Thai({
   preload: false,
 })
 
-const fontVariables = [bricolage, geist, anuphan, youngSerif, figtree, notoSerifThai, plexThaiLooped, archivo, instrumentSans, kanit, plexThai]
+// Sorn Studio
+const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], display: "swap", preload: false })
+const baiJamjuree = Bai_Jamjuree({
+  variable: "--font-bai-jamjuree",
+  weight: ["300", "400", "500", "600"],
+  subsets: ["thai"],
+  display: "swap",
+  preload: false,
+})
+
+const fontVariables = [
+  bricolage,
+  geist,
+  anuphan,
+  youngSerif,
+  figtree,
+  notoSerifThai,
+  plexThaiLooped,
+  archivo,
+  instrumentSans,
+  kanit,
+  plexThai,
+  manrope,
+  baiJamjuree,
+]
   .map((font) => font.variable)
   .join(" ")
 
