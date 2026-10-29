@@ -405,6 +405,36 @@
   display: none;
 }
 
+/* Hero screens: each card sits at --fan and moves to --fan-hover while the stack is hovered. */
+.fan-card {
+  transform: var(--fan);
+}
+/* Pointing at a card in the stack brings it to the front. */
+.fan-card:hover,
+.fan-card:focus-visible {
+  z-index: 10;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fan-card {
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    /* backwards, not both: once the intro ends, the hover transition owns transform again. */
+    animation: fan-in 1s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 120ms + 350ms);
+  }
+  .group\/fan:hover .fan-card,
+  .group\/fan:focus-within .fan-card {
+    transform: var(--fan-hover);
+  }
+}
+
+@keyframes fan-in {
+  from {
+    opacity: 0;
+    transform: translateY(12%) rotate(0deg) scale(0.94);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .intro {
     animation: intro-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;

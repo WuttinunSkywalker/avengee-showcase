@@ -8,7 +8,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Portal cards: live apps full width and listed first, coming-soon cards in one row; Open App and Staff Dashboard buttons equal width (side by side when the column allows, stacked otherwise); Thai uses "ระบบหลังบ้าน"
 - [x] Portal: each live card steps through real screens (home, booking or product page, staff dashboard) while hovered or focused; dots with a label pick a screen by mouse, touch or keyboard; no autoplay with reduced motion. Screens come from `pnpm capture:showcase` (`images.tour` in `src/config/site.ts`)
 - [x] Filter chips on the portal lost their gap: a `style` prop on ToggleGroup replaced its internal `--gap`. Reveal styles now go on a wrapper; e2e checks the chips stay apart
-- [ ] Portal hero: show something from the apps (e.g. a fanned stack of the live screenshots) instead of only text on the grid
+- [x] Portal hero: a fanned stack of the live apps' real screens (two desktop, one phone) beside the text; each opens its app, the pointed-at card comes to the front, the stack spreads on hover and fans in on load (off for reduced motion); built from `showcases`, so new live apps join automatically
 
 - [x] Regenerate portal screenshots from the production build, per language, with a phone view on the card (`pnpm capture:showcase`, needs `pnpm start --port 3200`)
 - [x] Portal and app metadata: `sitemap.ts`, `robots.ts`, share images per language (browser-rendered via `/[lang]/og/[app]` + `pnpm capture:og`, because next/og drops stacked Thai tone marks), SVG + Apple icons for the portal and Baan Lamai

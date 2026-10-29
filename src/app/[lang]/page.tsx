@@ -8,6 +8,7 @@ import { site } from "@/config/site"
 import { isLocale } from "@/i18n/config"
 import { stagger } from "@/lib/motion"
 import { portalMessages } from "@/features/portal/messages"
+import { HeroShowcase } from "@/features/portal/hero-showcase"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
 
@@ -43,7 +44,8 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_50%_0%,black_10%,transparent_70%)] bg-[size:48px_48px] opacity-60"
           />
-          <div className="relative mx-auto flex max-w-6xl flex-col gap-7 px-4 pt-16 pb-16 sm:px-6 lg:pt-24 lg:pb-20">
+          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-16 pb-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:pt-20 lg:pb-20">
+            <div className="flex flex-col gap-7">
             <p className="intro flex items-center gap-2 text-sm text-muted-foreground" style={stagger(0)}>
               <span className="relative flex size-2.5" aria-hidden="true">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-signal opacity-60 motion-reduce:animate-none" />
@@ -53,7 +55,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
             </p>
             <h1
               id="hero-title"
-              className="max-w-4xl font-heading text-5xl leading-[0.98] font-semibold tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]"
+              className="max-w-4xl font-heading text-5xl leading-[0.98] font-semibold tracking-[-0.035em] sm:text-6xl lg:text-7xl"
             >
               <Phrased text={t.hero.title} phraseClassName="intro" offset={1} />
             </h1>
@@ -68,6 +70,8 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
                 <a href="#contact">{t.hero.secondary}</a>
               </Button>
             </div>
+            </div>
+            <HeroShowcase locale={lang} />
           </div>
         </section>
 

@@ -23,6 +23,29 @@ test.describe("showcase portal", () => {
     await expect(grid.getByRole("heading", { level: 3 })).toHaveCount(5)
   })
 
+  test("the hero shows the live apps, each opening its app", async ({ page }) => {
+    await page.goto("/en")
+    const hero = page.getByTestId("hero-showcase")
+    await expect(hero.getByRole("link")).toHaveCount(3)
+    // Kaffa sits at the back: pointing at its visible top edge brings it forward, then it opens
+    const kaffa = hero.getByRole("link", { name: "Open Kaffa Roasters" })
+    await kaffa.hover({ position: { x: 60, y: 16 } })
+    await expect.poll(() => kaffa.evaluate((el) => getComputedStyle(el).zIndex)).toBe("10")
+    await kaffa.click()
+    await expect(page).toHaveURL(/\/en\/shop$/)
+
+    await page.goto("/th")
+    await page.getByTestId("hero-showcase").getByRole("link", { name: "เปิดแอป Baan Lamai" }).first().click()
+    await expect(page).toHaveURL(/\/th\/spa$/)
+  })
+
+  test("the portal never scrolls sideways", async ({ page }) => {
+    for (const lang of ["en", "th"]) {
+      await page.goto(`/${lang}`)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), lang).toBeLessThanOrEqual(0)
+    }
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
