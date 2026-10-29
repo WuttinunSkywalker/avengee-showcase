@@ -16,9 +16,14 @@ describe("showcase config", () => {
       expect(showcase.pages?.length, `${showcase.id} pages`).toBeGreaterThan(0)
       expect(showcase.images, showcase.id).toBeDefined()
       for (const locale of ["en", "th"] as const) {
-        for (const src of [showcase.images!.desktop[locale], showcase.images!.mobile[locale]]) {
+        const tour = (showcase.images!.tour ?? []).map((screen) => screen.src[locale])
+        for (const src of [showcase.images!.desktop[locale], showcase.images!.mobile[locale], ...tour]) {
           expect(existsSync(join(publicDir, src)), src).toBe(true)
         }
+      }
+      for (const screen of showcase.images!.tour ?? []) {
+        expect(screen.src.en, showcase.id).not.toBe(screen.src.th)
+        expect(screen.label.th, showcase.id).not.toBe(screen.label.en)
       }
     }
   })

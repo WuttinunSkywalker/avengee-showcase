@@ -222,6 +222,7 @@ function RevenueChart({ data }: { data: ReturnType<typeof revenueByDay> }) {
               strokeWidth={2}
               fill="var(--color-revenue)"
               fillOpacity={0.1}
+              isAnimationActive={false}
               activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)" }}
             />
           </AreaChart>

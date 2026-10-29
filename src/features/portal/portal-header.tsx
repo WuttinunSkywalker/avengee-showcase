@@ -46,6 +46,8 @@ export function PortalHeader() {
           </Button>
         </nav>
       </div>
+      {/* How far down the page you are; only where scroll timelines are supported. */}
+      <span aria-hidden="true" className="scroll-progress absolute inset-x-0 -bottom-px h-0.5 bg-primary" />
     </header>
   )
 }

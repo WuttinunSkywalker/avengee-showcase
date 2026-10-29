@@ -4,6 +4,12 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Now
 
+- [x] Portal motion: hero intro (phrases rise in turn), scroll-linked reveals with CSS view timelines (screenshot wipe, phone mock-up settles, services rules and the process line draw, cards and text rise), header scroll-progress bar; no JS, nothing hidden without support or with reduced motion; e2e checks reveals finish and reduced motion
+- [x] Portal cards: live apps full width and listed first, coming-soon cards in one row; Open App and Staff Dashboard buttons equal width (side by side when the column allows, stacked otherwise); Thai uses "ระบบหลังบ้าน"
+- [x] Portal: each live card steps through real screens (home, booking or product page, staff dashboard) while hovered or focused; dots with a label pick a screen by mouse, touch or keyboard; no autoplay with reduced motion. Screens come from `pnpm capture:showcase` (`images.tour` in `src/config/site.ts`)
+- [x] Filter chips on the portal lost their gap: a `style` prop on ToggleGroup replaced its internal `--gap`. Reveal styles now go on a wrapper; e2e checks the chips stay apart
+- [ ] Portal hero: show something from the apps (e.g. a fanned stack of the live screenshots) instead of only text on the grid
+
 - [x] Regenerate portal screenshots from the production build, per language, with a phone view on the card (`pnpm capture:showcase`, needs `pnpm start --port 3200`)
 - [x] Portal and app metadata: `sitemap.ts`, `robots.ts`, share images per language (browser-rendered via `/[lang]/og/[app]` + `pnpm capture:og`, because next/og drops stacked Thai tone marks), SVG + Apple icons for the portal and Baan Lamai
 - [x] `public/images/CREDITS.md` listing every photo source (rawpixel CC0 via Openverse); a unit test fails if a new photo is not credited
@@ -26,7 +32,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] `Stars`, `isValidPhone` and the date labels moved to `src/components/stars.tsx`, `src/lib/phone.ts` and `src/lib/dates.ts` (spa re-exports them); `tests/unit/boundaries.test.ts` fails if one app imports another, or shared code imports an app
 - [x] Unknown product ids are answered with 404 in `src/proxy.ts`, built from the product data; `tests/unit/proxy.test.ts` checks every listed coffee passes, unknown ids and extra segments 404, and bare URLs redirect by language. If products ever come from an API, the proxy needs a cached id list
 - [x] Orders saved under `kaffa:orders:v1` are upgraded on first load (card orders paid at checkout, PromptPay left to confirm, line `kind` from product data), saved under v2 and the old key removed; unit, integration and e2e cover it
-- [ ] Integration tests for the checkout form (field errors, province picker, card checks) and cart drawer; today only e2e covers them
+- [x] Integration tests for the checkout form (every field error, province picker and postcode check, carrier fee, card formatting, real-card refusal, card order saved with brand + last 4 only, Thai) and cart drawer (lines, free-shipping progress, quantities, remove, Thai) in `tests/integration/shop-checkout.test.tsx`
 - [ ] Admin: inventory page (adjust stock per size, restock log) and a customers view; stock alerts currently read static product data
 - [ ] Daily revenue chart ends on today, which is only partly over, so the last point always dips; mark it "today so far" or end at yesterday
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
@@ -64,11 +70,13 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [ ] Share cards must be re-captured (`pnpm capture:og`) whenever a hero title changes; add a check that fails when the copy and card drift
 
-- [ ] Recharts entry animations never finish under Playwright's fixed clock, so screenshots show empty charts; the Kaffa chart has animation off, the Baan Lamai charts still animate (check their screenshots/OG captures)
+- [x] Recharts entry animations never finish under Playwright's fixed clock, so screenshots show empty charts; both apps' charts now render without the entry animation
 
 - [x] Admin sidebar nav items (both apps) lost their styles because `NavLink` dropped the props from `SidebarMenuButton asChild`; it now forwards them. The floating "all showcases" button covered the sidebar footer, so admin screens show it in the top bar instead
 
 - [x] Portal kept the last app's colours after leaving it: Next keeps the previous route mounted with `display: none`, and `:root:has([data-app])` still matched. Theme selectors now ignore hidden wrappers; e2e covers link and history navigation
+
+- [ ] GitHub Actions warns that `actions/checkout@v4`, `actions/setup-node@v4` and `pnpm/action-setup@v4` target Node 20 (deprecated); move to releases that run on Node 24
 
 - [ ] Lighthouse pass on every page (performance ≥ 90 mobile, accessibility 100)
 - [ ] Review all Thai copy once more by reading it aloud; fix anything that sounds translated

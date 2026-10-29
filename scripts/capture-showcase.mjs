@@ -9,9 +9,31 @@ const hidePortalLink = 'a[aria-label^="All Avengee"], a[aria-label^="ดูผ�
 // Same fixed moment as the e2e suite, so availability and dashboards look identical every run.
 const fixedNow = new Date("2026-11-04T03:30:00Z")
 
+// `tour` screens are saved as <id>-<locale>-<key>.jpg and listed under images.tour in src/config/site.ts.
 const shots = [
-  { id: "baan-lamai", path: "/spa", mobilePath: "/spa/book?service=aromatherapy&minutes=90" },
-  { id: "kaffa-roasters", path: "/shop", mobilePath: "/shop#coffee" },
+  {
+    id: "baan-lamai",
+    path: "/spa",
+    mobilePath: "/spa/book?service=aromatherapy&minutes=90",
+    tour: [
+      {
+        key: "booking",
+        path: "/spa/book?service=aromatherapy&minutes=90",
+        // Tomorrow has a full day of free times; today at 10:30 is nearly booked out.
+        prepare: (page) => page.getByRole("radio", { name: /5 November|5 พฤศจิกายน/ }).first().click(),
+      },
+      { key: "admin", path: "/spa/admin" },
+    ],
+  },
+  {
+    id: "kaffa-roasters",
+    path: "/shop",
+    mobilePath: "/shop#coffee",
+    tour: [
+      { key: "product", path: "/shop/coffee/doi-pangkhon-natural" },
+      { key: "admin", path: "/shop/admin" },
+    ],
+  },
 ]
 
 const browser = await chromium.launch()
@@ -24,6 +46,14 @@ for (const shot of shots) {
     await page.addStyleTag({ content: hidePortalLink })
     await page.waitForTimeout(800)
     await page.screenshot({ path: `${outDir}${shot.id}-${locale}.jpg`, type: "jpeg", quality: 82 })
+    for (const screen of shot.tour) {
+      await page.goto(`${base}/${locale}${screen.path}`, { waitUntil: "networkidle" })
+      await page.addStyleTag({ content: hidePortalLink })
+      await screen.prepare?.(page)
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await page.waitForTimeout(800)
+      await page.screenshot({ path: `${outDir}${shot.id}-${locale}-${screen.key}.jpg`, type: "jpeg", quality: 80 })
+    }
     await desktop.close()
 
     const phone = await browser.newContext({ ...devices["iPhone 15"], locale })

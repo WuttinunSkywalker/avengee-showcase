@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright"
-import { expect, expectNoConsoleErrors, fillGuestDetails, test } from "./fixtures"
+import { expect, expectNoConsoleErrors, settleAnimations, fillGuestDetails, test } from "./fixtures"
 
 test.describe("showcase portal", () => {
   test("lists showcases and opens a live app", async ({ page, consoleErrors }) => {
@@ -23,10 +23,51 @@ test.describe("showcase portal", () => {
     await expect(grid.getByRole("heading", { level: 3 })).toHaveCount(5)
   })
 
+  test("filter chips sit apart, not touching", async ({ page }) => {
+    await page.goto("/th")
+    const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
+      els.slice(0, 2).map((el) => el.getBoundingClientRect()),
+    )
+    expect(second.left - first.right).toBeGreaterThanOrEqual(6)
+  })
+
+  test("a live card steps through its screens while hovered", async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 768, "touch screens use the dots instead")
+    await page.goto("/en")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Baan Lamai" }) })
+    const label = card.getByTestId("preview-label")
+    await card.scrollIntoViewIfNeeded()
+    await expect(label).toHaveText("Home")
+    await card.hover()
+    // setFixedTime freezes Date only; timers run in real time, one screen every 2.2 s
+    await expect(label).toHaveText("Booking", { timeout: 4000 })
+    await expect(card.getByRole("img", { name: "Baan Lamai: Booking" })).toBeVisible()
+    await expect(label).toHaveText("Staff dashboard", { timeout: 4000 })
+    // Leaving the card puts it back on the home screen
+    await page.mouse.move(0, 0)
+    await expect(label).toHaveText("Home")
+  })
+
+  test("the dots pick a screen, in Thai, by keyboard", async ({ page }) => {
+    await page.goto("/th")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
+    const screens = card.getByRole("group", { name: "หน้าจอในแอป Kaffa Roasters" })
+    await screens.getByRole("button", { name: "หน้าสินค้า" }).focus()
+    await page.keyboard.press("Enter")
+    await expect(screens.getByRole("button", { name: "หน้าสินค้า" })).toHaveAttribute("aria-pressed", "true")
+    await expect(card.getByTestId("preview-label")).toHaveText("หน้าสินค้า")
+    // Picking a screen stops the autoplay
+    await page.waitForTimeout(2600)
+    await expect(card.getByTestId("preview-label")).toHaveText("หน้าสินค้า")
+    await screens.getByRole("button", { name: "ระบบหลังบ้าน" }).click()
+    await expect(card.getByRole("img", { name: "Kaffa Roasters: ระบบหลังบ้าน" })).toBeVisible()
+  })
+
   test("opens Kaffa Roasters from its card", async ({ page }) => {
     await page.goto("/th")
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
     await expect(card.getByText("เปิดแล้ว")).toBeVisible()
+    await expect(card.getByRole("link", { name: "ระบบหลังบ้าน" })).toHaveAttribute("href", "/th/shop/admin")
     await card.getByRole("link", { name: "เปิดแอป" }).click()
     await expect(page).toHaveURL(/\/th\/shop$/)
     await expect(page.getByRole("heading", { level: 1, name: "กาแฟจากดอยทางเหนือ คั่วสดทุกวันอังคาร" })).toBeVisible()
@@ -61,6 +102,59 @@ test.describe("showcase portal", () => {
       await expect(page).toHaveURL(/\/en$/)
       await expect.poll(primary).toBe(portal)
     }
+  })
+
+  test("lists open apps before the ones coming soon", async ({ page }) => {
+    await page.goto("/en")
+    const names = await page.locator("#showcases li h3").allTextContents()
+    expect(names.slice(0, 2)).toEqual(["Baan Lamai", "Kaffa Roasters"])
+    expect(names).toHaveLength(5)
+  })
+
+  test("each live card's two buttons are the same width", async ({ page }) => {
+    await page.goto("/en")
+    for (const name of ["Baan Lamai", "Kaffa Roasters"]) {
+      const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name }) })
+      await card.scrollIntoViewIfNeeded()
+      const open = (await card.getByRole("link", { name: /^Open App/ }).boundingBox())!
+      const admin = (await card.getByRole("link", { name: "Staff Dashboard" }).boundingBox())!
+      expect(Math.abs(open.width - admin.width), name).toBeLessThan(1)
+      expect(Math.abs(open.height - admin.height), name).toBeLessThan(1)
+    }
+  })
+
+  test("sections finish revealing once scrolled into view", async ({ page }) => {
+    await page.goto("/en")
+    // Scroll through the page in viewport steps, as a visitor would.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight)
+    for (let y = 0; y < height; y += 400) {
+      await page.evaluate((top) => window.scrollTo(0, top), y)
+    }
+    for (const selector of ["#process-title", "#contact-title"]) {
+      const target = page.locator(selector)
+      await target.scrollIntoViewIfNeeded()
+      await page.evaluate(() => window.scrollBy(0, -200))
+      // A finished reveal no longer clips the heading (scroll timelines update on the next frame).
+      await expect.poll(() => target.evaluate((el) => getComputedStyle(el.closest(".reveal") ?? el).clipPath), { message: selector }).not.toMatch(/100%/)
+    }
+    // The last card's buttons respond to clicks (a part-way reveal would clip them).
+    const kaffa = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
+    await kaffa.getByRole("link", { name: "Staff Dashboard" }).click()
+    await expect(page).toHaveURL(/\/en\/shop\/admin$/)
+  })
+
+  test("respects reduced motion: nothing animates or hides", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/en")
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
+    const clipped = await page.locator(".reveal").evaluateAll((els) => els.filter((el) => getComputedStyle(el).clipPath !== "none").length)
+    expect(clipped).toBe(0)
+    // No autoplay either: hovering a card leaves it on the home screen
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Baan Lamai" }) })
+    await card.hover()
+    await page.waitForTimeout(2600)
+    await expect(card.getByTestId("preview-label")).toHaveText("Home")
   })
 
   test("apps never mention demos", async ({ page }) => {
@@ -206,6 +300,7 @@ test.describe("accessibility", () => {
       await page.goto(target.path)
       await page.waitForLoadState("networkidle")
       await expect(page.locator("[aria-busy=true]")).toHaveCount(0)
+      await settleAnimations(page)
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()
       const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical")
       expect(

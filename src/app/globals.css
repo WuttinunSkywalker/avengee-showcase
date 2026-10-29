@@ -389,3 +389,107 @@
     transition-duration: 0.01ms !important;
   }
 }
+/*
+ * Portal motion. One short intro on load, then scroll-linked reveals that
+ * follow the scrollbar (CSS scroll-driven animations, no JavaScript).
+ * Browsers without view timelines, and visitors who ask for reduced motion,
+ * get the finished layout with nothing hidden. Text is revealed with
+ * clip-path and transform rather than opacity, so its contrast never dips.
+ * Keyframes use `transform`, leaving Tailwind's translate/scale utilities
+ * (hover lifts) free to combine with them.
+ * Ancestors of a revealed element must crop with `overflow: clip`, not
+ * `hidden`: `hidden` makes them a scroll container, and view() would then
+ * track that box instead of the page and stop part-way.
+ */
+.scroll-progress {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro {
+    animation: intro-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms + 80ms);
+  }
+
+  @supports (animation-timeline: view()) {
+    .scroll-progress {
+      display: block;
+      transform-origin: left;
+      animation: draw-x linear both;
+      animation-timeline: scroll(root);
+    }
+
+    .reveal {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      /* Pixel offsets from the moment the element's top enters: the same scroll distance whatever its height. */
+      animation-range: entry calc(var(--i, 0) * 36px) entry calc(220px + var(--i, 0) * 36px);
+    }
+
+    .reveal-wipe {
+      animation: reveal-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 0px entry 420px;
+    }
+
+    .reveal-phone {
+      animation: reveal-phone linear both;
+      animation-timeline: view();
+      animation-range: entry 200px entry 520px;
+    }
+
+    .reveal-rule {
+      transform-origin: left;
+      animation: draw-x linear both;
+      animation-timeline: view();
+      animation-range: entry calc(80px + var(--i, 0) * 60px) entry calc(380px + var(--i, 0) * 60px);
+    }
+  }
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(6px);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(2rem);
+  }
+  to {
+    clip-path: inset(-2rem);
+    transform: none;
+  }
+}
+
+@keyframes reveal-wipe {
+  from {
+    clip-path: inset(10% 12% 10% 12% round 1.5rem);
+    transform: scale(1.08);
+  }
+  to {
+    clip-path: inset(0 round 0);
+    transform: none;
+  }
+}
+
+@keyframes reveal-phone {
+  from {
+    opacity: 0;
+    transform: translateY(40%) rotate(-6deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}

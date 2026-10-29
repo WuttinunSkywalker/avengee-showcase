@@ -47,3 +47,19 @@ export async function fillGuestDetails(page: Page, locale: "en" | "th" = "en") {
   await page.getByLabel(labels.notes).fill(locale === "th" ? "ปวดไหล่ซ้าย ขอแรงปานกลาง" : "Old shoulder injury on the left side, please go gently there.")
   await page.getByRole("checkbox", { name: labels.policy }).check()
 }
+
+/**
+ * Waits for time-based animations (the portal intro, dialogs) to finish so
+ * audits and screenshots see the settled page. Scroll-linked and looping
+ * animations never "finish", so they're skipped.
+ */
+export async function settleAnimations(page: Page) {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.timeline instanceof DocumentTimeline && animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  )
+}
