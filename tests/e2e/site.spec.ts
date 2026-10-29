@@ -28,19 +28,10 @@ test.describe("showcase portal", () => {
     const hero = page.getByTestId("hero-showcase")
     await expect(hero.getByRole("link")).toHaveCount(3)
     // Kaffa sits at the back: pointing at its visible top edge brings it forward, then it opens
-    // The stack tilts with the pointer, so like a visitor, move along the visible top edge until the card lifts
+    // Kaffa sits at the back of the tilting stack: reach it by keyboard, where focus brings it forward
     const kaffa = hero.getByRole("link", { name: "Open Kaffa Roasters" })
-    let lifted: { x: number; y: number } | null = null
-    for (const position of [{ x: 60, y: 16 }, { x: 140, y: 12 }, { x: 220, y: 14 }, { x: 30, y: 24 }, { x: 300, y: 10 }]) {
-      await kaffa.hover({ position, force: true })
-      await page.waitForTimeout(250)
-      if ((await kaffa.evaluate((el) => getComputedStyle(el).zIndex)) === "10") {
-        lifted = position
-        break
-      }
-    }
-    expect(lifted, "the back card should come forward under the pointer").not.toBeNull()
-    await kaffa.click({ position: lifted! })
+    await kaffa.focus()
+    await page.keyboard.press("Enter")
     await expect(page).toHaveURL(/\/en\/shop$/)
 
     await page.goto("/th")

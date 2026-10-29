@@ -18,6 +18,14 @@ export const test = base.extend<{ consoleErrors: string[] }>({
   },
   page: async ({ page }, provide) => {
     await page.clock.setFixedTime(FIXED_NOW)
+    // Wait for React to hydrate after every navigation, so clicks never land on a page that can't respond yet
+    // (slower CI machines otherwise click filters and cards before their handlers exist).
+    const goto = page.goto.bind(page)
+    page.goto = async (url, options) => {
+      const response = await goto(url, options)
+      if (response && response.status() < 400) await page.locator("html[data-hydrated]").waitFor({ state: "attached", timeout: 15_000 })
+      return response
+    }
     await provide(page)
   },
 })

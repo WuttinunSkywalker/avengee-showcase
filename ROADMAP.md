@@ -81,6 +81,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Quality backlog
 
+- [x] CI flakes from clicking before hydration (filters, cards): the root layout marks <html data-hydrated> and the e2e page fixture waits for it after every navigation
+
 - [ ] Next dev server races under full parallel e2e load ("Failed to generate static paths … Unexpected end of JSON input"); the gate now prefers e2e against production
 
 - [ ] Turbopack dev HMR sometimes keeps an old copy of an edited messages module (`t.catalog` undefined until restart); investigate or document a restart step

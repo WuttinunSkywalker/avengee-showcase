@@ -15,6 +15,7 @@ import {
   Noto_Serif_Thai,
   Young_Serif,
 } from "next/font/google"
+import { HydrationMarker } from "@/components/hydration-marker"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -112,6 +113,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <TooltipProvider>
               {children}
+              <HydrationMarker />
               <Toaster position="top-center" />
             </TooltipProvider>
           </ThemeProvider>
