@@ -172,16 +172,19 @@ test.describe("showcase portal", () => {
       // A finished reveal no longer clips the heading (scroll timelines update on the next frame).
       await expect.poll(() => target.evaluate((el) => getComputedStyle(el.closest(".reveal") ?? el).clipPath), { message: selector }).not.toMatch(/100%/)
     }
-    // The process steps: two connectors between three numbered steps, filled once scrolled past
+    // How we work: three steps and a live server, joined by connectors that run in turn once in view
     const steps = page.getByTestId("process-steps")
     await expect(steps.getByRole("listitem")).toHaveCount(3)
     await steps.scrollIntoViewIfNeeded()
-    await page.evaluate(() => window.scrollBy(0, 200))
-    const fill = steps.locator(page.viewportSize()!.width >= 768 ? ".reveal-rule" : ".reveal-rule-y")
-    await expect(fill).toHaveCount(2)
+    await expect(steps).toHaveAttribute("data-inview", "true")
+    await expect(page.getByTestId("process-live")).toContainText("Live")
     await expect
-      .poll(() => fill.evaluateAll((els) => els.map((el) => getComputedStyle(el).transform)))
-      .toEqual(["matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)"])
+      .poll(() =>
+        steps.locator("[data-connector]").evaluateAll((els) =>
+          els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => getComputedStyle(el).transform),
+        ),
+      { timeout: 6000 })
+      .toEqual(["matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)"])
     // The last card's buttons respond to clicks (a part-way reveal would clip them).
     const kaffa = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
     await kaffa.getByRole("link", { name: "Staff Dashboard" }).click()

@@ -10,6 +10,7 @@ import { stagger } from "@/lib/motion"
 import { portalMessages } from "@/features/portal/messages"
 import { HeroShowcase } from "@/features/portal/hero-showcase"
 import { PortalHeader } from "@/features/portal/portal-header"
+import { ProcessSteps } from "@/features/portal/process-steps"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
 
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
@@ -116,33 +117,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
             <h2 id="process-title" className="reveal font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
               {t.process.title}
             </h2>
-            <ol className="grid gap-10 md:grid-cols-3" data-testid="process-steps">
-              {t.process.steps.map((step, index) => {
-                const last = index === t.process.steps.length - 1
-                return (
-                  <li key={step.title} className="reveal relative grid grid-cols-[3.5rem_1fr] gap-x-5 md:flex md:flex-col md:gap-5" style={stagger(index)}>
-                    {/* A short connector to the next step: a quiet track that fills in brand blue as the steps scroll in. */}
-                    {!last && (
-                      <>
-                        <span aria-hidden="true" className="absolute top-16 -bottom-8 left-7 w-0.5 -translate-x-1/2 rounded-full bg-border md:hidden">
-                          <span className="reveal-rule-y block size-full rounded-full bg-primary" style={stagger(index)} />
-                        </span>
-                        <span aria-hidden="true" className="absolute top-7 left-16 -right-8 hidden h-0.5 -translate-y-1/2 rounded-full bg-border md:block">
-                          <span className="reveal-rule block size-full rounded-full bg-primary" style={stagger(index)} />
-                        </span>
-                      </>
-                    )}
-                    <span className="relative flex size-14 items-center justify-center rounded-full border-2 border-primary bg-background font-heading text-2xl font-semibold text-primary tabular-nums">
-                      {index + 1}
-                    </span>
-                    <div className="flex flex-col gap-2 pt-3 md:pt-0">
-                      <h3 className="font-heading text-lg font-semibold">{step.title}</h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">{step.body}</p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
+            <ProcessSteps />
           </div>
         </section>
 

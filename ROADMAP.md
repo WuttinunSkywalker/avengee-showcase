@@ -4,6 +4,9 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Now
 
+- [ ] Portal "wow" pass (asked for on 2026-10-30): research what current agency / product landing pages use and add a few eye-catching, tasteful effects. Candidates: hero headline with masked word-by-word reveal, cursor-following spotlight on the hero grid, magnetic / tilt hover on showcase cards, marquee of Thai business types, counters that tick up, section transitions with view-timeline parallax; keep reduced motion and performance (no layout shift, 60 fps)
+- [x] "How we work" runs in every browser: once in view the line fills 1 → 2 → 3 → a live server icon, each step lighting up as it's reached (IntersectionObserver + transitions, not scroll timelines that older Safari and Firefox lack)
+
 - [x] Portal motion: hero intro (phrases rise in turn), scroll-linked reveals with CSS view timelines (screenshot wipe, phone mock-up settles, services rules and the process line draw, cards and text rise), header scroll-progress bar; no JS, nothing hidden without support or with reduced motion; e2e checks reveals finish and reduced motion
 - [x] Portal cards: live apps full width and listed first, coming-soon cards in one row; Open App and Staff Dashboard buttons equal width (side by side when the column allows, stacked otherwise); Thai uses "ระบบหลังบ้าน"
 - [x] Portal: each live card steps through real screens (home, booking or product page, staff dashboard) while hovered or focused; dots with a label pick a screen by mouse, touch or keyboard; no autoplay with reduced motion. Screens come from `pnpm capture:showcase` (`images.tour` in `src/config/site.ts`)

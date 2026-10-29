@@ -40,6 +40,7 @@ const en = {
       { title: "We build, you try it as we go", body: "You get a working link to click through along the way. Ask for changes whenever you like." },
       { title: "Launch wherever suits you", body: "On your company's servers, your own account, or hosted by us. We work with companies and individuals." },
     ],
+    live: "Live",
   },
   contact: {
     title: "Tell us what you want to build.",
@@ -91,6 +92,7 @@ const th: PortalMessages = {
       { title: "ทำไปส่งให้ลองไป", body: "ระหว่างพัฒนา เราส่งลิงก์ให้กดลองได้เรื่อย ๆ อยากปรับตรงไหนบอกได้ตลอด" },
       { title: "ขึ้นระบบตามที่คุณสะดวก", body: "จะใช้เซิร์ฟเวอร์ของบริษัท บัญชีส่วนตัว หรือให้เราดูแลให้ก็ได้ รับทั้งงานบริษัทและงานส่วนตัว" },
     ],
+    live: "ออนไลน์แล้ว",
   },
   contact: {
     title: "อยากทำเว็บแบบไหน เล่าให้เราฟังได้เลย",
