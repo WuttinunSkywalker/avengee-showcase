@@ -51,6 +51,31 @@ test.describe("Krua Yai kitchen screen", () => {
     await expect(page.getByTestId("status-sheet").getByTestId("status-line")).toContainText("Served")
   })
 
+  test("a table and the kitchen open side by side keep each other up to date", async ({ page }) => {
+    const kitchen = await page.context().newPage()
+    await kitchen.goto("/en/restaurant/kitchen")
+    await kitchen.locator("html[data-hydrated]").waitFor({ state: "attached" })
+    await expect(kitchen.getByTestId("count-received")).toHaveText("2")
+
+    await page.goto("/en/restaurant?table=12")
+    await page.getByRole("button", { name: "Add Khao soi with chicken" }).first().click()
+    await page.getByRole("dialog").getByRole("button", { name: /^Add to Order/ }).click()
+    await page.getByTestId("basket-bar").getByRole("button", { name: "View Order" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Send to Kitchen" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Back to the Menu" }).click()
+
+    // No reload: the new round prints on the kitchen screen
+    const ticket = kitchen.getByTestId("ticket").filter({ hasText: "This device" })
+    await expect(ticket).toContainText("Table 12")
+    await expect(ticket).toContainText("Khao soi with chicken")
+    await kitchen.getByRole("button", { name: "Start Cooking: Table 12" }).click()
+    await kitchen.getByRole("button", { name: "Mark Served: Table 12" }).click()
+
+    // …and the table's phone shows it served
+    await expect(page.getByTestId("status-bar")).toContainText("Everything's on the table")
+    await kitchen.close()
+  })
+
   test("a week of sales", async ({ page, consoleErrors }) => {
     await page.goto("/en/restaurant/kitchen")
     await page.getByRole("tab", { name: "Sales" }).click()

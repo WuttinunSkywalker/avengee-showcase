@@ -39,7 +39,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Kitchen screen at `/[lang]/restaurant/kitchen` (noindex): New / Cooking / Served columns of seeded tickets (a new one most minutes, waiting three minutes for a cook), spice, extras and notes on each ticket, a flag after 15 minutes, Start Cooking / Mark Served kept per session; rounds sent from this browser's table appear as "This device". Sales tab (`?view=sales`): the last seven full days of takings, guests, spend per head, and the week's best sellers
 - [x] Portal card live: menu screenshots, an order status tour screen (a round nine minutes in) and the kitchen screen, share card with four dishes, steaming-bowl icon + apple icon, sitemap entry; the card's staff link opens the kitchen screen. `capture:showcase` and `capture:og` now take an optional app id to refresh just one app
 - [x] The guest's status bar and sheet follow the kitchen screen: Start Cooking or Mark Served on this device's round moves it on at once. The kitchen can only move dishes forward, so a mark is a floor on the prep-time status (the board uses the same rule, so a ticket started by hand still goes out on time). Device tickets are keyed by table and send time, so a fresh basket on the same table never inherits old marks
-- [ ] Both stores are per tab (sessionStorage): a kitchen screen opened in another tab doesn't see later rounds until reloaded, and doesn't update the guest's tab live. A `storage`-backed sync (localStorage + `storage` event) would make the two-tab story work
+- [x] A table and the kitchen open in two tabs stay in step: both stores moved to localStorage and re-read on the `storage` event (shared `useStorageSync` hook), so new rounds print on the kitchen screen and its marks reach the table without a reload. A table's visit ends after three quiet hours, and kitchen marks older than three hours are pruned. Seeded tickets no longer put cooking notes on sweets and drinks
 
 ## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)
 
@@ -76,7 +76,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Kaffa Roasters follow-ups
 
-- [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
+- [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page (the `useStorageSync` hook from Krua Yai fits here)
 
 ## Baan Lamai improvements
 

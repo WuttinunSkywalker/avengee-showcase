@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import { useStorageSync } from "@/hooks/use-storage-sync"
 import type { Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatBaht } from "@/lib/format"
@@ -143,6 +144,9 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
   const [billOpen, setBillOpen] = useState(false)
   const now = useNow()
   const kitchenHydrated = usePersistHydrated(useKitchenStore.persist)
+  // A table and the kitchen open in two tabs keep each other up to date
+  useStorageSync(useBasketStore.persist)
+  useStorageSync(useKitchenStore.persist)
   const overrides = useKitchenStore((state) => state.overrides)
   // What the kitchen screen has marked for this table's rounds
   const kitchen = (round: Round) => (kitchenHydrated ? overrides[deviceTicketId(table, round)] : undefined)

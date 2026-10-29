@@ -34,12 +34,16 @@ export function generateTickets(now: Date): Ticket[] {
     const lines: BasketLine[] = Array.from({ length: lineCount }, () => {
       const dish = weightedPick(random, dishWeights)
       const addOns = dish.addOns.filter(() => random() < 0.18) as AddOnId[]
+      const quantity = random() < 0.8 ? 1 : 2
+      const spice = dish.spice === null ? null : (Math.min(4, Math.max(0, dish.spice + (random() < 0.3 ? -1 : 0))) as SpiceLevel)
+      // Sweets and drinks don't get cooking notes
+      const note = pick(random, notes)
       return {
         dishId: dish.id,
-        quantity: random() < 0.8 ? 1 : 2,
-        spice: dish.spice === null ? null : (Math.min(4, Math.max(0, dish.spice + (random() < 0.3 ? -1 : 0))) as SpiceLevel),
+        quantity,
+        spice,
         addOns,
-        note: pick(random, notes),
+        note: dish.category === "sweets" ? "" : note,
       }
     })
     const table = 1 + Math.floor(random() * restaurant.tables)
@@ -56,6 +60,19 @@ export const PICKUP_MINUTES = 3
 export function ticketStatus(ticket: Ticket, now: Date, override?: DishStatus): DishStatus {
   if (!ticket.here && ticketAge(ticket, now) < PICKUP_MINUTES) return laterStatus("received", override)
   return roundProgress(ticket.round, now, override).status
+}
+
+/** When the ticket behind a board id was sent: seeded ids carry their minute, device ids their send time. */
+function ticketTime(id: string): number {
+  if (id.startsWith("k-")) return Number(id.slice(2)) * MINUTE
+  const sent = id.match(/^here-\d+-(.+)$/)?.[1]
+  return sent ? Date.parse(sent) : Number.NaN
+}
+
+/** Drops the kitchen's marks on tickets that left the board hours ago, so stored state stays small. */
+export function pruneOverrides(overrides: Record<string, DishStatus>, now: Date, hours = 3): Record<string, DishStatus> {
+  const cutoff = now.getTime() - hours * 3_600_000
+  return Object.fromEntries(Object.entries(overrides).filter(([id]) => ticketTime(id) >= cutoff))
 }
 
 /** The board's id for a round sent from this browser, shared with the guest's order status. */

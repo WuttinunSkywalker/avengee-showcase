@@ -2,7 +2,7 @@
 
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
-import { addLine, canCall, setLineQuantity, type BasketLine, type CallReason, type Round } from "../lib/order"
+import { addLine, canCall, setLineQuantity, visitExpired, type BasketLine, type CallReason, type Round } from "../lib/order"
 
 interface BasketState {
   /** The table this basket belongs to; switching tables starts a fresh basket. */
@@ -12,6 +12,8 @@ interface BasketState {
   rounds: Round[]
   /** When each kind of help was last asked for. */
   calls: Partial<Record<CallReason, string>>
+  /** The table's last change, so a visit left in storage ends after a few hours. */
+  updatedAt: string | null
   open: boolean
   setTable: (table: number) => void
   add: (line: BasketLine) => void
@@ -24,7 +26,15 @@ interface BasketState {
   setOpen: (open: boolean) => void
 }
 
-/** What this table is about to order, kept in sessionStorage: it belongs to this visit, not this phone. */
+type Saved = Pick<BasketState, "table" | "lines" | "rounds" | "calls" | "updatedAt">
+
+const stamp = () => new Date().toISOString()
+
+/**
+ * What this table has ordered and is about to order. Kept in localStorage so
+ * the kitchen screen in another tab sees each round as it's sent; a visit
+ * with nothing new for three hours is over, and the next one starts fresh.
+ */
 export const useBasketStore = create<BasketState>()(
   persist(
     (set, get) => ({
@@ -32,31 +42,36 @@ export const useBasketStore = create<BasketState>()(
       lines: [],
       rounds: [],
       calls: {},
+      updatedAt: null,
       open: false,
-      setTable: (table) => set((state) => (state.table === table ? state : { table, lines: [], rounds: [], calls: {} })),
-      add: (line) => set((state) => ({ lines: addLine(state.lines, line) })),
-      setQuantity: (key, quantity) => set((state) => ({ lines: setLineQuantity(state.lines, key, quantity) })),
-      clear: () => set({ lines: [] }),
+      setTable: (table) => set((state) => (state.table === table ? state : { table, lines: [], rounds: [], calls: {}, updatedAt: stamp() })),
+      add: (line) => set((state) => ({ lines: addLine(state.lines, line), updatedAt: stamp() })),
+      setQuantity: (key, quantity) => set((state) => ({ lines: setLineQuantity(state.lines, key, quantity), updatedAt: stamp() })),
+      clear: () => set({ lines: [], updatedAt: stamp() }),
       send: (now) => {
         const { lines, rounds } = get()
         if (!lines.length) return null
         const round: Round = { number: rounds.length + 1, sentAt: now.toISOString(), lines }
-        set({ rounds: [...rounds, round], lines: [] })
+        set({ rounds: [...rounds, round], lines: [], updatedAt: now.toISOString() })
         return round
       },
       call: (reason, now) => {
         if (!canCall(get().calls[reason], now)) return false
-        set((state) => ({ calls: { ...state.calls, [reason]: now.toISOString() } }))
+        set((state) => ({ calls: { ...state.calls, [reason]: now.toISOString() }, updatedAt: now.toISOString() }))
         return true
       },
       setOpen: (open) => set({ open }),
     }),
     {
       name: "kruayai:table:v1",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       version: 1,
       skipHydration: true,
-      partialize: ({ table, lines, rounds, calls }) => ({ table, lines, rounds, calls }),
+      partialize: ({ table, lines, rounds, calls, updatedAt }): Saved => ({ table, lines, rounds, calls, updatedAt }),
+      merge: (saved, current) => {
+        const visit = saved as Saved | undefined
+        return !visit || visitExpired(visit.updatedAt, new Date()) ? current : { ...current, ...visit }
+      },
     },
   ),
 )

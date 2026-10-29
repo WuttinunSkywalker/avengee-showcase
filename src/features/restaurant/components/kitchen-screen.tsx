@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import { useStorageSync } from "@/hooks/use-storage-sync"
 import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatDayMonth, formatLongDate } from "@/lib/dates"
@@ -90,6 +91,9 @@ function Board({ locale }: { locale: Locale }) {
   const now = useNow()
   const kitchenReady = usePersistHydrated(useKitchenStore.persist)
   const basketReady = usePersistHydrated(useBasketStore.persist)
+  // A table and the kitchen open in two tabs keep each other up to date
+  useStorageSync(useBasketStore.persist)
+  useStorageSync(useKitchenStore.persist)
   const overrides = useKitchenStore((state) => state.overrides)
   const move = useKitchenStore((state) => state.move)
   const table = useBasketStore((state) => state.table)

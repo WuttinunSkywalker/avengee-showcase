@@ -118,6 +118,17 @@ describe("rounds in the kitchen", () => {
     expect(ticketStatus({ ...ticket, here: false }, at(1), "cooking")).toBe("cooking")
   })
 
+  it("ends a table's visit after three quiet hours, and forgets old kitchen marks", async () => {
+    const { visitExpired } = await import("@/features/restaurant/lib/order")
+    const { pruneOverrides } = await import("@/features/restaurant/lib/kitchen")
+    expect(visitExpired(null, at(0))).toBe(true)
+    expect(visitExpired(sentAt, at(179))).toBe(false)
+    expect(visitExpired(sentAt, at(181))).toBe(true)
+    const minute = Date.parse(sentAt) / 60_000
+    const marks = { [`k-${minute}`]: "cooking", [`k-${minute - 200}`]: "served", [`here-9-${sentAt}`]: "served", "here-9-garbage": "served" } as const
+    expect(pruneOverrides(marks, at(30))).toEqual({ [`k-${minute}`]: "cooking", [`here-9-${sentAt}`]: "served" })
+  })
+
   it("adds up every round and limits calls to one per reason every two minutes", async () => {
     const { roundsTotal, canCall } = await import("@/features/restaurant/lib/order")
     expect(roundsTotal([round, { ...round, number: 2 }])).toBe((80 + 160 + 55 * 2) * 2)

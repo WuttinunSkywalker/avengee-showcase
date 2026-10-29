@@ -124,6 +124,15 @@ export function roundsTotal(rounds: readonly Round[]): number {
   return rounds.reduce((sum, round) => sum + basketSummary(round.lines).total, 0)
 }
 
+/* ---------- The table's visit ---------- */
+
+/** A table that hasn't ordered or changed anything for this long has gone home. */
+export const VISIT_HOURS = 3
+
+export function visitExpired(updatedAt: string | null | undefined, now: Date): boolean {
+  return !updatedAt || now.getTime() - Date.parse(updatedAt) > VISIT_HOURS * 3_600_000
+}
+
 /* ---------- Calling staff ---------- */
 
 export const CALL_REASONS = ["water", "cutlery", "problem", "bill"] as const
