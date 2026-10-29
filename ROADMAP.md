@@ -35,7 +35,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Integration tests for the checkout form (every field error, province picker and postcode check, carrier fee, card formatting, real-card refusal, card order saved with brand + last 4 only, Thai) and cart drawer (lines, free-shipping progress, quantities, remove, Thai) in `tests/integration/shop-checkout.test.tsx`
 - [x] Admin inventory at `/[lang]/shop/admin/inventory`: every size with stock level, restock or stocktake count per size (with undo), seeded Tuesday restock log plus this device's changes; overview stock alerts and reset include them
 - [x] Admin customers at `/[lang]/shop/admin/customers`: customer count, returning share, average spend; search by name, email or phone; sort by spend, recency or orders; regulars marked; customer sheet with contact, address, favourite coffee and order history linking to each order; order sheet links back. Seeded orders now come from a pool of 300 customers (regulars, occasional, one-off; many Thai names in Thai script) with fixed addresses
-- [ ] Stock changes in the admin are per device (`kaffa:inventory:v1`) and don't reach the storefront's sold-out states, and orders don't draw stock down; decide whether the storefront should read them
+- [x] Live stock per device: orders placed here draw stock down (cancelling puts it back) and admin restocks/counts reach the product page, catalogue and cart (`useLiveProducts`); e2e buys the last bags, cancels, restocks
+- [ ] Home page product cards are server-rendered with printed stock, and checkout doesn't re-check cart quantities against live stock before taking payment
 - [ ] Daily revenue chart ends on today, which is only partly over, so the last point always dips; mark it "today so far" or end at yesterday
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
 

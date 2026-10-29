@@ -10,6 +10,7 @@ import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { shopMessages } from "../../i18n/messages"
+import { useLiveProducts } from "../../hooks/use-live-products"
 import { cartLines, maxQuantity } from "../../lib/cart"
 import { applyShopPromo, orderTotals } from "../../lib/checkout"
 import { PromoField } from "./promo-field"
@@ -28,7 +29,9 @@ export function CartDrawer() {
   const remove = useCartStore((state) => state.remove)
 
   const promoCode = useCartStore((state) => state.promoCode)
-  const lines = hydrated ? cartLines(items) : []
+  const live = useLiveProducts()
+  // Live sizes, so the + button stops at what's really left on the shelf.
+  const lines = hydrated ? cartLines(items, live) : []
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0)
   const summary = orderTotals(lines, { promo: promoCode ? applyShopPromo(promoCode, subtotal) : null })
 
@@ -100,7 +103,7 @@ export function CartDrawer() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={t.detail.decrease}
-                            onClick={() => setQuantity(line.key, line.quantity - 1)}
+                            onClick={() => setQuantity(line.key, line.quantity - 1, live)}
                           >
                             <MinusIcon aria-hidden="true" />
                           </Button>
@@ -110,7 +113,7 @@ export function CartDrawer() {
                             size="icon-sm"
                             aria-label={t.detail.increase}
                             disabled={line.quantity >= max}
-                            onClick={() => setQuantity(line.key, line.quantity + 1)}
+                            onClick={() => setQuantity(line.key, line.quantity + 1, live)}
                           >
                             <PlusIcon aria-hidden="true" />
                           </Button>

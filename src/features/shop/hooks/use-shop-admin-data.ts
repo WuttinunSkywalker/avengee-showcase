@@ -5,7 +5,7 @@ import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import type { Product } from "../data/products"
 import { fulfilmentStatus, generateShopOrders, type FulfilmentStatus } from "../lib/admin"
-import { withAdjustments, type StockAdjustment } from "../lib/inventory"
+import { liveProducts, type StockAdjustment } from "../lib/inventory"
 import { bangkokDate } from "../lib/tracking"
 import { useShopAdminStore } from "../store/admin-store"
 import { useInventoryStore } from "../store/inventory-store"
@@ -19,7 +19,7 @@ export type AdminData =
       orders: ShopOrder[]
       statuses: Map<string, FulfilmentStatus>
       placedHere: Set<string>
-      /** Products with this device's restocks and stocktakes applied. */
+      /** Live stock: restocks and stocktakes applied, orders placed on this device taken off. */
       products: Product[]
       adjustments: StockAdjustment[]
     }
@@ -48,7 +48,7 @@ export function useShopAdminData(): AdminData {
       orders,
       statuses,
       placedHere: new Set(deviceOrders.map((order) => order.reference)),
-      products: withAdjustments(adjustments),
+      products: liveProducts(adjustments, deviceOrders, (order) => statuses.get(order.reference) === "cancelled"),
       adjustments,
     }
   }, [now, ordersReady, adminReady, inventoryReady, deviceOrders, seed, overrides, adjustments])

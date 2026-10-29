@@ -13,10 +13,14 @@ import { shopMessages } from "../../i18n/messages"
 import { grindsFor, maxQuantity, type Grind } from "../../lib/cart"
 import { formatBaht } from "../../lib/format"
 import { unitPrice } from "../../data/products"
+import { useLiveProducts } from "../../hooks/use-live-products"
 import { useCartStore } from "../../store/cart-store"
 
-export function PurchasePanel({ product }: { product: Product }) {
+export function PurchasePanel({ product: printed }: { product: Product }) {
   const locale = useLocale()
+  // Live stock on this device (restocks, earlier orders); the printed product until it loads.
+  const live = useLiveProducts()
+  const product = live.find((candidate) => candidate.id === printed.id) ?? printed
   const t = shopMessages[locale].detail
   const firstAvailable = product.sizes.find((size) => size.stock > 0) ?? product.sizes[0]
   const [amount, setAmount] = useState(firstAvailable.amount)
@@ -33,7 +37,7 @@ export function PurchasePanel({ product }: { product: Product }) {
   const unit = product.kind === "drip-bags" ? "bag" : "100g"
 
   function addToCart() {
-    add({ productId: product.id, amount, grind, quantity })
+    add({ productId: product.id, amount, grind, quantity }, live)
     toast.success(t.added(product.name), { action: { label: t.viewCart, onClick: () => setOpen(true) } })
     setQuantity(1)
   }

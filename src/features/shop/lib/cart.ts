@@ -1,4 +1,4 @@
-import { getProduct, type Product, type ProductSize } from "../data/products"
+import { products as catalogue, type Product, type ProductSize } from "../data/products"
 
 export const GRINDS = ["whole", "pour-over", "espresso", "moka", "french-press"] as const
 export type Grind = (typeof GRINDS)[number]
@@ -34,9 +34,15 @@ export function maxQuantity(size: ProductSize): number {
   return Math.max(0, Math.min(size.stock, MAX_PER_LINE))
 }
 
+/** Looks up a size in `list`: the catalogue, or live stock that includes restocks and earlier orders. */
+function findSize(list: readonly Product[], productId: string, amount: number) {
+  const product = list.find((candidate) => candidate.id === productId)
+  return { product, size: product?.sizes.find((s) => s.amount === amount) }
+}
+
 /** Adds an item, merging with an identical line and respecting stock. */
-export function addToCart(items: readonly CartItem[], item: CartItem): CartItem[] {
-  const size = getProduct(item.productId)?.sizes.find((s) => s.amount === item.amount)
+export function addToCart(items: readonly CartItem[], item: CartItem, list: readonly Product[] = catalogue): CartItem[] {
+  const { size } = findSize(list, item.productId, item.amount)
   if (!size || item.quantity < 1) return [...items]
   const limit = maxQuantity(size)
   const key = lineKey(item)
@@ -47,11 +53,11 @@ export function addToCart(items: readonly CartItem[], item: CartItem): CartItem[
   return limit === 0 ? [...items] : [...items, { ...item, quantity: Math.min(limit, item.quantity) }]
 }
 
-export function setQuantity(items: readonly CartItem[], key: string, quantity: number): CartItem[] {
+export function setQuantity(items: readonly CartItem[], key: string, quantity: number, list: readonly Product[] = catalogue): CartItem[] {
   if (quantity < 1) return items.filter((line) => lineKey(line) !== key)
   return items.map((line) => {
     if (lineKey(line) !== key) return line
-    const size = getProduct(line.productId)?.sizes.find((s) => s.amount === line.amount)
+    const { size } = findSize(list, line.productId, line.amount)
     return { ...line, quantity: Math.min(size ? maxQuantity(size) : quantity, quantity) }
   })
 }
@@ -61,10 +67,9 @@ export function removeLine(items: readonly CartItem[], key: string): CartItem[] 
 }
 
 /** Resolves stored items against the catalogue, dropping anything no longer sold. */
-export function cartLines(items: readonly CartItem[]): CartLine[] {
+export function cartLines(items: readonly CartItem[], list: readonly Product[] = catalogue): CartLine[] {
   return items.flatMap((item) => {
-    const product = getProduct(item.productId)
-    const size = product?.sizes.find((s) => s.amount === item.amount)
+    const { product, size } = findSize(list, item.productId, item.amount)
     if (!product || !size) return []
     return [{ ...item, key: lineKey(item), product, size, lineTotal: size.price * item.quantity }]
   })

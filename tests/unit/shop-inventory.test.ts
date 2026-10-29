@@ -5,6 +5,7 @@ import {
   createAdjustment,
   inventoryRows,
   inventoryTotals,
+  liveProducts,
   restockHistory,
   stockLevel,
   withAdjustments,
@@ -107,5 +108,23 @@ describe("restock history", () => {
       const product = products.find((p) => p.id === entry.productId)!
       expect(entry.noteKey === "dripPacked").toBe(product.kind === "drip-bags")
     }
+  })
+})
+
+describe("live stock on this device", () => {
+  const order = (reference: string, productId: string, amount: number, quantity: number) =>
+    ({ reference, lines: [{ productId, name: "", kind: "beans", amount, grind: "whole", quantity, unitPrice: 0 }] }) as never
+
+  it("takes orders placed here off the shelf and puts cancelled ones back", () => {
+    const orders = [order("KR-1", "khun-chang-khian-anaerobic", 250, 3), order("KR-2", "khun-chang-khian-anaerobic", 250, 1)]
+    const none = liveProducts([], orders, () => false)
+    expect(none.find((p) => p.id === "khun-chang-khian-anaerobic")!.sizes[0].stock).toBe(0) // 4 printed − 3 − 1
+    const oneCancelled = liveProducts([], orders, (o) => (o as { reference: string }).reference === "KR-2")
+    expect(oneCancelled.find((p) => p.id === "khun-chang-khian-anaerobic")!.sizes[0].stock).toBe(1)
+  })
+
+  it("adds staff restocks on top", () => {
+    const list = liveProducts([adjustment("doi-inthanon-washed", 500, 24)], [order("KR-3", "doi-inthanon-washed", 500, 2)], () => false)
+    expect(stockOf(list, "doi-inthanon-washed", 500)).toBe(22)
   })
 })

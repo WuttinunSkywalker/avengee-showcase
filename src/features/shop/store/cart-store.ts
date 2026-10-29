@@ -2,6 +2,7 @@
 
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
+import type { Product } from "../data/products"
 import { addToCart, removeLine, setQuantity, type CartItem } from "../lib/cart"
 
 interface CartState {
@@ -9,8 +10,9 @@ interface CartState {
   /** Applied promo code, re-validated against the cart whenever totals are computed. */
   promoCode: string | null
   open: boolean
-  add: (item: CartItem) => void
-  setQuantity: (key: string, quantity: number) => void
+  /** `stock` is the live catalogue to check against; defaults to the printed stock. */
+  add: (item: CartItem, stock?: readonly Product[]) => void
+  setQuantity: (key: string, quantity: number, stock?: readonly Product[]) => void
   remove: (key: string) => void
   clear: () => void
   setPromoCode: (code: string | null) => void
@@ -24,8 +26,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       promoCode: null,
       open: false,
-      add: (item) => set((state) => ({ items: addToCart(state.items, item) })),
-      setQuantity: (key, quantity) => set((state) => ({ items: setQuantity(state.items, key, quantity) })),
+      add: (item, stock) => set((state) => ({ items: addToCart(state.items, item, stock) })),
+      setQuantity: (key, quantity, stock) => set((state) => ({ items: setQuantity(state.items, key, quantity, stock) })),
       remove: (key) => set((state) => ({ items: removeLine(state.items, key) })),
       clear: () => set({ items: [], promoCode: null }),
       setPromoCode: (promoCode) => set({ promoCode }),

@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Switch } from "@/components/ui/switch"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
-import { products } from "../../data/products"
+import { useLiveProducts } from "../../hooks/use-live-products"
 import { shopMessages } from "../../i18n/messages"
 import {
   activeFilterCount,
@@ -39,6 +39,7 @@ const noopSubscribe = () => () => {}
 
 export function Catalog() {
   const locale = useLocale()
+  const products = useLiveProducts()
   const t = shopMessages[locale]
   const router = useRouter()
   const pathname = usePathname()

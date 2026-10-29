@@ -4,6 +4,29 @@ import { expect, expectNoConsoleErrors, openAdminNav, test } from "./fixtures"
 /** Rows of the orders table, minus the header. */
 const rows = (page: Page) => page.getByRole("table").getByRole("row").filter({ has: page.getByRole("cell") })
 
+/** Pays for whatever is in the cart by test card and returns the order reference. */
+async function checkoutByCard(page: Page): Promise<string> {
+  await page.goto("/en/shop/checkout")
+  await page.getByLabel("Full name").fill("Aiko Mori")
+  await page.getByLabel("Email").fill("aiko@mail.example")
+  await page.getByLabel("Mobile").fill("081 234 5678")
+  await page.getByLabel("House number, building, street").fill("88 Nimmanhaemin Soi 9")
+  await page.getByLabel("Sub-district (tambon / khwaeng)").fill("Suthep")
+  await page.getByLabel("District (amphoe / khet)").fill("Mueang Chiang Mai")
+  await page.getByRole("combobox", { name: "Province" }).click()
+  await page.getByPlaceholder("Search provinces…").fill("chiang m")
+  await page.getByRole("option", { name: "Chiang Mai" }).click()
+  await page.getByLabel("Postcode").fill("50200")
+  await page.getByRole("radio", { name: /Credit or debit card/ }).click()
+  await page.getByLabel("Card number").fill("4242424242424242")
+  await page.getByLabel("Name on card").fill("AIKO MORI")
+  await page.getByLabel("Expiry (MM/YY)").fill("1229")
+  await page.getByRole("textbox", { name: "CVC" }).fill("123")
+  await page.getByRole("button", { name: /^Place Order/ }).click()
+  await expect(page).toHaveURL(/\/en\/shop\/order\?ref=/)
+  return new URL(page.url()).searchParams.get("ref")!
+}
+
 async function filterStatus(page: Page, status: string) {
   await page.getByRole("combobox", { name: "Filter by status" }).click()
   await page.getByRole("option", { name: status, exact: true }).click()
@@ -118,25 +141,7 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await page.goto("/en/shop/coffee/doi-pangkhon-natural")
     await page.getByRole("button", { name: "Add to Cart" }).click()
     await expect(page.getByTestId("cart-count")).toBeVisible()
-    await page.goto("/en/shop/checkout")
-    await page.getByLabel("Full name").fill("Aiko Mori")
-    await page.getByLabel("Email").fill("aiko@mail.example")
-    await page.getByLabel("Mobile").fill("081 234 5678")
-    await page.getByLabel("House number, building, street").fill("88 Nimmanhaemin Soi 9")
-    await page.getByLabel("Sub-district (tambon / khwaeng)").fill("Suthep")
-    await page.getByLabel("District (amphoe / khet)").fill("Mueang Chiang Mai")
-    await page.getByRole("combobox", { name: "Province" }).click()
-    await page.getByPlaceholder("Search provinces…").fill("chiang m")
-    await page.getByRole("option", { name: "Chiang Mai" }).click()
-    await page.getByLabel("Postcode").fill("50200")
-    await page.getByRole("radio", { name: /Credit or debit card/ }).click()
-    await page.getByLabel("Card number").fill("4242424242424242")
-    await page.getByLabel("Name on card").fill("AIKO MORI")
-    await page.getByLabel("Expiry (MM/YY)").fill("1229")
-    await page.getByRole("textbox", { name: "CVC" }).fill("123")
-    await page.getByRole("button", { name: /^Place Order/ }).click()
-    await expect(page).toHaveURL(/\/en\/shop\/order\?ref=/)
-    const reference = new URL(page.url()).searchParams.get("ref")!
+    const reference = await checkoutByCard(page)
 
     await page.goto("/en/shop")
     await page.getByRole("link", { name: "Staff login" }).click()
@@ -241,6 +246,43 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await expect(page.getByText("ไม่พบลูกค้าที่ค้นหา")).toBeVisible()
     await page.getByRole("button", { name: "ล้างคำค้นหา" }).click()
     await expect(page.getByTestId("customer-row")).toHaveCount(20)
+  })
+
+  test("the storefront follows real stock: buying the last bags, cancelling, restocking", async ({ page, consoleErrors }) => {
+    // Khun Chang Khian comes in one size with 4 bags left: buy them all
+    await page.goto("/en/shop/coffee/khun-chang-khian-anaerobic")
+    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Increase quantity" }).click()
+    await expect(page.getByTestId("quantity")).toHaveText("4")
+    await page.getByRole("button", { name: "Add to Cart" }).click()
+    await expect(page.getByTestId("cart-count")).toHaveText("4")
+    const reference = await checkoutByCard(page)
+
+    await page.goto("/en/shop/coffee/khun-chang-khian-anaerobic")
+    await expect(page.getByText("Sold out at this size. Try another size.")).toBeVisible()
+    await expect(page.getByRole("button", { name: "Add to Cart" })).toBeDisabled()
+
+    // Staff cancel the order: the bags go back on the shelf
+    await page.goto(`/en/shop/admin/orders?order=${reference}`)
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel Order" }).click()
+    await page.goto("/en/shop/coffee/khun-chang-khian-anaerobic")
+    await expect(page.getByText("Only 4 left at this size.")).toBeVisible()
+    await expect(page.getByRole("button", { name: "Add to Cart" })).toBeEnabled()
+
+    // Doi Inthanon 500 g is sold out until staff restock it
+    await page.goto("/en/shop/coffee/doi-inthanon-washed")
+    await expect(page.getByRole("radio", { name: /^500 g, ฿980, Sold out$/ })).toBeVisible()
+    await page.goto("/en/shop/admin/inventory")
+    await page.getByRole("button", { name: "Update stock for Doi Inthanon Washed, 500 g" }).click()
+    await page.getByRole("dialog").getByLabel("How many came in").fill("6")
+    await page.getByRole("dialog").getByRole("button", { name: "Save Stock" }).click()
+    await expect(page.getByText("Doi Inthanon Washed, 500 g: 6 in stock")).toBeVisible()
+
+    await page.goto("/en/shop/coffee/doi-inthanon-washed")
+    await page.getByRole("radio", { name: /^500 g, ฿980$/ }).click()
+    await expect(page.getByText("In stock. Roasted Tuesday, shipped the same day.").or(page.getByText("Only 6 left at this size."))).toBeVisible()
+    await page.getByRole("button", { name: "Add to Cart" }).click()
+    await expect(page.getByTestId("cart-count")).toHaveText("1")
+    expectNoConsoleErrors(consoleErrors)
   })
 })
 

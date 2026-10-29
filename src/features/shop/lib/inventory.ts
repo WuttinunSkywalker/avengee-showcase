@@ -1,6 +1,7 @@
 import { createRandom, pick } from "@/lib/random"
 import { products as allProducts, type Product } from "../data/products"
 import { LOW_STOCK } from "./admin"
+import type { ShopOrder } from "../store/orders-store"
 import { bangkokDate } from "./tracking"
 
 export type AdjustmentKind = "restock" | "count"
@@ -47,6 +48,34 @@ export function withAdjustments(adjustments: readonly StockAdjustment[], list: r
       stock: Math.min(MAX_STOCK, Math.max(0, size.stock + (deltas.get(sizeKey(product.id, size.amount)) ?? 0))),
     })),
   }))
+}
+
+/**
+ * What's on the shelf right now on this device: the printed stock, plus
+ * restocks and stocktakes from the admin, minus every order placed here that
+ * hasn't been cancelled (cancelling puts the bags back). Seeded history is
+ * already counted in the printed stock.
+ */
+export function liveProducts(
+  adjustments: readonly StockAdjustment[],
+  orders: readonly ShopOrder[],
+  isCancelled: (order: ShopOrder) => boolean,
+  list: readonly Product[] = allProducts,
+): Product[] {
+  const sold: StockAdjustment[] = orders
+    .filter((order) => !isCancelled(order))
+    .flatMap((order) =>
+      order.lines.map((line) => ({
+        id: `sale-${order.reference}-${line.productId}-${line.amount}`,
+        productId: line.productId,
+        amount: line.amount,
+        kind: "count" as const,
+        delta: -line.quantity,
+        note: "",
+        at: "",
+      })),
+    )
+  return withAdjustments([...adjustments, ...sold], list)
 }
 
 export interface InventoryRow {

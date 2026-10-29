@@ -108,3 +108,16 @@ describe("brew recipes", () => {
     expect(formatBrewTime(28)).toBe("0:28")
   })
 })
+
+describe("cart against live stock", () => {
+  it("lets a restocked size into the cart and caps at what's left", async () => {
+    const { withAdjustments } = await import("@/features/shop/lib/inventory")
+    const restocked = withAdjustments([{ id: "a", productId: "doi-inthanon-washed", amount: 500, kind: "restock", delta: 3, note: "", at: "" }])
+    const item = { productId: "doi-inthanon-washed", amount: 500, grind: "whole" as const, quantity: 5 }
+    expect(addToCart([], item)).toEqual([]) // printed stock: sold out
+    expect(addToCart([], item, restocked)).toEqual([{ ...item, quantity: 3 }])
+    const key = "doi-inthanon-washed:500:whole"
+    expect(setQuantity([{ ...item, quantity: 1 }], key, 9, restocked)[0].quantity).toBe(3)
+    expect(cartLines([{ ...item, quantity: 1 }], restocked)[0].size.stock).toBe(3)
+  })
+})
