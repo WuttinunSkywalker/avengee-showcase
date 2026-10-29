@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxesIcon, ExternalLinkIcon, LayoutDashboardIcon, PackageIcon, RotateCcwIcon } from "lucide-react"
+import { BoxesIcon, ExternalLinkIcon, LayoutDashboardIcon, PackageIcon, RotateCcwIcon, UsersIcon } from "lucide-react"
 import { toast } from "sonner"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { ShowcaseReturn } from "@/components/showcase-return"
@@ -100,6 +100,7 @@ export function ShopAdminShell({ children }: { children: React.ReactNode }) {
   const nav = [
     { href: localePath(locale, "/shop/admin"), label: t.nav.overview, icon: LayoutDashboardIcon },
     { href: localePath(locale, "/shop/admin/orders"), label: t.nav.orders, icon: PackageIcon },
+    { href: localePath(locale, "/shop/admin/customers"), label: t.nav.customers, icon: UsersIcon },
     { href: localePath(locale, "/shop/admin/inventory"), label: t.nav.inventory, icon: BoxesIcon },
   ]
   const current = nav.find((item) => item.href === pathname)

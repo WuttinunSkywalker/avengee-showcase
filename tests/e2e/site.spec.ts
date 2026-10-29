@@ -315,6 +315,8 @@ const pagesToAudit = [
   { name: "shop admin overview", path: "/en/shop/admin" },
   { name: "shop admin orders (th)", path: "/th/shop/admin/orders" },
   { name: "shop admin inventory", path: "/en/shop/admin/inventory" },
+  { name: "shop admin customers", path: "/en/shop/admin/customers?customer=daniel.brooks%40mail.example" },
+  { name: "shop admin customers (th)", path: "/th/shop/admin/customers" },
   { name: "shop admin inventory (th)", path: "/th/shop/admin/inventory" },
   { name: "shop admin orders (filtered)", path: "/en/shop/admin/orders?status=to-roast" },
 ]

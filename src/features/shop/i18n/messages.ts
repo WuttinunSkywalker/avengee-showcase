@@ -6,6 +6,7 @@ import type { CardBrand, Carrier, ShopPromoReason } from "../lib/checkout"
 import type { TrackingStepId } from "../lib/tracking"
 import type { FulfilmentStatus } from "../lib/admin"
 import type { RestockNoteKey, StockLevel } from "../lib/inventory"
+import type { CustomerSort } from "../lib/customers"
 
 /**
  * Kaffa Roasters copy. The Thai voice is a relaxed café owner talking to
@@ -246,7 +247,7 @@ const en = {
   },
   admin: {
     brand: "Roastery desk",
-    nav: { overview: "Overview", orders: "Orders", inventory: "Inventory", store: "Online store", reset: "Reset changes" },
+    nav: { overview: "Overview", orders: "Orders", customers: "Customers", inventory: "Inventory", store: "Online store", reset: "Reset changes" },
     navLabel: "Manage",
     resetTitle: "Undo all changes?",
     resetBody: "Orders go back to the status their schedule gives them and stock goes back to the last count. Orders placed on this device stay.",
@@ -293,6 +294,38 @@ const en = {
       stockLow: (count: number) => `${count} left`,
       recent: "Latest orders",
       viewAll: "All Orders",
+    },
+    customers: {
+      title: "Customers",
+      hint: "Everyone who ordered in the last 60 days. Search by name, email or phone.",
+      count: "Customers",
+      returning: "Came back",
+      returningDetail: "ordered twice or more",
+      average: "Average spend",
+      averageDetail: "per customer, paid orders",
+      search: "Search customers…",
+      searchLabel: "Search customers",
+      sortLabel: "Sort customers",
+      sort: { spend: "Top spenders", recent: "Ordered recently", orders: "Most orders" } satisfies Record<CustomerSort, string>,
+      columns: { customer: "Customer", orders: "Orders", spend: "Spent", last: "Last order", province: "Ships to", favourite: "Buys most" },
+      regular: "Regular",
+      open: (name: string) => `Open ${name}`,
+      showing: (from: number, to: number, total: string) => `Showing ${from}–${to} of ${total} customers`,
+      none: "No customers match",
+      emptyTitle: "No customers match that search",
+      emptyBody: "Try part of a name, an email or a phone number.",
+      clear: "Clear Search",
+      sheet: {
+        since: (date: string) => `Ordering since ${date}`,
+        orders: "Orders",
+        spend: "Spent",
+        favourite: "Buys most",
+        contact: "Contact",
+        shipTo: "Ships to",
+        history: "Order history",
+        openOrder: (reference: string) => `Open order ${reference}`,
+      },
+      viewCustomer: "View Customer",
     },
     inventory: {
       title: "Inventory",
@@ -638,7 +671,7 @@ const th: ShopMessages = {
   },
   admin: {
     brand: "หลังร้าน",
-    nav: { overview: "ภาพรวม", orders: "คำสั่งซื้อ", inventory: "สต็อก", store: "หน้าร้านออนไลน์", reset: "ย้อนการแก้ไข" },
+    nav: { overview: "ภาพรวม", orders: "คำสั่งซื้อ", customers: "ลูกค้า", inventory: "สต็อก", store: "หน้าร้านออนไลน์", reset: "ย้อนการแก้ไข" },
     navLabel: "จัดการร้าน",
     resetTitle: "ย้อนการแก้ไขทั้งหมด?",
     resetBody: "สถานะออเดอร์จะกลับไปตามตารางคั่วและจัดส่ง สต็อกจะกลับเป็นยอดที่นับไว้ล่าสุด ส่วนออเดอร์ที่สั่งจากเครื่องนี้ยังอยู่",
@@ -685,6 +718,38 @@ const th: ShopMessages = {
       stockLow: (count) => `เหลือ ${count}`,
       recent: "ออเดอร์ล่าสุด",
       viewAll: "ดูทั้งหมด",
+    },
+    customers: {
+      title: "ลูกค้า",
+      hint: "ทุกคนที่สั่งซื้อใน 60 วันที่ผ่านมา ค้นหาด้วยชื่อ อีเมล หรือเบอร์โทร",
+      count: "ลูกค้าทั้งหมด",
+      returning: "กลับมาซื้อซ้ำ",
+      returningDetail: "สั่งตั้งแต่ 2 ครั้งขึ้นไป",
+      average: "ยอดซื้อเฉลี่ย",
+      averageDetail: "ต่อคน นับเฉพาะออเดอร์ที่จ่ายแล้ว",
+      search: "ค้นหาลูกค้า…",
+      searchLabel: "ค้นหาลูกค้า",
+      sortLabel: "เรียงลูกค้า",
+      sort: { spend: "ยอดซื้อสูงสุด", recent: "สั่งล่าสุด", orders: "สั่งบ่อยสุด" },
+      columns: { customer: "ลูกค้า", orders: "ออเดอร์", spend: "ยอดซื้อ", last: "สั่งล่าสุด", province: "ส่งไปที่", favourite: "ซื้อบ่อยสุด" },
+      regular: "ขาประจำ",
+      open: (name) => `ดูข้อมูล ${name}`,
+      showing: (from, to, total) => `แสดง ${from}–${to} จาก ${total} คน`,
+      none: "ไม่พบลูกค้า",
+      emptyTitle: "ไม่พบลูกค้าที่ค้นหา",
+      emptyBody: "ลองพิมพ์แค่บางส่วนของชื่อ อีเมล หรือเบอร์โทร",
+      clear: "ล้างคำค้นหา",
+      sheet: {
+        since: (date) => `สั่งครั้งแรก${date}`,
+        orders: "ออเดอร์",
+        spend: "ยอดซื้อ",
+        favourite: "ซื้อบ่อยสุด",
+        contact: "ติดต่อ",
+        shipTo: "ส่งไปที่",
+        history: "ประวัติการสั่งซื้อ",
+        openOrder: (reference) => `เปิดออเดอร์ ${reference}`,
+      },
+      viewCustomer: "ดูข้อมูลลูกค้า",
     },
     inventory: {
       title: "สต็อกสินค้า",

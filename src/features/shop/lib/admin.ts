@@ -1,49 +1,12 @@
-import { createRandom, pick, weightedPick } from "@/lib/random"
+import { createRandom, weightedPick } from "@/lib/random"
 import { products, type Product } from "../data/products"
-import { provinces } from "../data/thailand"
+import { customers } from "../data/customers"
 import type { ShopOrder } from "../store/orders-store"
 import { cartLines, GRINDS, type Grind } from "./cart"
 import { applyShopPromo, orderReference, orderTotals, type Carrier } from "./checkout"
 import { bangkokDate, trackingTimeline } from "./tracking"
 
 /* ---------- Seeded order history ---------- */
-
-const buyers: [name: string, email: string, phone: string][] = [
-  ["Kanyarat Somboon", "kanyarat.s@mail.example", "081 552 1094"],
-  ["Thanakrit Wongsuwan", "thanakrit.w@mail.example", "089 301 7742"],
-  ["Pimlada Charoenrat", "pimlada.c@mail.example", "086 220 9135"],
-  ["Nattawut Kaewmanee", "nattawut.k@mail.example", "092 448 0617"],
-  ["Sasiwimon Thongchai", "sasiwimon.t@mail.example", "095 117 3380"],
-  ["Apichart Rungrueang", "apichart.r@mail.example", "084 639 2051"],
-  ["Waraporn Suksan", "waraporn.s@mail.example", "061 774 5208"],
-  ["Chutima Phongsri", "chutima.p@mail.example", "087 205 6643"],
-  ["Daniel Brooks", "daniel.brooks@mail.example", "080 918 2276"],
-  ["Mei Lin Tan", "meilin.tan@mail.example", "083 662 0419"],
-  ["Lukas Hartmann", "lukas.h@mail.example", "098 403 1157"],
-  ["Sophie Martin", "sophie.martin@mail.example", "090 257 8834"],
-  ["Ryo Takahashi", "ryo.t@mail.example", "082 771 9902"],
-  ["Anong Inthawong", "anong.i@mail.example", "085 130 4467"],
-  ["Prasert Chaiyakul", "prasert.c@mail.example", "093 864 2210"],
-  ["Jiraporn Meesuk", "jiraporn.m@mail.example", "064 309 5521"],
-]
-
-const provinceWeights = [
-  ["bangkok", 34],
-  ["chiang-mai", 16],
-  ["nonthaburi", 8],
-  ["samut-prakan", 5],
-  ["chiang-rai", 5],
-  ["phuket", 5],
-  ["khon-kaen", 4],
-  ["chonburi", 4],
-  ["songkhla", 3],
-  ["nakhon-ratchasima", 3],
-  ["pathum-thani", 3],
-  ["lampang", 2],
-  ["nan", 2],
-] as const
-
-const streets = ["Sukhumvit Soi 39", "Ratchada Soi 7", "Nimmanhaemin Soi 5", "Chang Khlan Rd", "Phahonyothin Soi 12", "Thepkasattri Rd", "Mittraphap Rd", "Charoen Krung Soi 44"]
 
 const BANGKOK = 7 * 3_600_000
 
@@ -56,12 +19,14 @@ function addDays(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
 }
 
+const customerWeights = customers.map((customer) => [customer, customer.weight] as const)
 const productWeights = products.map((product) => [product, Math.sqrt(product.reviewCount)] as const)
 const grindWeights: (readonly [Grind, number])[] = GRINDS.map((grind) => [grind, grind === "whole" ? 5 : grind === "espresso" ? 2 : 1])
 
 /**
  * About two months of believable orders: busier weekends, a slow upward trend,
- * mostly Bangkok and Chiang Mai, a few unpaid PromptPay orders. The same date
+ * regulars coming back most weeks (see data/customers.ts), mostly Bangkok and
+ * Chiang Mai, a few unpaid PromptPay orders. The same date
  * always produces the same orders, so references stay stable.
  */
 export function generateShopOrders(now: Date, days = 60): ShopOrder[] {
@@ -97,9 +62,7 @@ export function generateShopOrders(now: Date, days = 60): ShopOrder[] {
       const card = random() < 0.4
       const neverPaid = !card && random() < 0.04
       const paidAt = neverPaid ? null : new Date(created.getTime() + (card ? 0 : (5 + Math.floor(random() * 35)) * 60_000))
-      const [name, email, phone] = pick(random, buyers)
-      const provinceId = weightedPick(random, provinceWeights)
-      const province = provinces.find((p) => p.id === provinceId)!
+      const customer = weightedPick(random, customerWeights)
 
       orders.push({
         reference: orderReference(created, `${date}:${index}`),
@@ -115,14 +78,8 @@ export function generateShopOrders(now: Date, days = 60): ShopOrder[] {
         })),
         totals: orderTotals(lines, { promo, carrier }),
         promoCode: promo?.ok ? promo.code : null,
-        contact: { name, email, phone },
-        address: {
-          line1: `${10 + Math.floor(random() * 380)} ${pick(random, streets)}`,
-          line2: "",
-          district: "",
-          provinceId,
-          postcode: `${province.postalPrefix}${String(100 + Math.floor(random() * 900))}`,
-        },
+        contact: { name: customer.name, email: customer.email, phone: customer.phone },
+        address: { ...customer.address, line2: "", district: "" },
         carrier,
         payment: card ? { method: "card", brand: random() < 0.7 ? "visa" : "mastercard", last4: String(1000 + Math.floor(random() * 9000)) } : { method: "promptpay" },
         paidAt: paidAt && paidAt.getTime() <= now.getTime() ? paidAt.toISOString() : null,

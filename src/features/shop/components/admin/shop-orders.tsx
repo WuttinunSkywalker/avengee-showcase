@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useDeferredValue, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeftIcon, ChevronRightIcon, SearchIcon, SearchXIcon } from "lucide-react"
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatNumber } from "@/lib/format"
 import { getProvince } from "../../data/thailand"
@@ -272,7 +274,13 @@ function OrderSheet({ order, status, onClose }: { order: ShopOrder | undefined; 
               <dl className="grid grid-cols-[6rem_1fr] gap-x-4 gap-y-3">
                 <dt className="text-muted-foreground">{t.sheet.contact}</dt>
                 <dd>
-                  {order.contact.name}
+                  <Link
+                    href={localePath(locale, `/shop/admin/customers?customer=${encodeURIComponent(order.contact.email.toLowerCase())}`)}
+                    className="font-medium underline-offset-2 hover:underline"
+                    aria-label={`${t.customers.viewCustomer}: ${order.contact.name}`}
+                  >
+                    {order.contact.name}
+                  </Link>
                   <br />
                   <span className="break-all">{order.contact.email}</span>
                   <br />

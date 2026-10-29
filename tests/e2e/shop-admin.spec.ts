@@ -198,5 +198,49 @@ test.describe("Kaffa Roasters roastery desk", () => {
     for (const level of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-level")))) expect(level).not.toBe("ok")
     await expect(page.getByTestId("restock-log")).toContainText("คั่ววันอังคาร")
   })
+
+  test("customers: search, open a customer, jump to one of their orders and back", async ({ page, consoleErrors }) => {
+    await page.goto("/en/shop/admin")
+    await openAdminNav(page)
+    await page.getByRole("link", { name: "Customers" }).click()
+    await expect(page.getByRole("heading", { level: 1, name: "Customers" })).toBeVisible()
+    await expect(page.getByTestId("customer-row")).toHaveCount(20)
+
+    await page.getByRole("searchbox", { name: "Search customers" }).fill("brooks")
+    await expect(page).toHaveURL(/q=brooks/)
+    await expect(page.getByTestId("customer-row")).toHaveCount(1)
+    await page.getByRole("button", { name: "Open Daniel Brooks" }).click()
+    await expect(page).toHaveURL(/customer=daniel\.brooks%40mail\.example|customer=daniel\.brooks@mail\.example/)
+
+    const sheet = page.getByRole("dialog")
+    await expect(sheet.getByRole("heading", { name: "Daniel Brooks" })).toBeVisible()
+    const first = sheet.getByTestId("customer-orders").getByRole("link").first()
+    const reference = (await first.textContent())!
+    await first.click()
+    await expect(page).toHaveURL(new RegExp(`/en/shop/admin/orders\\?order=${reference}$`))
+
+    // From the order, back to the customer
+    await page.getByRole("dialog").getByRole("link", { name: "View Customer: Daniel Brooks" }).click()
+    await expect(page).toHaveURL(/\/en\/shop\/admin\/customers\?customer=/)
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Daniel Brooks" })).toBeVisible()
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("customers sort by most orders and explain an empty search, in Thai", async ({ page }) => {
+    await page.goto("/th/shop/admin/customers")
+    await expect(page.getByRole("heading", { level: 1, name: "ลูกค้า" })).toBeVisible()
+    await page.getByRole("combobox", { name: "เรียงลูกค้า" }).click()
+    await page.getByRole("option", { name: "สั่งบ่อยสุด" }).click()
+    await expect(page).toHaveURL(/sort=orders/)
+    const counts = await page.getByTestId("customer-row").locator("td:nth-child(2)").allTextContents()
+    const numbers = counts.map(Number)
+    expect(numbers).toEqual([...numbers].sort((a, b) => b - a))
+    await expect(page.getByTestId("customer-row").first()).toContainText("ขาประจำ")
+
+    await page.getByRole("searchbox", { name: "ค้นหาลูกค้า" }).fill("ไม่มีคนนี้")
+    await expect(page.getByText("ไม่พบลูกค้าที่ค้นหา")).toBeVisible()
+    await page.getByRole("button", { name: "ล้างคำค้นหา" }).click()
+    await expect(page.getByTestId("customer-row")).toHaveCount(20)
+  })
 })
 

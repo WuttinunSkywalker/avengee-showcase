@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { ShopCustomers } from "@/features/shop/components/admin/shop-customers"
 import { ShopInventory } from "@/features/shop/components/admin/shop-inventory"
 import { ShopOrders } from "@/features/shop/components/admin/shop-orders"
 import { PromoField } from "@/features/shop/components/cart/promo-field"
@@ -268,5 +269,32 @@ describe("ShopInventory", () => {
     expect(rows.length).toBeGreaterThan(0)
     for (const row of rows) expect(row).toHaveAttribute("data-level", "out")
     expect(within(screen.getByTestId("restock-log")).getAllByText(/คั่ววันอังคาร|แพ็กดริปซองเสร็จ/).length).toBeGreaterThan(0)
+  })
+})
+
+describe("ShopCustomers", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it("lists top spenders first and opens a customer from the URL", async () => {
+    navigation.params = new URLSearchParams({ customer: "daniel.brooks@mail.example" })
+    renderWithLocale(<ShopCustomers />)
+    expect(await screen.findByTestId("customers-showing")).toHaveTextContent(/^Showing 1–20 of \d+ customers$/)
+    const sheet = await screen.findByRole("dialog")
+    expect(within(sheet).getByRole("heading", { name: "Daniel Brooks" })).toBeInTheDocument()
+    const history = within(sheet).getByTestId("customer-orders")
+    const links = within(history).getAllByRole("link")
+    expect(links.length).toBeGreaterThan(1)
+    expect(links[0]).toHaveAttribute("href", expect.stringMatching(/^\/en\/shop\/admin\/orders\?order=KR-/))
+  })
+
+  it("speaks Thai", async () => {
+    renderWithLocale(<ShopCustomers />, "th")
+    expect(await screen.findByRole("heading", { level: 1, name: "ลูกค้า" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "ยอดซื้อ" })).toBeInTheDocument()
+    expect(screen.getByTestId("customers-showing")).toHaveTextContent(/^แสดง 1–20 จาก \d+ คน$/)
   })
 })
