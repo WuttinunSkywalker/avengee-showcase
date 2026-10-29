@@ -22,14 +22,13 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] GitHub Actions workflow (`.github/workflows/ci.yml`): lint, typecheck, unit + integration, then build + Playwright desktop/mobile with the report uploaded on failure. Runs once the project is pushed to GitHub
 - [x] README in Thai and English: what the project is, how to run, scripts, how to add a showcase, how to deploy to Vercel
 
-## Next showcase: Sorn Studio (single-page site, `/[lang]/studio`)
+## Showcase 5: Sorn Studio (single-page site, `/[lang]/studio`)
 
 - [x] Brand (Manrope + Bai Jamjuree, concrete paper and drafting ink, roof-and-ground mark), hero with a self-drawing elevation on a titled sheet, gallery of 8 projects with type filter, lightbox with elevation / plan / section drawn as SVG from each project's numbers, URL-synced (?project=&view=), arrow keys, Thai with Buddhist-era years
 - [x] Services (new houses, renovations, cafés/stays, interiors; each with how fees work) and a process section drawn as a week-by-week design schedule (bars draw in on entering view; durations as text on phones and for screen readers); header links to both
 - [x] Contact form: project type, location, floor area, budget band, start time, brief with counter, name/email/phone and preferred reply (email / LINE with ID / phone); field errors in both languages; sending shows an enquiry number (SS-MMDD-XXXX), the reply-by date two working days out, and a summary. Not stored or sent anywhere yet
 - [x] Portal card live: screenshots with tour screens (drawings, design schedule), share card, icon + apple icon, sitemap entry; summary and features rewritten to match the app; a lone Open App button no longer sits in half a row
-- [ ] Drawings: dark-mode check; plans for upper floors; a site plan with sun path for each project
-- [ ] Sorn Studio enquiries could land in a small studio inbox page (like the shops' staff dashboards) so the form has somewhere to go
+- [x] Drawings in dark mode: checked hero, gallery, plan, section and schedule; e2e runs axe on Sorn Studio in dark mode
 - [x] `next start` only sees public/ files present at startup: restart it after `pnpm capture:showcase` (noted in CLAUDE.md)
 
 ## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
@@ -42,6 +41,11 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [ ] Seller storefronts, product search across sellers, multi-seller cart split at checkout
 - [ ] Seller dashboard: listings, orders, payouts
+
+## Sorn Studio follow-ups
+
+- [ ] Drawings: plans for upper floors; a site plan with sun path for each project
+- [ ] Sorn Studio enquiries could land in a small studio inbox page (like the shops' staff dashboards) so the form has somewhere to go
 
 ## Showcase 2: Kaffa Roasters (online shop, `/[lang]/shop`)
 

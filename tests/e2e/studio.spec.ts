@@ -176,6 +176,17 @@ test.describe("Sorn Studio", () => {
     await expect(sent).toContainText("เราจะติดต่อกลับทางโทรศัพท์ภายในวันศุกร์ที่ 6 พฤศจิกายน 2569")
   })
 
+  test("dark mode keeps contrast, drawings included", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" })
+    await page.goto("/th/studio?project=ari-house&view=section")
+    await page.waitForLoadState("networkidle")
+    await settleAnimations(page)
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(20, 24, 21)")
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()
+    const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical")
+    expect(serious.map((v) => `${v.id} → ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`)).toEqual([])
+  })
+
   for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)
