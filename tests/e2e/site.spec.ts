@@ -71,6 +71,18 @@ test.describe("showcase portal", () => {
     await expect(label).toHaveText("Home")
   })
 
+  test("a screen that fails to load drops out instead of showing a broken image", async ({ page }) => {
+    await page.route(/kaffa-roasters-en-admin/, (route) => route.abort())
+    await page.goto("/en")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
+    await card.scrollIntoViewIfNeeded()
+    const screens = card.getByRole("group", { name: "Kaffa Roasters screens" })
+    await expect(screens.getByRole("button")).toHaveCount(2)
+    await expect(screens.getByRole("button", { name: "Staff dashboard" })).toHaveCount(0)
+    await screens.getByRole("button", { name: "Product page" }).click()
+    await expect(card.getByRole("img", { name: "Kaffa Roasters: Product page" })).toBeVisible()
+  })
+
   test("the dots pick a screen, in Thai, by keyboard", async ({ page }) => {
     await page.goto("/th")
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
@@ -160,6 +172,16 @@ test.describe("showcase portal", () => {
       // A finished reveal no longer clips the heading (scroll timelines update on the next frame).
       await expect.poll(() => target.evaluate((el) => getComputedStyle(el.closest(".reveal") ?? el).clipPath), { message: selector }).not.toMatch(/100%/)
     }
+    // The process steps: two connectors between three numbered steps, filled once scrolled past
+    const steps = page.getByTestId("process-steps")
+    await expect(steps.getByRole("listitem")).toHaveCount(3)
+    await steps.scrollIntoViewIfNeeded()
+    await page.evaluate(() => window.scrollBy(0, 200))
+    const fill = steps.locator(page.viewportSize()!.width >= 768 ? ".reveal-rule" : ".reveal-rule-y")
+    await expect(fill).toHaveCount(2)
+    await expect
+      .poll(() => fill.evaluateAll((els) => els.map((el) => getComputedStyle(el).transform)))
+      .toEqual(["matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)"])
     // The last card's buttons respond to clicks (a part-way reveal would clip them).
     const kaffa = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
     await kaffa.getByRole("link", { name: "Staff Dashboard" }).click()

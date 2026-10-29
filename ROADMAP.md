@@ -7,6 +7,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Portal motion: hero intro (phrases rise in turn), scroll-linked reveals with CSS view timelines (screenshot wipe, phone mock-up settles, services rules and the process line draw, cards and text rise), header scroll-progress bar; no JS, nothing hidden without support or with reduced motion; e2e checks reveals finish and reduced motion
 - [x] Portal cards: live apps full width and listed first, coming-soon cards in one row; Open App and Staff Dashboard buttons equal width (side by side when the column allows, stacked otherwise); Thai uses "ระบบหลังบ้าน"
 - [x] Portal: each live card steps through real screens (home, booking or product page, staff dashboard) while hovered or focused; dots with a label pick a screen by mouse, touch or keyboard; no autoplay with reduced motion. Screens come from `pnpm capture:showcase` (`images.tour` in `src/config/site.ts`)
+- [x] Portal "How we work" is a real stepper: numbered circles joined by short connectors that fill in brand blue as you scroll (horizontal on desktop, vertical on phones), instead of a faint hairline running through the numbers and past the last step
+- [x] A card screen that fails to load drops out with its dot, so the portal never shows a broken image
 - [x] Filter chips on the portal lost their gap: a `style` prop on ToggleGroup replaced its internal `--gap`. Reveal styles now go on a wrapper; e2e checks the chips stay apart
 - [x] Portal hero: a fanned stack of the live apps' real screens (two desktop, one phone) beside the text; each opens its app, the pointed-at card comes to the front, the stack spreads on hover and fans in on load (off for reduced motion); built from `showcases`, so new live apps join automatically
 
@@ -15,6 +17,21 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] `public/images/CREDITS.md` listing every photo source (rawpixel CC0 via Openverse); a unit test fails if a new photo is not credited
 - [x] GitHub Actions workflow (`.github/workflows/ci.yml`): lint, typecheck, unit + integration, then build + Playwright desktop/mobile with the report uploaded on failure. Runs once the project is pushed to GitHub
 - [x] README in Thai and English: what the project is, how to run, scripts, how to add a showcase, how to deploy to Vercel
+
+## Next showcase: Sorn Studio (single-page site, `/[lang]/studio`)
+
+- [ ] One-page architect portfolio (split into slices: brand + hero + gallery with lightbox; services + process; contact form with validation and success state; portal card live with screenshots, share card, icons): hero, project gallery with lightbox, services, process, contact form with validation and success state
+
+## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
+
+- [ ] Table landing from QR (`?table=7`), photo menu by category, spice level and add-ons
+- [ ] Order basket, send to kitchen, order status, call staff, split bill
+- [ ] Kitchen board (live columns: new, cooking, served) and simple sales summary
+
+## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)
+
+- [ ] Seller storefronts, product search across sellers, multi-seller cart split at checkout
+- [ ] Seller dashboard: listings, orders, payouts
 
 ## Showcase 2: Kaffa Roasters (online shop, `/[lang]/shop`)
 
@@ -38,22 +55,10 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Live stock per device: orders placed here draw stock down (cancelling puts it back) and admin restocks/counts reach the product page, catalogue and cart (`useLiveProducts`); e2e buys the last bags, cancels, restocks
 - [x] Home page and "pairs well with" product cards follow live stock (`LiveProductCard`); checkout checks the cart against live stock, blocks payment and offers "Update My Cart" when a size ran low or sold out
 - [x] Daily revenue charts (Kaffa and Baan Lamai) draw today as a dashed segment labelled "Today", with a "so far" tooltip, so the partial day no longer reads as a crash (`src/lib/chart.ts`)
+
+## Kaffa Roasters follow-ups
+
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
-
-## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
-
-- [ ] Table landing from QR (`?table=7`), photo menu by category, spice level and add-ons
-- [ ] Order basket, send to kitchen, order status, call staff, split bill
-- [ ] Kitchen board (live columns: new, cooking, served) and simple sales summary
-
-## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)
-
-- [ ] Seller storefronts, product search across sellers, multi-seller cart split at checkout
-- [ ] Seller dashboard: listings, orders, payouts
-
-## Showcase 5: Sorn Studio (single-page site, `/[lang]/studio`)
-
-- [ ] One-page architect portfolio: hero, project gallery with lightbox, services, process, contact form with validation and success state
 
 ## Baan Lamai improvements
 

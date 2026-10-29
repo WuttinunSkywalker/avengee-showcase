@@ -21,11 +21,14 @@ export function ShowcasePreview({ showcase, locale, active }: { showcase: Showca
   const t = portalMessages[locale].showcases
   const reduceMotion = useReducedMotion()
   const images = showcase.images!
+  // Screens that failed to load drop out (with their dot), so a card never shows a broken image.
+  const [broken, setBroken] = useState<ReadonlySet<string>>(new Set())
   const slides = [
     { src: images.desktop[locale], label: t.home, alt: images.alt[locale] },
     ...(images.tour ?? []).map((screen) => ({ src: screen.src[locale], label: screen.label[locale], alt: `${showcase.name}: ${screen.label[locale]}` })),
-  ]
-  const [index, setIndex] = useState(0)
+  ].filter((slide, i) => i === 0 || !broken.has(slide.src))
+  const [rawIndex, setIndex] = useState(0)
+  const index = rawIndex < slides.length ? rawIndex : 0
   const [chosen, setChosen] = useState(false)
   const autoplay = active && !chosen && !reduceMotion && slides.length > 1
 
@@ -62,6 +65,7 @@ export function ShowcasePreview({ showcase, locale, active }: { showcase: Showca
             loading={i === 0 ? "eager" : "lazy"}
             style={{ objectPosition: i === 0 ? (images.focus ?? "left top") : "left top" }}
             data-active={i === index || undefined}
+            onError={i === 0 ? undefined : () => setBroken((current) => new Set(current).add(slide.src))}
             className={cn(
               "h-full w-full object-cover transition-[opacity,scale] duration-700 group-hover:scale-[1.02] motion-reduce:transition-none",
               i > 0 && "absolute inset-0",

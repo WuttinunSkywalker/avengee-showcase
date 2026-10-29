@@ -474,6 +474,13 @@
       animation-timeline: view();
       animation-range: entry calc(80px + var(--i, 0) * 60px) entry calc(380px + var(--i, 0) * 60px);
     }
+
+    .reveal-rule-y {
+      transform-origin: top;
+      animation: draw-y linear both;
+      animation-timeline: view();
+      animation-range: entry 40px entry 260px;
+    }
   }
 }
 
@@ -521,5 +528,11 @@
 @keyframes draw-x {
   from {
     transform: scaleX(0);
+  }
+}
+
+@keyframes draw-y {
+  from {
+    transform: scaleY(0);
   }
 }
