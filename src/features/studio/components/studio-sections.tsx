@@ -132,3 +132,20 @@ export function StudioProcess({ locale }: { locale: Locale }) {
     </section>
   )
 }
+
+export function StudioContactSection({ locale, children }: { locale: Locale; children: React.ReactNode }) {
+  const t = studioMessages[locale].contact
+  return (
+    <section id="contact" aria-labelledby="contact-title" className="scroll-mt-16 border-t border-border">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.5fr] lg:py-28">
+        <div className="flex flex-col gap-4">
+          <h2 id="contact-title" className="text-4xl font-light tracking-[-0.03em] sm:text-5xl">
+            {t.title}
+          </h2>
+          <p className="text-lg leading-relaxed text-muted-foreground">{t.intro}</p>
+        </div>
+        {children}
+      </div>
+    </section>
+  )
+}

@@ -51,7 +51,7 @@ export function StudioHeader({ locale }: { locale: Locale }) {
 export function StudioFooter({ locale }: { locale: Locale }) {
   const t = studioMessages[locale]
   return (
-    <footer id="contact" className="scroll-mt-16 border-t border-border">
+    <footer className="border-t border-border">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 text-sm sm:grid-cols-3 sm:px-6">
         <div className="flex flex-col gap-2">
           <p className="flex items-center gap-2 text-base font-medium">
