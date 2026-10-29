@@ -178,13 +178,22 @@ test.describe("showcase portal", () => {
     await steps.scrollIntoViewIfNeeded()
     await expect(steps).toHaveAttribute("data-inview", "true")
     await expect(page.getByTestId("process-live")).toContainText("Live")
+    // How much of each visible track is filled: 1 once the line has run through it
     await expect
-      .poll(() =>
-        steps.locator("[data-connector]").evaluateAll((els) =>
-          els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => getComputedStyle(el).transform),
-        ),
-      { timeout: 6000 })
-      .toEqual(["matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)", "matrix(1, 0, 0, 1, 0, 0)"])
+      .poll(
+        () =>
+          steps.locator("[data-connector]").evaluateAll((els) =>
+            els
+              .filter((el) => (el as HTMLElement).offsetParent !== null)
+              .map((el) => {
+                const fill = el.getBoundingClientRect()
+                const track = el.parentElement!.getBoundingClientRect()
+                return Math.round(Math.min(fill.width / track.width, fill.height / track.height) * 100) / 100
+              }),
+          ),
+        { timeout: 6000 },
+      )
+      .toEqual([1, 1, 1])
     // The last card's buttons respond to clicks (a part-way reveal would clip them).
     const kaffa = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Kaffa Roasters" }) })
     await kaffa.getByRole("link", { name: "Staff Dashboard" }).click()
