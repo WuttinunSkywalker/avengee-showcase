@@ -453,16 +453,14 @@
 }
 
 /*
- * Portal motion. One short intro on load, then scroll-linked reveals that
- * follow the scrollbar (CSS scroll-driven animations, no JavaScript).
- * Browsers without view timelines, and visitors who ask for reduced motion,
- * get the finished layout with nothing hidden. Text is revealed with
- * clip-path and transform rather than opacity, so its contrast never dips.
- * Keyframes use `transform`, leaving Tailwind's translate/scale utilities
- * (hover lifts) free to combine with them.
- * Ancestors of a revealed element must crop with `overflow: clip`, not
- * `hidden`: `hidden` makes them a scroll container, and view() would then
- * track that box instead of the page and stop part-way.
+ * Portal motion. One short intro on load in CSS; the section reveals
+ * (.reveal, .reveal-rule, .reveal-wipe, .reveal-phone, [data-split]) are run by
+ * GSAP in features/portal/portal-motion.tsx so every browser gets them. The
+ * header progress bar still uses a scroll timeline (hidden where unsupported).
+ * Visitors who ask for reduced motion get the finished layout with nothing
+ * hidden. Text is revealed with clip-path and transform rather than opacity,
+ * so its contrast never dips. Keyframes use `transform`, leaving Tailwind's
+ * translate/scale utilities (hover lifts) free to combine with them.
  */
 .scroll-progress {
   display: none;
@@ -472,7 +470,8 @@
 .fan-card {
   transform: var(--fan);
 }
-/* Pointing at a card in the stack brings it to the front. */
+/* Pointing at a card in the stack brings it to the front (z-index for flat
+   layouts; in the 3D stack depth comes from translateZ, see below). */
 .fan-card:hover,
 .fan-card:focus-visible {
   z-index: 10;
@@ -488,6 +487,25 @@
   .group\/fan:hover .fan-card,
   .group\/fan:focus-within .fan-card {
     transform: var(--fan-hover);
+  }
+  /* Inside the preserve-3d stack, z-index can't lift a card: move it toward the viewer instead. */
+  .group\/fan .fan-card:hover,
+  .group\/fan .fan-card:focus-visible {
+    transform: var(--fan-hover) translateZ(140px);
+  }
+}
+
+/* The hero stack tilts toward the pointer; preserve-3d lets each card's translateZ read as depth. */
+.hero-tilt {
+  transform-style: preserve-3d;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-tilt {
+    transform: perspective(1400px) rotateX(calc(var(--pyr, 0) * -9deg)) rotateY(calc(var(--pxr, 0) * 13deg));
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  [data-pointer] .hero-tilt {
+    transition-duration: 0.25s;
   }
 }
 
@@ -511,39 +529,6 @@
       animation: draw-x linear both;
       animation-timeline: scroll(root);
     }
-
-    .reveal {
-      animation: reveal-up linear both;
-      animation-timeline: view();
-      /* Pixel offsets from the moment the element's top enters: the same scroll distance whatever its height. */
-      animation-range: entry calc(var(--i, 0) * 36px) entry calc(220px + var(--i, 0) * 36px);
-    }
-
-    .reveal-wipe {
-      animation: reveal-wipe linear both;
-      animation-timeline: view();
-      animation-range: entry 0px entry 420px;
-    }
-
-    .reveal-phone {
-      animation: reveal-phone linear both;
-      animation-timeline: view();
-      animation-range: entry 200px entry 520px;
-    }
-
-    .reveal-rule {
-      transform-origin: left;
-      animation: draw-x linear both;
-      animation-timeline: view();
-      animation-range: entry calc(80px + var(--i, 0) * 60px) entry calc(380px + var(--i, 0) * 60px);
-    }
-
-    .reveal-rule-y {
-      transform-origin: top;
-      animation: draw-y linear both;
-      animation-timeline: view();
-      animation-range: entry 40px entry 260px;
-    }
   }
 }
 
@@ -555,48 +540,9 @@
   }
 }
 
-@keyframes reveal-up {
-  from {
-    clip-path: inset(0 0 100% 0);
-    transform: translateY(2rem);
-  }
-  to {
-    clip-path: inset(-2rem);
-    transform: none;
-  }
-}
-
-@keyframes reveal-wipe {
-  from {
-    clip-path: inset(10% 12% 10% 12% round 1.5rem);
-    transform: scale(1.08);
-  }
-  to {
-    clip-path: inset(0 round 0);
-    transform: none;
-  }
-}
-
-@keyframes reveal-phone {
-  from {
-    opacity: 0;
-    transform: translateY(40%) rotate(-6deg);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @keyframes draw-x {
   from {
     transform: scaleX(0);
-  }
-}
-
-@keyframes draw-y {
-  from {
-    transform: scaleY(0);
   }
 }
 
@@ -724,4 +670,70 @@
   to {
     transform: translateX(-50%);
   }
+}
+
+/* SplitText masks each heading line; leave room for Thai tone marks above and below. */
+.split-line {
+  padding-block: 0.08em;
+  margin-block: -0.08em;
+}
+
+/*
+ * Portal reveals. PortalMotion sets main[data-motion] once it's running and
+ * marks each element data-shown as it scrolls into view; transitions (not
+ * timed animations) do the rest. Without JS, or with reduced motion, the
+ * attribute is never set and nothing is hidden.
+ */
+main[data-motion] .reveal {
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    clip-path 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+main[data-motion] .reveal:not([data-shown]) {
+  transform: translateY(28px);
+  clip-path: inset(0 0 100% 0);
+}
+main[data-motion] .reveal[data-shown] {
+  clip-path: inset(-2rem);
+}
+
+main[data-motion] .reveal-rule {
+  transform-origin: left;
+  transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  transition-delay: calc(var(--i, 0) * 80ms + 100ms);
+}
+main[data-motion] .reveal-rule:not([data-shown]) {
+  transform: scaleX(0);
+}
+
+main[data-motion] .reveal-wipe {
+  transition:
+    clip-path 1.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+main[data-motion] .reveal-wipe:not([data-shown]) {
+  clip-path: inset(10% 12% 10% 12% round 24px);
+  transform: scale(1.08);
+}
+main[data-motion] .reveal-wipe[data-shown] {
+  clip-path: inset(0 round 0);
+}
+
+main[data-motion] .reveal-phone {
+  transition:
+    transform 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s,
+    opacity 0.6s ease 0.45s;
+}
+main[data-motion] .reveal-phone:not([data-shown]) {
+  transform: translateY(40%) rotate(-6deg);
+  opacity: 0;
+}
+
+main[data-motion] [data-split] .split-line {
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--l, 0) * 90ms);
+}
+main[data-motion] [data-split]:not([data-shown]) .split-line {
+  transform: translateY(110%);
 }

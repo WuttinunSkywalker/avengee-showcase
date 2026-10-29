@@ -8,9 +8,10 @@ import { portalMessages } from "./messages"
 
 /**
  * Real screens from the live apps, fanned out beside the hero text. Each one
- * opens its app. The cards spread out of a stack on load and fan a little
- * wider on hover (both off for reduced motion); new apps join automatically
- * once they're live with screenshots.
+ * opens its app. The cards spread out of a stack on load, fan a little wider on
+ * hover, and the whole stack tilts in 3D toward the pointer with each screen at
+ * its own depth (all off for reduced motion). New apps join automatically once
+ * they're live with screenshots.
  */
 export function HeroShowcase({ locale }: { locale: Locale }) {
   const t = portalMessages[locale].hero
@@ -26,19 +27,21 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
           {
             showcase: back,
             className: "top-0 right-0 w-[78%]",
-            style: { "--fan": "rotate(5deg)", "--fan-hover": "translate(4%, -4%) rotate(8deg)", "--i": 0 } as CSSProperties,
+            style: { "--fan": "translateZ(-50px) rotate(5deg)", "--fan-hover": "translate3d(4%, -4%, -50px) rotate(8deg)", "--i": 0 } as CSSProperties,
           },
         ]
       : []),
     {
       showcase: front,
       className: "top-[16%] left-0 w-[80%]",
-      style: { "--fan": "rotate(-3deg)", "--fan-hover": "translate(-3%, 2%) rotate(-5deg)", "--i": 1 } as CSSProperties,
+      style: { "--fan": "translateZ(0) rotate(-3deg)", "--fan-hover": "translate3d(-3%, 2%, 0) rotate(-5deg)", "--i": 1 } as CSSProperties,
     },
   ]
 
   return (
     <div className="group/fan relative mx-auto aspect-[5/4] w-[92%] max-w-md lg:w-full lg:max-w-none" data-testid="hero-showcase">
+      {/* Tilts toward the pointer (vars set on the hero by HeroSpotlight); cards sit at different depths, so they shift like layers. */}
+      <div className="hero-tilt absolute inset-0" data-testid="hero-tilt">
       {cards.map(({ showcase, style, className }) => (
         <Link
           key={showcase.id}
@@ -64,11 +67,12 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
       <Link
         href={localePath(locale, phone.href!)}
         aria-label={t.openApp(phone.name)}
-        style={{ "--fan": "rotate(4deg)", "--fan-hover": "translate(-6%, -6%) rotate(1deg)", "--i": 2 } as CSSProperties}
+        style={{ "--fan": "translateZ(70px) rotate(4deg)", "--fan-hover": "translate3d(-6%, -6%, 70px) rotate(1deg)", "--i": 2 } as CSSProperties}
         className="fan-card absolute right-[6%] bottom-0 w-[27%] overflow-clip rounded-[1.1rem] border-[3px] border-foreground/85 bg-card shadow-2xl focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
       >
         <Image src={phone.images!.mobile[locale]} alt="" width={393} height={659} sizes="140px" loading="eager" className="w-full" />
       </Link>
+      </div>
     </div>
   )
 }

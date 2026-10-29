@@ -56,6 +56,20 @@ test.describe("showcase portal", () => {
     await expect(marquee.getByRole("listitem").first()).toHaveText("สปาและร้านนวด")
   })
 
+  test("section headings reveal line by line and settle", async ({ page }) => {
+    await page.goto("/th")
+    const heading = page.locator("#process-title")
+    // SplitText wraps each line in a mask; until seen, the lines wait below it
+    await expect(heading.locator(".split-line").first()).toBeAttached()
+    expect(await heading.locator(".split-line").first().evaluate((l) => getComputedStyle(l).transform)).not.toBe("none")
+    await heading.scrollIntoViewIfNeeded()
+    await expect(heading).toHaveAttribute("data-shown", "")
+    await expect
+      .poll(() => heading.locator(".split-line").evaluateAll((lines) => lines.map((l) => getComputedStyle(l).transform)), { timeout: 4000 })
+      .toEqual(["none"])
+    await expect(heading).toHaveText("ขั้นตอนการทำงาน")
+  })
+
   test("the hero grid and live cards follow the mouse", async ({ page }) => {
     test.skip(page.viewportSize()!.width < 768, "pointer effects are for mouse and pen")
     await page.goto("/en")
@@ -72,6 +86,11 @@ test.describe("showcase portal", () => {
     await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.18)
     await expect(tilt).toHaveAttribute("data-pointer", "")
     await expect.poll(() => tilt.evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/)
+    // The hero stack tilts in 3D as well
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.mouse.move(1200, 260)
+    await page.mouse.move(1220, 240)
+    await expect.poll(() => page.getByTestId("hero-tilt").evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/)
     await page.mouse.move(5, 5)
     await expect(tilt).not.toHaveAttribute("data-pointer", "")
   })

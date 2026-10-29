@@ -4,6 +4,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Now
 
+- [x] Portal section motion in every browser: headings rise line by line from a mask (GSAP SplitText, free since 2025), text blocks, rules, screenshots and phone mock-ups reveal on entering view (IntersectionObserver + CSS transitions, so frozen-clock tests and screenshots still settle), and the hero stack tilts in 3D toward the pointer with each screen at its own depth. three.js was considered and left out: too heavy for a landing page that currently loads fast
 - [x] Portal "wow" pass (asked for on 2026-10-30): hero grid lights up around the cursor, live showcase cards tilt toward the pointer with a moving glare, coming-soon cards glow where pointed, and a slow marquee of the business types we build for (pauses on hover). Mouse and pen only, no React re-renders (CSS variables), reduced motion turns them off and the marquee into a still list
 - [x] "How we work" runs in every browser: once in view the line fills 1 → 2 → 3 → a live server icon, each step lighting up as it's reached (IntersectionObserver + transitions, not scroll timelines that older Safari and Firefox lack)
 
@@ -93,7 +94,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [ ] GitHub Actions warns that `actions/checkout@v4`, `actions/setup-node@v4` and `pnpm/action-setup@v4` target Node 20 (deprecated); move to releases that run on Node 24
 
-- [ ] Portal wow pass 2 ideas: hero headline kinetic reveal (check Thai tone marks aren't clipped), numbers that tick up when seen, view-timeline parallax between sections
+- [ ] Portal wow pass 2 ideas: numbers that tick up when seen, gentle parallax between sections (GSAP tweens stall under Playwright's fixed clock, so prefer CSS transitions/scroll timelines)
 
 - [ ] Lighthouse pass on every page (performance ≥ 90 mobile, accessibility 100)
 - [ ] Review all Thai copy once more by reading it aloud; fix anything that sounds translated

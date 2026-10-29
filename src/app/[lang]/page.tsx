@@ -12,6 +12,7 @@ import { HeroShowcase } from "@/features/portal/hero-showcase"
 import { BusinessMarquee } from "@/features/portal/business-marquee"
 import { HeroSpotlight } from "@/features/portal/hero-spotlight"
 import { PortalHeader } from "@/features/portal/portal-header"
+import { PortalMotion } from "@/features/portal/portal-motion"
 import { ProcessSteps } from "@/features/portal/process-steps"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
 
@@ -42,6 +43,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
       <SkipLink label={t.skip} />
       <PortalHeader />
       <main id="main" className="flex flex-1 flex-col">
+        <PortalMotion />
         <section aria-labelledby="hero-title" className="relative overflow-hidden">
           <div
             aria-hidden="true"
@@ -83,11 +85,13 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
 
         <section id="showcases" aria-labelledby="showcases-title" className="scroll-mt-16">
           <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-16 pb-20 sm:px-6 lg:pt-20 lg:pb-28">
-            <div className="reveal flex max-w-2xl flex-col gap-3">
-              <h2 id="showcases-title" className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+            <div className="flex max-w-2xl flex-col gap-3">
+              <h2 id="showcases-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
                 {t.showcases.title}
               </h2>
-              <p className="text-lg text-muted-foreground">{t.showcases.intro}</p>
+              <p className="reveal text-lg text-muted-foreground" style={stagger(2)}>
+                {t.showcases.intro}
+              </p>
             </div>
             <ShowcaseGrid />
           </div>
@@ -95,11 +99,13 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
 
         <section id="services" aria-labelledby="services-title" className="scroll-mt-16 border-t border-border bg-card">
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.6fr] lg:py-28">
-            <div className="reveal flex flex-col gap-3">
-              <h2 id="services-title" className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+            <div className="flex flex-col gap-3">
+              <h2 id="services-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
                 {t.services.title}
               </h2>
-              <p className="text-lg text-muted-foreground">{t.services.intro}</p>
+              <p className="reveal text-lg text-muted-foreground" style={stagger(2)}>
+                {t.services.intro}
+              </p>
             </div>
             <dl className="grid gap-10 sm:grid-cols-2">
               {t.services.items.map((service, index) => (
@@ -119,7 +125,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
 
         <section aria-labelledby="process-title">
           <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:py-28">
-            <h2 id="process-title" className="reveal font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h2 id="process-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
               {t.process.title}
             </h2>
             <ProcessSteps />
@@ -128,11 +134,13 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
 
         <section id="contact" aria-labelledby="contact-title" className="scroll-mt-16 bg-foreground text-background">
           <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:py-28">
-            <div className="reveal flex max-w-3xl flex-col gap-4">
-              <h2 id="contact-title" className="font-heading text-4xl font-semibold tracking-tight sm:text-6xl">
+            <div className="flex max-w-3xl flex-col gap-4">
+              <h2 id="contact-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-6xl">
                 <Phrased text={t.contact.title} />
               </h2>
-              <p className="text-lg opacity-75">{t.contact.body}</p>
+              <p className="reveal text-lg opacity-75" style={stagger(2)}>
+                {t.contact.body}
+              </p>
             </div>
             <div className="reveal flex flex-col gap-4 sm:flex-row" style={stagger(1)}>
               <a
