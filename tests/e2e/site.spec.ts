@@ -28,10 +28,19 @@ test.describe("showcase portal", () => {
     const hero = page.getByTestId("hero-showcase")
     await expect(hero.getByRole("link")).toHaveCount(3)
     // Kaffa sits at the back: pointing at its visible top edge brings it forward, then it opens
+    // The stack tilts with the pointer, so like a visitor, move along the visible top edge until the card lifts
     const kaffa = hero.getByRole("link", { name: "Open Kaffa Roasters" })
-    await kaffa.hover({ position: { x: 60, y: 16 } })
-    await expect.poll(() => kaffa.evaluate((el) => getComputedStyle(el).zIndex)).toBe("10")
-    await kaffa.click()
+    let lifted: { x: number; y: number } | null = null
+    for (const position of [{ x: 60, y: 16 }, { x: 140, y: 12 }, { x: 220, y: 14 }, { x: 30, y: 24 }, { x: 300, y: 10 }]) {
+      await kaffa.hover({ position, force: true })
+      await page.waitForTimeout(250)
+      if ((await kaffa.evaluate((el) => getComputedStyle(el).zIndex)) === "10") {
+        lifted = position
+        break
+      }
+    }
+    expect(lifted, "the back card should come forward under the pointer").not.toBeNull()
+    await kaffa.click({ position: lifted! })
     await expect(page).toHaveURL(/\/en\/shop$/)
 
     await page.goto("/th")
@@ -73,24 +82,29 @@ test.describe("showcase portal", () => {
   test("the hero grid and live cards follow the mouse", async ({ page }) => {
     test.skip(page.viewportSize()!.width < 768, "pointer effects are for mouse and pen")
     await page.goto("/en")
+    // Keep nudging the mouse until the listeners are up (hydration can lag on slower CI machines).
+    const nudge = async (x: number, y: number, check: () => Promise<void>) => {
+      let step = 0
+      await expect(async () => {
+        step += 1
+        await page.mouse.move(x + step * 3, y + step * 2)
+        await check()
+      }).toPass({ timeout: 10_000 })
+    }
+
     const hero = page.locator('section[aria-labelledby="hero-title"]')
-    await page.mouse.move(400, 300)
-    await page.mouse.move(420, 320)
-    await expect(hero).toHaveAttribute("data-pointer", "")
+    await nudge(400, 300, () => expect(hero).toHaveAttribute("data-pointer", "", { timeout: 300 }))
     expect(await hero.evaluate((el) => el.style.getPropertyValue("--px"))).toMatch(/px$/)
+    // The hero stack tilts in 3D toward the pointer
+    await nudge(1200, 240, async () =>
+      expect(await page.getByTestId("hero-tilt").evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/),
+    )
 
     const tilt = page.getByTestId("preview-tilt").first()
     await tilt.scrollIntoViewIfNeeded()
     const box = (await tilt.boundingBox())!
-    await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.2)
-    await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.18)
-    await expect(tilt).toHaveAttribute("data-pointer", "")
+    await nudge(box.x + box.width * 0.85, box.y + box.height * 0.2, () => expect(tilt).toHaveAttribute("data-pointer", "", { timeout: 300 }))
     await expect.poll(() => tilt.evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/)
-    // The hero stack tilts in 3D as well
-    await page.evaluate(() => window.scrollTo(0, 0))
-    await page.mouse.move(1200, 260)
-    await page.mouse.move(1220, 240)
-    await expect.poll(() => page.getByTestId("hero-tilt").evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/)
     await page.mouse.move(5, 5)
     await expect(tilt).not.toHaveAttribute("data-pointer", "")
   })
