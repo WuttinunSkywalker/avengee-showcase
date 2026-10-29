@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-dev/
 /out/
 
 # production
@@ -39,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing
+/test-results
+/playwright-report
+/blob-report
+/coverage
+
+# local agent state
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

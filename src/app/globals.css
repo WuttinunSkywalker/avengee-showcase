@@ -1,26 +1,391 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-celadon: var(--celadon);
+  --color-celadon-deep: var(--celadon-deep);
+  --color-teak: var(--teak);
+  --color-turmeric: var(--turmeric);
+  --color-leaf: var(--leaf);
+  --color-fog: var(--fog);
+  --color-roast-1: var(--roast-1);
+  --color-roast-2: var(--roast-2);
+  --color-roast-3: var(--roast-3);
+  --color-roast-4: var(--roast-4);
+  --color-roast-5: var(--roast-5);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Avengee Team portal. Cobalt on cool paper, navy ink. */
+  --font-display: var(--font-bricolage), var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-geist), var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
+  --background: #fbfbfc;
+  --foreground: #14213d;
+  --card: #ffffff;
+  --card-foreground: #14213d;
+  --popover: #ffffff;
+  --popover-foreground: #14213d;
+  --primary: #2f5bea;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f7;
+  --secondary-foreground: #14213d;
+  --muted: #f1f3f7;
+  --muted-foreground: #5b6478;
+  --accent: #e8eeff;
+  --accent-foreground: #1e3fb8;
+  --destructive: #d92d20;
+  --border: #e2e6ee;
+  --input: #d5dbe6;
+  --ring: #2f5bea;
+  --signal: #ffc53d;
+  --signal-foreground: #3d2c00;
+  --success: #0e6b4c;
+  --warning: #b54708;
+  --chart-1: #2f5bea;
+  --chart-2: #14213d;
+  --chart-3: #ffc53d;
+  --chart-4: #7c9bff;
+  --chart-5: #9aa5bd;
+  --radius: 0.75rem;
+  --sidebar: #f5f7fa;
+  --sidebar-foreground: #14213d;
+  --sidebar-primary: #2f5bea;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8eeff;
+  --sidebar-accent-foreground: #1e3fb8;
+  --sidebar-border: #e2e6ee;
+  --sidebar-ring: #2f5bea;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0c1324;
+  --foreground: #e8ecf5;
+  --card: #121b31;
+  --card-foreground: #e8ecf5;
+  --popover: #121b31;
+  --popover-foreground: #e8ecf5;
+  --primary: #7c9bff;
+  --primary-foreground: #0c1324;
+  --secondary: #18223a;
+  --secondary-foreground: #e8ecf5;
+  --muted: #18223a;
+  --muted-foreground: #9aa5bd;
+  --accent: #1b2a52;
+  --accent-foreground: #c9d6ff;
+  --destructive: #f97066;
+  --border: #233050;
+  --input: #2b3a5e;
+  --ring: #7c9bff;
+  --success: #3ccb7f;
+  --warning: #fdb022;
+  --chart-1: #7c9bff;
+  --chart-2: #e8ecf5;
+  --chart-3: #ffc53d;
+  --chart-4: #2f5bea;
+  --chart-5: #5b6478;
+  --sidebar: #0f182c;
+  --sidebar-foreground: #e8ecf5;
+  --sidebar-primary: #7c9bff;
+  --sidebar-primary-foreground: #0c1324;
+  --sidebar-accent: #1b2a52;
+  --sidebar-accent-foreground: #c9d6ff;
+  --sidebar-border: #233050;
+  --sidebar-ring: #7c9bff;
+}
+
+/*
+ * App themes switch on while an app's wrapper is on the page. Next keeps the
+ * previous route mounted but hidden (React <Activity> sets an inline
+ * display: none) so Back is instant, so a hidden wrapper must not count:
+ * otherwise the portal keeps the last app's colours after you leave it.
+ */
+
+/*
+ * Baan Lamai spa app. Thai materials instead of spa clichés:
+ * indigo-dyed cotton (ink), celadon glaze (surfaces), teak and turmeric (accents).
+ */
+:root:has([data-app="spa"]:not([style*="display: none"], [style*="display: none"] *)),
+.theme-spa {
+  --font-display: var(--font-young-serif), var(--font-noto-serif-thai), ui-serif, serif;
+  --font-body: var(--font-figtree), var(--font-plex-thai-looped), ui-sans-serif, system-ui, sans-serif;
+  --background: #f3f6f1;
+  --foreground: #1d2b53;
+  --card: #ffffff;
+  --card-foreground: #1d2b53;
+  --popover: #ffffff;
+  --popover-foreground: #1d2b53;
+  --primary: #1d2b53;
+  --primary-foreground: #f3f6f1;
+  --secondary: #dcebdd;
+  --secondary-foreground: #1d2b53;
+  --muted: #e8eee6;
+  --muted-foreground: #55607a;
+  --accent: #dcebdd;
+  --accent-foreground: #1d2b53;
+  --destructive: #b42318;
+  --border: #d3ddd2;
+  --input: #c3d0c2;
+  --ring: #4e7a5a;
+  --celadon: #9cc5a1;
+  --celadon-deep: #3f6a4b;
+  --teak: #7a4e2d;
+  --turmeric: #e0a526;
+  --signal: #e0a526;
+  --signal-foreground: #3a2a05;
+  --success: #2f7a4b;
+  --warning: #9a5b0b;
+  --chart-1: #1d2b53;
+  --chart-2: #4e7a5a;
+  --chart-3: #e0a526;
+  --chart-4: #7a4e2d;
+  --chart-5: #9cc5a1;
+  --radius: 0.5rem;
+  --sidebar: #eaf0e8;
+  --sidebar-foreground: #1d2b53;
+  --sidebar-primary: #1d2b53;
+  --sidebar-primary-foreground: #f3f6f1;
+  --sidebar-accent: #dcebdd;
+  --sidebar-accent-foreground: #1d2b53;
+  --sidebar-border: #d3ddd2;
+  --sidebar-ring: #4e7a5a;
+}
+
+:root.dark:has([data-app="spa"]:not([style*="display: none"], [style*="display: none"] *)),
+.dark .theme-spa {
+  --background: #121a33;
+  --foreground: #e9efe6;
+  --card: #18213f;
+  --card-foreground: #e9efe6;
+  --popover: #18213f;
+  --popover-foreground: #e9efe6;
+  --primary: #b9dcbc;
+  --primary-foreground: #121a33;
+  --secondary: #223055;
+  --secondary-foreground: #e9efe6;
+  --muted: #1c2747;
+  --muted-foreground: #a3aec6;
+  --accent: #223055;
+  --accent-foreground: #e9efe6;
+  --destructive: #f97066;
+  --border: #2a3657;
+  --input: #34416a;
+  --ring: #9cc5a1;
+  --celadon: #9cc5a1;
+  --celadon-deep: #b9dcbc;
+  --teak: #c08a5e;
+  --turmeric: #f0bf4c;
+  --signal: #f0bf4c;
+  --success: #6fcf97;
+  --warning: #f0bf4c;
+  --chart-1: #9cc5a1;
+  --chart-2: #f0bf4c;
+  --chart-3: #7fa7e0;
+  --chart-4: #c08a5e;
+  --chart-5: #e9efe6;
+  --sidebar: #0f1630;
+  --sidebar-foreground: #e9efe6;
+  --sidebar-primary: #b9dcbc;
+  --sidebar-primary-foreground: #121a33;
+  --sidebar-accent: #223055;
+  --sidebar-accent-foreground: #e9efe6;
+  --sidebar-border: #2a3657;
+  --sidebar-ring: #9cc5a1;
+}
+
+:root:has([data-app="shop"]:not([style*="display: none"], [style*="display: none"] *)),
+.theme-shop {
+  /* Kaffa Roasters: espresso ink on white, coffee-cherry red for actions, a roast spectrum for data. */
+  --font-display: var(--font-archivo), var(--font-kanit), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-instrument-sans), var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --background: #ffffff;
+  --foreground: #2b1b14;
+  --card: #ffffff;
+  --card-foreground: #2b1b14;
+  --popover: #ffffff;
+  --popover-foreground: #2b1b14;
+  --primary: #b3202a;
+  --primary-foreground: #ffffff;
+  --secondary: #eff1ee;
+  --secondary-foreground: #2b1b14;
+  --muted: #f3f4f1;
+  --muted-foreground: #66574f;
+  --accent: #eff1ee;
+  --accent-foreground: #2b1b14;
+  --destructive: #b3202a;
+  --border: #e3e2dc;
+  --input: #d5d3cb;
+  --ring: #b3202a;
+  --signal: #b3202a;
+  --signal-foreground: #ffffff;
+  --success: #2f5d46;
+  --warning: #9a5b0b;
+  --leaf: #2f5d46;
+  --fog: #eff1ee;
+  --turmeric: #c79a2e;
+  --roast-1: #9fa86a;
+  --roast-2: #c08a4b;
+  --roast-3: #8a5530;
+  --roast-4: #63391f;
+  --roast-5: #3a2216;
+  --chart-1: #b3202a;
+  --chart-2: #2f5d46;
+  --chart-3: #c08a4b;
+  --chart-4: #63391f;
+  --chart-5: #9fa86a;
+  --radius: 0.375rem;
+  --sidebar: #f7f7f5;
+  --sidebar-foreground: #2b1b14;
+  --sidebar-primary: #b3202a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eff1ee;
+  --sidebar-accent-foreground: #2b1b14;
+  --sidebar-border: #e3e2dc;
+  --sidebar-ring: #b3202a;
+}
+
+:root.dark:has([data-app="shop"]:not([style*="display: none"], [style*="display: none"] *)),
+.dark .theme-shop {
+  --background: #1b120d;
+  --foreground: #f3ece6;
+  --card: #241812;
+  --card-foreground: #f3ece6;
+  --popover: #241812;
+  --popover-foreground: #f3ece6;
+  --primary: #e5484d;
+  --primary-foreground: #1b120d;
+  --secondary: #2e2019;
+  --secondary-foreground: #f3ece6;
+  --muted: #2a1d16;
+  --muted-foreground: #bfae9f;
+  --accent: #2e2019;
+  --accent-foreground: #f3ece6;
+  --border: #3a2a21;
+  --input: #4a372c;
+  --ring: #e5484d;
+  --success: #6fbf8f;
+  --leaf: #6fbf8f;
+  --fog: #2a1d16;
+  --chart-1: #e5484d;
+  --chart-2: #6fbf8f;
+  --sidebar: #160e0a;
+  --sidebar-foreground: #f3ece6;
+  --sidebar-primary: #e5484d;
+  --sidebar-primary-foreground: #1b120d;
+  --sidebar-accent: #2e2019;
+  --sidebar-accent-foreground: #f3ece6;
+  --sidebar-border: #3a2a21;
+  --sidebar-ring: #e5484d;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+  @media (pointer: fine) {
+    html {
+      overscroll-behavior: none;
+    }
+  }
+  a,
+  button,
+  [role="button"],
+  input,
+  label,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  /* Thai stacks vowels and tone marks above and below the line; tight Latin leading clips them. */
+  :lang(th) :is(h1, h2, h3, h4) {
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+  }
+  :lang(th) body {
+    line-height: 1.7;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :target {
+    scroll-margin-top: 6rem;
+  }
+  /* Fieldsets default to min-content width, which lets horizontal scrollers (date strips) blow out the page on phones. */
+  fieldset {
+    min-inline-size: 0;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
