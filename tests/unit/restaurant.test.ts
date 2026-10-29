@@ -139,3 +139,61 @@ describe("splitting the bill", () => {
     expect(splitByItems(units, { a: [5] }, 2).unassigned).toBe(95 + 160 + 55)
   })
 })
+
+describe("kitchen board", () => {
+  const NOW = new Date("2026-11-04T12:30:00Z") // 19:30 Bangkok
+
+  it("seeds stable tickets from the last 45 minutes", async () => {
+    const { generateTickets } = await import("@/features/restaurant/lib/kitchen")
+    const tickets = generateTickets(NOW)
+    expect(tickets.length).toBeGreaterThan(5)
+    expect(tickets.length).toBeLessThan(30)
+    for (const ticket of tickets) {
+      expect(Date.parse(ticket.round.sentAt)).toBeLessThanOrEqual(NOW.getTime())
+      expect(NOW.getTime() - Date.parse(ticket.round.sentAt)).toBeLessThanOrEqual(46 * 60_000)
+      expect(ticket.table).toBeGreaterThanOrEqual(1)
+      expect(ticket.table).toBeLessThanOrEqual(24)
+    }
+    // Five minutes later, the old tickets are still exactly the same
+    const later = generateTickets(new Date(NOW.getTime() + 5 * 60_000))
+    const ids = new Set(later.map((t) => t.id))
+    for (const ticket of tickets.filter((t) => NOW.getTime() - Date.parse(t.round.sentAt) < 39 * 60_000)) {
+      expect(ids.has(ticket.id)).toBe(true)
+      expect(later.find((t) => t.id === ticket.id)).toEqual(ticket)
+    }
+  })
+
+  it("sorts tickets into columns, honouring the kitchen's own moves", async () => {
+    const { boardColumns, generateTickets, nextStatus, ticketAge, PICKUP_MINUTES } = await import("@/features/restaurant/lib/kitchen")
+    const tickets = generateTickets(NOW)
+    const columns = boardColumns(tickets, NOW)
+    expect(columns.received.length + columns.cooking.length + columns.served.length).toBeLessThanOrEqual(tickets.length)
+    expect(columns.cooking.length).toBeGreaterThan(0)
+    const first = columns.cooking[0]
+    const moved = boardColumns(tickets, NOW, { [first.id]: "served" })
+    expect(moved.served.map((t) => t.id)).toContain(first.id)
+    expect(nextStatus("received")).toBe("cooking")
+    expect(nextStatus("cooking")).toBe("served")
+    expect(nextStatus("served")).toBeNull()
+    // Fresh tickets from other tables wait in New until someone picks them up
+    for (const ticket of columns.received) expect(ticketAge(ticket, NOW)).toBeLessThan(PICKUP_MINUTES)
+    expect(columns.received.length).toBeGreaterThan(0)
+  })
+
+  it("reports a believable week of sales and best sellers", async () => {
+    const { salesByDay, topDishes } = await import("@/features/restaurant/lib/kitchen")
+    const week = salesByDay(NOW)
+    expect(week).toHaveLength(7)
+    // Today isn't over, so the week ends yesterday
+    expect(week[0].date).toBe("2026-10-28")
+    expect(week.at(-1)!.date).toBe("2026-11-03")
+    for (const day of week) {
+      expect(day.revenue).toBeGreaterThan(30_000)
+      expect(day.revenue).toBeLessThan(80_000)
+    }
+    expect(salesByDay(NOW)).toEqual(week)
+    const top = topDishes(NOW)
+    expect(top).toHaveLength(5)
+    for (let i = 1; i < top.length; i++) expect(top[i - 1].plates).toBeGreaterThanOrEqual(top[i].plates)
+  })
+})

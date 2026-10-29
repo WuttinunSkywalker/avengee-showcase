@@ -36,8 +36,9 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Krua Yai at `/[lang]/restaurant`: theme (banana-leaf green, turmeric, chilli for heat; Mitr + Sarabun), landing that takes a table number, QR menu at `?table=N` with 14 photographed dishes (CC0, Wikimedia Commons) in sticky sections, dish sheet with spice level, extras and a kitchen note, basket per table (sessionStorage) with a running bar and an order list to change quantities
 - [x] Send to the kitchen in rounds; each dish moves from received to cooking to served on realistic prep times (salads 7, rice 10, curries 14, sweets 5 min, staggered down the ticket); status sheet with ETAs and the running total; a bar that follows the latest round; call staff for water, cutlery, a problem or the bill, once per reason every two minutes
 - [x] Split the bill from the order status: evenly in whole baht (leftover baht to the first people), or plate by plate with shared plates divided; each person gets a PromptPay QR for their amount once every plate has someone paying for it
-- [ ] Portal card for Krua Yai: screenshots, share card, icons, sitemap
-- [ ] Kitchen board (live columns: new, cooking, served) and simple sales summary
+- [x] Kitchen screen at `/[lang]/restaurant/kitchen` (noindex): New / Cooking / Served columns of seeded tickets (a new one most minutes, waiting three minutes for a cook), spice, extras and notes on each ticket, a flag after 15 minutes, Start Cooking / Mark Served kept per session; rounds sent from this browser's table appear as "This device". Sales tab (`?view=sales`): the last seven full days of takings, guests, spend per head, and the week's best sellers
+- [ ] Portal card for Krua Yai: screenshots (menu, kitchen screen as the second tour screen), share card, icons, sitemap, `adminHref` to the kitchen screen
+- [ ] When the kitchen marks a round from this device served, the guest's status sheet could follow it (today it only follows prep times)
 
 ## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)
 
