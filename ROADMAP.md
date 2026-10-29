@@ -33,8 +33,9 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
 
-- [ ] Table landing from QR (`?table=7`), photo menu by category, spice level and add-ons
-- [ ] Order basket, send to kitchen, order status, call staff, split bill
+- [x] Krua Yai at `/[lang]/restaurant`: theme (banana-leaf green, turmeric, chilli for heat; Mitr + Sarabun), landing that takes a table number, QR menu at `?table=N` with 14 photographed dishes (CC0, Wikimedia Commons) in sticky sections, dish sheet with spice level, extras and a kitchen note, basket per table (sessionStorage) with a running bar and an order list to change quantities
+- [ ] Send the order to the kitchen, order status per round, call staff, split the bill
+- [ ] Portal card for Krua Yai: screenshots, share card, icons, sitemap
 - [ ] Kitchen board (live columns: new, cooking, served) and simple sales summary
 
 ## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)

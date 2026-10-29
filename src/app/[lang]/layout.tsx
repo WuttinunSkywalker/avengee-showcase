@@ -12,7 +12,9 @@ import {
   Instrument_Sans,
   Kanit,
   Manrope,
+  Mitr,
   Noto_Serif_Thai,
+  Sarabun,
   Young_Serif,
 } from "next/font/google"
 import { HydrationMarker } from "@/components/hydration-marker"
@@ -64,6 +66,10 @@ const baiJamjuree = Bai_Jamjuree({
   preload: false,
 })
 
+// Krua Yai
+const mitr = Mitr({ variable: "--font-mitr", weight: ["400", "500", "600"], subsets: ["latin", "thai"], display: "swap", preload: false })
+const sarabun = Sarabun({ variable: "--font-sarabun", weight: ["400", "500", "600"], subsets: ["latin", "thai"], display: "swap", preload: false })
+
 const fontVariables = [
   bricolage,
   geist,
@@ -78,6 +84,8 @@ const fontVariables = [
   plexThai,
   manrope,
   baiJamjuree,
+  mitr,
+  sarabun,
 ]
   .map((font) => font.variable)
   .join(" ")

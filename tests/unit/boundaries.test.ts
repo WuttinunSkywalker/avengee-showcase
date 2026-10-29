@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest"
  * exceptions: they exist to show every app.
  */
 const ROOT = join(process.cwd(), "src")
-const APPS = ["spa", "shop", "studio"]
+const APPS = ["spa", "shop", "studio", "restaurant"]
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

@@ -18,6 +18,7 @@
   --color-teak: var(--teak);
   --color-turmeric: var(--turmeric);
   --color-leaf: var(--leaf);
+  --color-chili: var(--chili);
   --color-fog: var(--fog);
   --color-roast-1: var(--roast-1);
   --color-roast-2: var(--roast-2);
@@ -389,6 +390,64 @@
     transition-duration: 0.01ms !important;
   }
 }
+/*
+ * Krua Yai. Banana-leaf green on plate white, turmeric for highlights and
+ * chilli red only for heat. Mitr for signage-style headings, Sarabun to read.
+ */
+:root:has([data-app="restaurant"]:not([style*="display: none"], [style*="display: none"] *)),
+.theme-restaurant {
+  --font-display: var(--font-mitr), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-sarabun), ui-sans-serif, system-ui, sans-serif;
+  --background: #ffffff;
+  --foreground: #1b2a1e;
+  --card: #ffffff;
+  --card-foreground: #1b2a1e;
+  --popover: #ffffff;
+  --popover-foreground: #1b2a1e;
+  --primary: #1f7a3a;
+  --primary-foreground: #ffffff;
+  --secondary: #eef5ec;
+  --secondary-foreground: #1b2a1e;
+  --muted: #f3f6f1;
+  --muted-foreground: #556257;
+  --accent: #fff4d1;
+  --accent-foreground: #1b2a1e;
+  --destructive: #c0341d;
+  --border: #e1e8de;
+  --input: #cfd8cb;
+  --ring: #1f7a3a;
+  --signal: #e7a81e;
+  --signal-foreground: #2a1d00;
+  --turmeric: #e7a81e;
+  --chili: #c0341d;
+  --leaf: #1f7a3a;
+  --success: #1f7a3a;
+  --radius: 0.875rem;
+}
+
+:root.dark:has([data-app="restaurant"]:not([style*="display: none"], [style*="display: none"] *)),
+.dark .theme-restaurant {
+  --background: #111a13;
+  --foreground: #eaf2e7;
+  --card: #18231a;
+  --card-foreground: #eaf2e7;
+  --popover: #18231a;
+  --popover-foreground: #eaf2e7;
+  --primary: #5cc27a;
+  --primary-foreground: #0d160f;
+  --secondary: #1f2c21;
+  --secondary-foreground: #eaf2e7;
+  --muted: #1c281e;
+  --muted-foreground: #a5b5a7;
+  --accent: #33290f;
+  --accent-foreground: #eaf2e7;
+  --border: #2a382c;
+  --input: #364638;
+  --ring: #5cc27a;
+  --chili: #ff7a5c;
+  --leaf: #5cc27a;
+}
+
 /*
  * Sorn Studio. Cool concrete paper, green-black drafting ink, one leaf-green
  * accent. Drawings use --line, --shade and --glass so they follow dark mode.
