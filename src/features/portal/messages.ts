@@ -33,6 +33,23 @@ const en = {
       { name: "Care after launch", body: "Updates, fixes and small changes after your site goes live." },
     ],
   },
+  marquee: {
+    title: "Businesses we build for",
+    items: [
+      "Spas & massage",
+      "Coffee shops",
+      "Restaurants",
+      "Clinics",
+      "Architects & studios",
+      "Hotels & homestays",
+      "Shops & brands",
+      "Tutoring schools",
+      "Gyms & yoga",
+      "Hair salons",
+      "Property",
+      "Weddings & events",
+    ],
+  },
   process: {
     title: "How we work",
     steps: [
@@ -83,6 +100,23 @@ const th: PortalMessages = {
       { name: "ร้านค้าออนไลน์", body: "หน้าสินค้า ตะกร้า ชำระเงิน ติดตามออเดอร์ และแจ้งเตือนเมื่อของใกล้หมด" },
       { name: "เว็บไซต์ธุรกิจ", body: "เว็บโหลดไว มีเมนู ราคา แผนที่ และช่องทางติดต่อครบ รองรับทั้งไทยและอังกฤษ" },
       { name: "ดูแลหลังขึ้นระบบ", body: "อัปเดต แก้บั๊ก หรือปรับนิด ๆ หน่อย ๆ หลังเว็บเปิดใช้งานแล้ว" },
+    ],
+  },
+  marquee: {
+    title: "ธุรกิจที่เราทำเว็บให้",
+    items: [
+      "สปาและร้านนวด",
+      "ร้านกาแฟ",
+      "ร้านอาหาร",
+      "คลินิก",
+      "สถาปนิกและสตูดิโอ",
+      "โรงแรมและโฮมสเตย์",
+      "ร้านค้าและแบรนด์",
+      "โรงเรียนกวดวิชา",
+      "ฟิตเนสและโยคะ",
+      "ร้านทำผม",
+      "อสังหาริมทรัพย์",
+      "งานแต่งและอีเวนต์",
     ],
   },
   process: {

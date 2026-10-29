@@ -46,6 +46,36 @@ test.describe("showcase portal", () => {
     }
   })
 
+  test("a marquee lists the businesses we build for, once for screen readers", async ({ page }) => {
+    await page.goto("/th")
+    const marquee = page.getByTestId("business-marquee")
+    await expect(marquee.getByRole("heading", { name: "ธุรกิจที่เราทำเว็บให้" })).toBeAttached()
+    // Two copies for a seamless loop; assistive tech only sees the first
+    await expect(marquee.getByRole("listitem")).toHaveCount(12)
+    await expect(marquee.locator("li")).toHaveCount(24)
+    await expect(marquee.getByRole("listitem").first()).toHaveText("สปาและร้านนวด")
+  })
+
+  test("the hero grid and live cards follow the mouse", async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 768, "pointer effects are for mouse and pen")
+    await page.goto("/en")
+    const hero = page.locator('section[aria-labelledby="hero-title"]')
+    await page.mouse.move(400, 300)
+    await page.mouse.move(420, 320)
+    await expect(hero).toHaveAttribute("data-pointer", "")
+    expect(await hero.evaluate((el) => el.style.getPropertyValue("--px"))).toMatch(/px$/)
+
+    const tilt = page.getByTestId("preview-tilt").first()
+    await tilt.scrollIntoViewIfNeeded()
+    const box = (await tilt.boundingBox())!
+    await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.2)
+    await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.18)
+    await expect(tilt).toHaveAttribute("data-pointer", "")
+    await expect.poll(() => tilt.evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/)
+    await page.mouse.move(5, 5)
+    await expect(tilt).not.toHaveAttribute("data-pointer", "")
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
@@ -207,6 +237,8 @@ test.describe("showcase portal", () => {
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
     const clipped = await page.locator(".reveal").evaluateAll((els) => els.filter((el) => getComputedStyle(el).clipPath !== "none").length)
     expect(clipped).toBe(0)
+    // The marquee becomes a still, wrapped list without its duplicate
+    await expect(page.getByTestId("business-marquee").locator("ul[aria-hidden]")).toBeHidden()
     // No autoplay either: hovering a card leaves it on the home screen
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Baan Lamai" }) })
     await card.hover()

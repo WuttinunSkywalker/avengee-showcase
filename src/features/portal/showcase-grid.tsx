@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { ArrowUpRightIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { showcaseKinds, showcases, type Showcase, type ShowcaseKind } from "@/config/site"
 import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
+import { usePointerVars } from "@/hooks/use-pointer-vars"
 import { stagger } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
@@ -133,8 +134,11 @@ const soonPatterns: Record<ShowcaseKind, string> = {
 
 function SoonCard({ showcase, locale, index }: { showcase: Showcase; locale: Locale; index: number }) {
   const t = portalMessages[locale].showcases
+  const ref = useRef<HTMLLIElement>(null)
+  usePointerVars(ref)
   return (
-    <li className="reveal flex flex-col overflow-clip rounded-2xl border border-dashed border-border bg-card/60" style={stagger(index % 3)}>
+    <li ref={ref} className="reveal relative flex flex-col overflow-clip rounded-2xl border border-dashed border-border bg-card/60" style={stagger(index % 3)}>
+      <div aria-hidden="true" className="card-glow pointer-events-none absolute inset-0" />
       <div className={cn("relative h-36 border-b border-dashed border-border", soonPatterns[showcase.kind])} aria-hidden="true">
         {/* A quiet wireframe hint of the layout to come */}
         <div className="absolute inset-x-6 top-6 flex flex-col gap-2 opacity-60">

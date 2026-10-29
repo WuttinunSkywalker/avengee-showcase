@@ -9,6 +9,8 @@ import { isLocale } from "@/i18n/config"
 import { stagger } from "@/lib/motion"
 import { portalMessages } from "@/features/portal/messages"
 import { HeroShowcase } from "@/features/portal/hero-showcase"
+import { BusinessMarquee } from "@/features/portal/business-marquee"
+import { HeroSpotlight } from "@/features/portal/hero-spotlight"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { ProcessSteps } from "@/features/portal/process-steps"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
@@ -45,6 +47,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_50%_0%,black_10%,transparent_70%)] bg-[size:48px_48px] opacity-60"
           />
+          <HeroSpotlight />
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-16 pb-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:pt-20 lg:pb-20">
             <div className="flex flex-col gap-7">
             <p className="intro flex items-center gap-2 text-sm text-muted-foreground" style={stagger(0)}>
@@ -76,8 +79,10 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
+        <BusinessMarquee locale={lang} />
+
         <section id="showcases" aria-labelledby="showcases-title" className="scroll-mt-16">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-20 sm:px-6 lg:pb-28">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-16 pb-20 sm:px-6 lg:pt-20 lg:pb-28">
             <div className="reveal flex max-w-2xl flex-col gap-3">
               <h2 id="showcases-title" className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
                 {t.showcases.title}

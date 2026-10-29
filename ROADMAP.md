@@ -4,7 +4,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Now
 
-- [ ] Portal "wow" pass (asked for on 2026-10-30): research what current agency / product landing pages use and add a few eye-catching, tasteful effects. Candidates: hero headline with masked word-by-word reveal, cursor-following spotlight on the hero grid, magnetic / tilt hover on showcase cards, marquee of Thai business types, counters that tick up, section transitions with view-timeline parallax; keep reduced motion and performance (no layout shift, 60 fps)
+- [x] Portal "wow" pass (asked for on 2026-10-30): hero grid lights up around the cursor, live showcase cards tilt toward the pointer with a moving glare, coming-soon cards glow where pointed, and a slow marquee of the business types we build for (pauses on hover). Mouse and pen only, no React re-renders (CSS variables), reduced motion turns them off and the marquee into a still list
 - [x] "How we work" runs in every browser: once in view the line fills 1 → 2 → 3 → a live server icon, each step lighting up as it's reached (IntersectionObserver + transitions, not scroll timelines that older Safari and Firefox lack)
 
 - [x] Portal motion: hero intro (phrases rise in turn), scroll-linked reveals with CSS view timelines (screenshot wipe, phone mock-up settles, services rules and the process line draw, cards and text rise), header scroll-progress bar; no JS, nothing hidden without support or with reduced motion; e2e checks reveals finish and reduced motion
@@ -92,6 +92,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Portal kept the last app's colours after leaving it: Next keeps the previous route mounted with `display: none`, and `:root:has([data-app])` still matched. Theme selectors now ignore hidden wrappers; e2e covers link and history navigation
 
 - [ ] GitHub Actions warns that `actions/checkout@v4`, `actions/setup-node@v4` and `pnpm/action-setup@v4` target Node 20 (deprecated); move to releases that run on Node 24
+
+- [ ] Portal wow pass 2 ideas: hero headline kinetic reveal (check Thai tone marks aren't clipped), numbers that tick up when seen, view-timeline parallax between sections
 
 - [ ] Lighthouse pass on every page (performance ≥ 90 mobile, accessibility 100)
 - [ ] Review all Thai copy once more by reading it aloud; fix anything that sounds translated

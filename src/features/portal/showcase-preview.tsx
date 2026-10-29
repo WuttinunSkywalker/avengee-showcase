@@ -1,10 +1,11 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "motion/react"
 import type { Showcase } from "@/config/site"
 import type { Locale } from "@/i18n/config"
+import { usePointerVars } from "@/hooks/use-pointer-vars"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
 
@@ -49,9 +50,13 @@ export function ShowcasePreview({ showcase, locale, active }: { showcase: Showca
   }
 
   const controlsSide = images.phoneSide === "left" ? "right-3" : "left-3"
+  // The screenshot tilts toward the pointer, with a glare that follows it.
+  const tiltRef = useRef<HTMLDivElement>(null)
+  usePointerVars(tiltRef)
 
   return (
-    <div className="relative overflow-clip border-b border-border bg-muted lg:border-r lg:border-b-0">
+    <div ref={tiltRef} data-testid="preview-tilt" className="tilt relative overflow-clip border-b border-border bg-muted lg:border-r lg:border-b-0">
+      <div aria-hidden="true" className="tilt-glare pointer-events-none absolute inset-0 z-10" />
       <div className="reveal-wipe relative h-full">
         {slides.map((slide, i) => (
           <Image

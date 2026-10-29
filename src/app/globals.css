@@ -639,3 +639,89 @@
     opacity: 0;
   }
 }
+
+/*
+ * Portal pointer effects (mouse and pen only; usePointerVars writes the vars).
+ * Hero grid lights up around the cursor; live cards tilt toward it with a glare;
+ * coming-soon cards glow where you point. Off for reduced motion.
+ */
+.hero-spotlight {
+  opacity: 0;
+  mask-image: radial-gradient(240px circle at var(--px, 50%) var(--py, 50%), black, transparent 75%);
+  transition: opacity 0.4s ease;
+}
+[data-pointer] > .hero-spotlight {
+  opacity: 0.32;
+}
+
+.card-glow {
+  opacity: 0;
+  background: radial-gradient(360px circle at var(--px, 50%) var(--py, 50%), color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%);
+  transition: opacity 0.3s ease;
+}
+[data-pointer] > .card-glow {
+  opacity: 1;
+}
+
+.tilt-glare {
+  opacity: 0;
+  background: radial-gradient(520px circle at var(--px, 50%) var(--py, 50%), rgb(255 255 255 / 0.22), transparent 45%);
+  transition: opacity 0.3s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tilt {
+    transform: perspective(1200px) rotateX(calc(var(--pyr, 0) * -4deg)) rotateY(calc(var(--pxr, 0) * 5deg));
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .tilt[data-pointer] {
+    transition-duration: 0.15s;
+  }
+  .tilt[data-pointer] .tilt-glare {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-spotlight,
+  .card-glow {
+    display: none;
+  }
+}
+
+/* Business marquee: the list is doubled, so sliding by half loops seamlessly. Edges fade out. */
+.marquee {
+  overflow: clip;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track {
+    animation: marquee 50s linear infinite;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    mask-image: none;
+  }
+  .marquee-track {
+    width: auto;
+    justify-content: center;
+    padding-inline: 1rem;
+  }
+  .marquee-list {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-right: 0;
+  }
+  .marquee-list[aria-hidden] {
+    display: none;
+  }
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
