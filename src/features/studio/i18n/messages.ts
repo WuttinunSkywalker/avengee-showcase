@@ -1,10 +1,10 @@
 import type { Locale } from "@/i18n/config"
-import type { ProjectType, Room } from "../data/projects"
+import type { ProjectType, Room, Service, StageId } from "../data/projects"
 import type { DrawingView } from "../components/project-drawing"
 
 const en = {
   skip: "Skip to content",
-  nav: { work: "Work", contact: "Contact", label: "Main", menu: "Menu" },
+  nav: { work: "Work", services: "Services", process: "Process", contact: "Contact", label: "Main", menu: "Menu" },
   tagline: "Architecture for the tropics",
   hero: {
     title: "Houses that stay cool without trying.",
@@ -22,6 +22,47 @@ const en = {
     open: (name: string) => `Open ${name}`,
     area: (m2: number) => `${m2} m²`,
     empty: "No projects of this kind yet.",
+  },
+  services: {
+    title: "What we design",
+    intro: "Small buildings, done carefully. We take on about eight projects a year so the people who draw your house are the ones who visit the site.",
+    items: {
+      houses: {
+        name: "New houses",
+        body: "From the first site visit to permit drawings and visits during the build. Most of our houses are 150–350 m².",
+        fee: "Design fee from 7% of construction cost",
+      },
+      renovation: {
+        name: "Renovations & shophouses",
+        body: "Opening up old townhouses and shophouses: light wells, new stairs, roofs that stop leaking, and keeping what's worth keeping.",
+        fee: "Design fee from 8% of construction cost",
+      },
+      hospitality: {
+        name: "Cafés, shops & small stays",
+        body: "Spaces that have to work for a business: counters, kitchens, guest rooms, and a front that people stop for.",
+        fee: "Design fee from 8% of construction cost",
+      },
+      interiors: {
+        name: "Interiors & built-ins",
+        body: "Kitchens, wardrobes and shelving drawn to the millimetre and made by local carpenters we've worked with for years.",
+        fee: "Fixed fee, quoted after a visit",
+      },
+    } satisfies Record<Service, { name: string; body: string; fee: string }>,
+  },
+  process: {
+    title: "How a house comes together",
+    intro: (weeks: number) => `About ${weeks} weeks from the first visit to drawings ready for the district office, then we stay with you through the build.`,
+    weeks: (n: number) => `${n} wk`,
+    axis: "Weeks",
+    ongoing: "Through the build",
+    stages: {
+      brief: { name: "Site visit & brief", body: "We walk the land with you, note the sun, wind and neighbours, and write down how you live." },
+      concept: { name: "Concept", body: "Two or three directions as sketches and simple models, with a sun and breeze study for each." },
+      development: { name: "Design development", body: "The chosen direction in detail: plans, materials, 3D views and a first cost estimate." },
+      permit: { name: "Permit & construction drawings", body: "The full drawing set and engineer's calculations, submitted to the district office for approval." },
+      construction: { name: "During construction", body: "Site visits every two weeks, answering the builder's questions, and checking work before each payment." },
+    } satisfies Record<StageId, { name: string; body: string }>,
+    chartLabel: (weeks: number) => `Typical schedule: ${weeks} weeks of design before construction starts`,
   },
   lightbox: {
     views: { elevation: "Elevation", plan: "Plan", section: "Section" } satisfies Record<DrawingView, string>,
@@ -68,7 +109,7 @@ export type StudioMessages = typeof en
 
 const th: StudioMessages = {
   skip: "ข้ามไปที่เนื้อหา",
-  nav: { work: "ผลงาน", contact: "ติดต่อ", label: "เมนูหลัก", menu: "เมนู" },
+  nav: { work: "ผลงาน", services: "บริการ", process: "ขั้นตอน", contact: "ติดต่อ", label: "เมนูหลัก", menu: "เมนู" },
   tagline: "สถาปัตยกรรมสำหรับเมืองร้อน",
   hero: {
     title: "บ้านที่เย็นสบาย โดยไม่ต้องเปิดแอร์ทั้งวัน",
@@ -86,6 +127,47 @@ const th: StudioMessages = {
     open: (name) => `ดู ${name}`,
     area: (m2) => `${m2} ตร.ม.`,
     empty: "ยังไม่มีผลงานประเภทนี้",
+  },
+  services: {
+    title: "งานที่เราออกแบบ",
+    intro: "เราทำอาคารขนาดเล็กอย่างตั้งใจ รับงานปีละประมาณแปดโปรเจกต์ คนที่เขียนแบบบ้านคุณจึงเป็นคนเดียวกับที่ลงไปดูหน้างาน",
+    items: {
+      houses: {
+        name: "บ้านสร้างใหม่",
+        body: "ตั้งแต่ลงพื้นที่ครั้งแรก จนได้แบบขออนุญาต และไปดูหน้างานระหว่างก่อสร้าง บ้านส่วนใหญ่ของเราอยู่ที่ 150–350 ตร.ม.",
+        fee: "ค่าออกแบบเริ่มที่ 7% ของค่าก่อสร้าง",
+      },
+      renovation: {
+        name: "รีโนเวตบ้านและตึกแถว",
+        body: "เปิดตึกแถวและทาวน์เฮาส์เก่าให้โปร่ง เจาะช่องแสง ทำบันไดใหม่ แก้หลังคารั่ว และเก็บส่วนที่ควรเก็บไว้",
+        fee: "ค่าออกแบบเริ่มที่ 8% ของค่าก่อสร้าง",
+      },
+      hospitality: {
+        name: "คาเฟ่ ร้านค้า และที่พักเล็ก ๆ",
+        body: "พื้นที่ที่ต้องทำงานให้ธุรกิจได้จริง ทั้งเคาน์เตอร์ ครัว ห้องพัก และหน้าร้านที่คนเดินผ่านแล้วอยากแวะ",
+        fee: "ค่าออกแบบเริ่มที่ 8% ของค่าก่อสร้าง",
+      },
+      interiors: {
+        name: "ภายในและบิวท์อิน",
+        body: "ครัว ตู้เสื้อผ้า และชั้นวาง เขียนแบบละเอียดถึงมิลลิเมตร ทำโดยช่างไม้ในพื้นที่ที่ร่วมงานกันมาหลายปี",
+        fee: "ค่าออกแบบเหมา คิดหลังลงดูพื้นที่",
+      },
+    },
+  },
+  process: {
+    title: "บ้านหนึ่งหลังเกิดขึ้นอย่างไร",
+    intro: (weeks) => `ประมาณ ${weeks} สัปดาห์ตั้งแต่ลงพื้นที่ครั้งแรกจนได้แบบพร้อมยื่นสำนักงานเขต แล้วเราก็อยู่ดูแลต่อจนสร้างเสร็จ`,
+    weeks: (n) => `${n} สัปดาห์`,
+    axis: "สัปดาห์",
+    ongoing: "ตลอดช่วงก่อสร้าง",
+    stages: {
+      brief: { name: "ลงพื้นที่และคุยโจทย์", body: "เดินดูที่ดินด้วยกัน จดทิศแดด ทางลม และเพื่อนบ้าน แล้วฟังว่าคุณใช้ชีวิตในบ้านอย่างไร" },
+      concept: { name: "แบบร่างแนวคิด", body: "เสนอสองถึงสามแนวทางเป็นสเก็ตช์และโมเดลง่าย ๆ พร้อมศึกษาแดดและทางลมของแต่ละแบบ" },
+      development: { name: "พัฒนาแบบ", body: "ลงรายละเอียดแนวทางที่เลือก ทั้งแปลน วัสดุ ภาพ 3 มิติ และประมาณราคาค่าก่อสร้างรอบแรก" },
+      permit: { name: "แบบขออนุญาตและแบบก่อสร้าง", body: "เขียนแบบครบชุดพร้อมรายการคำนวณของวิศวกร แล้วยื่นขออนุญาตที่สำนักงานเขต" },
+      construction: { name: "ดูแลระหว่างก่อสร้าง", body: "ลงหน้างานทุกสองสัปดาห์ ตอบคำถามผู้รับเหมา และตรวจงานก่อนจ่ายเงินแต่ละงวด" },
+    },
+    chartLabel: (weeks) => `ตารางเวลาโดยทั่วไป: ออกแบบ ${weeks} สัปดาห์ก่อนเริ่มก่อสร้าง`,
   },
   lightbox: {
     views: { elevation: "รูปด้าน", plan: "แปลนพื้น", section: "รูปตัด" },

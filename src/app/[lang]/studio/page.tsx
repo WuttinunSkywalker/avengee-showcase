@@ -5,6 +5,7 @@ import { isLocale } from "@/i18n/config"
 import { ProjectGallery, ProjectGridFallback } from "@/features/studio/components/project-gallery"
 import { StudioFooter, StudioHeader } from "@/features/studio/components/studio-chrome"
 import { StudioHero } from "@/features/studio/components/studio-hero"
+import { StudioProcess, StudioServices } from "@/features/studio/components/studio-sections"
 import { studioMessages } from "@/features/studio/i18n/messages"
 
 export default async function StudioPage({ params }: PageProps<"/[lang]/studio">) {
@@ -31,6 +32,8 @@ export default async function StudioPage({ params }: PageProps<"/[lang]/studio">
             </Suspense>
           </div>
         </section>
+        <StudioServices locale={lang} />
+        <StudioProcess locale={lang} />
       </main>
       <StudioFooter locale={lang} />
     </>

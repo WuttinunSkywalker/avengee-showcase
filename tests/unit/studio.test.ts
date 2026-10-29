@@ -75,3 +75,14 @@ describe("drawings", () => {
     expect(metres(6.4)).toBe("6.4 m")
   })
 })
+
+describe("services and schedule", () => {
+  it("runs the design stages back to back to a permit in 20 weeks", async () => {
+    const { STAGES, WEEKS_TO_PERMIT, SERVICES } = await import("@/features/studio/data/projects")
+    expect(STAGES.map((s) => s.id)).toEqual(["brief", "concept", "development", "permit", "construction"])
+    expect(WEEKS_TO_PERMIT).toBe(20)
+    expect(STAGES.at(-1)!.weeks).toBeNull()
+    for (const service of SERVICES) expect(studioMessages.th.services.items[service].fee).toMatch(/[฀-๿]/)
+    expect(studioMessages.th.process.intro(WEEKS_TO_PERMIT)).toContain("20 สัปดาห์")
+  })
+})

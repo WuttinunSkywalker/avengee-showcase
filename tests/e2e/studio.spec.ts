@@ -81,6 +81,39 @@ test.describe("Sorn Studio", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("services and the design schedule, drawn in as they scroll into view", async ({ page, consoleErrors }) => {
+    await page.goto("/en/studio")
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: page.viewportSize()!.width >= 768 ? "Services" : "Work" }).click()
+    const services = page.locator("#services")
+    await expect(services.getByRole("listitem")).toHaveCount(4)
+    await expect(services).toContainText("Design fee from 7% of construction cost")
+
+    const schedule = page.getByTestId("studio-schedule")
+    await expect(page.locator("#process")).toContainText("About 20 weeks from the first visit")
+    await expect(schedule.getByTestId("studio-stage")).toHaveCount(5)
+    await schedule.scrollIntoViewIfNeeded()
+    await expect(schedule).toHaveAttribute("data-inview", "true")
+    const stages = schedule.getByTestId("studio-stage")
+    await expect(stages.nth(1)).toContainText("4 wk")
+    await expect(stages.last()).toContainText("Through the build")
+    if (page.viewportSize()!.width >= 768) {
+      // Bars finish drawing, and sit at their real lengths: the 4-week concept is twice the 2-week brief
+      const bars = schedule.locator("[data-bar]")
+      await expect.poll(() => bars.last().evaluate((b) => getComputedStyle(b).scale), { timeout: 5000 }).toMatch(/^1( 1)?$/)
+      const [two, four] = await bars.evaluateAll((all) => all.slice(0, 2).map((b) => (b as HTMLElement).offsetWidth))
+      expect(Math.round(four / two)).toBe(2)
+    }
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("services and schedule in Thai", async ({ page }) => {
+    await page.goto("/th/studio")
+    await expect(page.getByRole("heading", { name: "งานที่เราออกแบบ" })).toBeVisible()
+    await expect(page.locator("#services")).toContainText("ค่าออกแบบเริ่มที่ 7% ของค่าก่อสร้าง")
+    await expect(page.getByRole("heading", { name: "บ้านหนึ่งหลังเกิดขึ้นอย่างไร" })).toBeVisible()
+    await expect(page.getByTestId("studio-stage").last()).toContainText("ตลอดช่วงก่อสร้าง")
+  })
+
   for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)

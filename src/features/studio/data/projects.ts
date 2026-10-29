@@ -327,3 +327,22 @@ export const studio = {
     th: ["ชั้น 2 เลขที่ 48 ซอยเจริญกรุง 30", "บางรัก กรุงเทพฯ 10500"],
   },
 }
+
+export const SERVICES = ["houses", "renovation", "hospitality", "interiors"] as const
+export type Service = (typeof SERVICES)[number]
+
+/**
+ * How a house project usually runs, in weeks. Stages follow one another; the
+ * last one lasts as long as the build itself (typically 8–12 months).
+ */
+export const STAGES = [
+  { id: "brief", weeks: 2 },
+  { id: "concept", weeks: 4 },
+  { id: "development", weeks: 6 },
+  { id: "permit", weeks: 8 },
+  { id: "construction", weeks: null },
+] as const
+export type StageId = (typeof STAGES)[number]["id"]
+
+/** Weeks from the first visit to drawings ready for the district office. */
+export const WEEKS_TO_PERMIT = STAGES.reduce((sum, stage) => sum + (stage.weeks ?? 0), 0)

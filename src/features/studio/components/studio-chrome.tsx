@@ -32,6 +32,12 @@ export function StudioHeader({ locale }: { locale: Locale }) {
           <a href="#work" className="rounded-sm px-2 py-1.5 text-sm hover:text-leaf focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
             {t.nav.work}
           </a>
+          <a href="#services" className="hidden rounded-sm px-2 py-1.5 text-sm hover:text-leaf focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:inline">
+            {t.nav.services}
+          </a>
+          <a href="#process" className="hidden rounded-sm px-2 py-1.5 text-sm hover:text-leaf focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:inline">
+            {t.nav.process}
+          </a>
           <a href="#contact" className="rounded-sm px-2 py-1.5 text-sm hover:text-leaf focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
             {t.nav.contact}
           </a>
