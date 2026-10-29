@@ -69,3 +69,39 @@ describe("table numbers", () => {
     for (const bad of [null, "", "0", "25", "7a", "-3", "007"]) expect(parseTable(bad), String(bad)).toBeNull()
   })
 })
+
+describe("rounds in the kitchen", () => {
+  const sentAt = "2026-11-04T12:00:00.000Z" // 19:00 Bangkok
+  const round = {
+    number: 1,
+    sentAt,
+    lines: [
+      { dishId: "som-tam", quantity: 1, spice: 2 as const, addOns: [], note: "" },
+      { dishId: "green-curry", quantity: 1, spice: 2 as const, addOns: [], note: "" },
+      { dishId: "cha-yen", quantity: 2, spice: null, addOns: [], note: "" },
+    ],
+  }
+  const at = (minutes: number) => new Date(Date.parse(sentAt) + minutes * 60_000)
+
+  it("times each dish by its kitchen and its place on the ticket", async () => {
+    const { readyTimes } = await import("@/features/restaurant/lib/order")
+    expect(readyTimes(round).map((t) => (t - Date.parse(sentAt)) / 60_000)).toEqual([7, 15.5, 8])
+  })
+
+  it("moves from received to cooking to served", async () => {
+    const { lineStatus, roundProgress } = await import("@/features/restaurant/lib/order")
+    expect(lineStatus(round, 0, at(0.5))).toBe("received")
+    expect(lineStatus(round, 0, at(3))).toBe("cooking")
+    expect(lineStatus(round, 0, at(7))).toBe("served")
+    expect(roundProgress(round, at(9))).toEqual({ status: "cooking", minutesLeft: 7, served: 2 })
+    expect(roundProgress(round, at(16))).toEqual({ status: "served", minutesLeft: 0, served: 3 })
+  })
+
+  it("adds up every round and limits calls to one per reason every two minutes", async () => {
+    const { roundsTotal, canCall } = await import("@/features/restaurant/lib/order")
+    expect(roundsTotal([round, { ...round, number: 2 }])).toBe((80 + 160 + 55 * 2) * 2)
+    expect(canCall(undefined, at(0))).toBe(true)
+    expect(canCall(at(0).toISOString(), at(1.5))).toBe(false)
+    expect(canCall(at(0).toISOString(), at(2))).toBe(true)
+  })
+})

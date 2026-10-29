@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config"
 import type { AddOnId, Category, SpiceLevel } from "../data/menu"
+import type { CallReason, DishStatus } from "../lib/order"
 
 const en = {
   skip: "Skip to the menu",
@@ -74,6 +75,36 @@ const en = {
     remove: (name: string) => `Remove ${name}`,
     empty: "Nothing chosen yet. Pick something from the menu.",
     keepBrowsing: "Keep Browsing",
+    send: "Send to Kitchen",
+    sentTitle: (n: number) => `Round ${n} is in the kitchen`,
+    sentBody: "Most dishes reach your table in 10 to 15 minutes. Order more any time.",
+    backToMenu: "Back to the Menu",
+  },
+  status: {
+    open: "Order Status",
+    title: (n: number) => `Orders for table ${n}`,
+    description: "Dishes come out as soon as each one is ready.",
+    round: (n: number, time: string) => `Round ${n}, sent ${time}`,
+    statuses: { received: "Kitchen has it", cooking: "Cooking", served: "Served" } satisfies Record<DishStatus, string>,
+    eta: (minutes: number) => (minutes <= 1 ? "Any minute now" : `About ${minutes} min`),
+    served: (n: number, total: number) => `${n} of ${total} served`,
+    soFar: "Ordered so far",
+    pay: "Pay at the counter on your way out, or call for the bill.",
+    bar: (status: string, eta: string) => `${status}, ${eta.toLowerCase()}`,
+    allServed: "Everything's on the table",
+  },
+  call: {
+    open: "Call Staff",
+    title: "What can we bring you?",
+    description: (n: number) => `Someone will come to table ${n}.`,
+    reasons: {
+      water: "Water or ice",
+      cutlery: "Napkins or cutlery",
+      problem: "Something's wrong with a dish",
+      bill: "The bill, please",
+    } satisfies Record<CallReason, string>,
+    sent: (n: number) => `Someone's on the way to table ${n}`,
+    recently: "On the way",
   },
   footer: { rights: "All rights reserved." },
 }
@@ -153,6 +184,36 @@ const th: RestaurantMessages = {
     remove: (name) => `เอา${name}ออก`,
     empty: "ยังไม่ได้เลือกอะไรเลย ลองดูเมนูก่อนนะ",
     keepBrowsing: "ดูเมนูต่อ",
+    send: "ส่งเข้าครัว",
+    sentTitle: (n) => `ส่งรอบที่ ${n} เข้าครัวแล้ว`,
+    sentBody: "อาหารส่วนใหญ่จะมาเสิร์ฟภายใน 10 ถึง 15 นาที สั่งเพิ่มได้ตลอดนะ",
+    backToMenu: "กลับไปดูเมนู",
+  },
+  status: {
+    open: "สถานะออเดอร์",
+    title: (n) => `ออเดอร์ของโต๊ะ ${n}`,
+    description: "ทำเสร็จจานไหนจะยกมาเสิร์ฟทันที",
+    round: (n, time) => `รอบที่ ${n} สั่งเมื่อ ${time} น.`,
+    statuses: { received: "ครัวรับแล้ว", cooking: "กำลังทำ", served: "เสิร์ฟแล้ว" },
+    eta: (minutes) => (minutes <= 1 ? "อีกแป๊บเดียว" : `อีกประมาณ ${minutes} นาที`),
+    served: (n, total) => `เสิร์ฟแล้ว ${n} จาก ${total}`,
+    soFar: "สั่งไปแล้วทั้งหมด",
+    pay: "จ่ายที่เคาน์เตอร์ตอนกลับ หรือกดเรียกพนักงานเพื่อขอบิลได้เลย",
+    bar: (status, eta) => `${status} ${eta}`,
+    allServed: "เสิร์ฟครบทุกจานแล้ว",
+  },
+  call: {
+    open: "เรียกพนักงาน",
+    title: "ต้องการอะไรเพิ่มไหม",
+    description: (n) => `จะมีพนักงานไปที่โต๊ะ ${n}`,
+    reasons: {
+      water: "น้ำเปล่าหรือน้ำแข็ง",
+      cutlery: "ทิชชูหรือช้อนส้อม",
+      problem: "มีปัญหากับอาหาร",
+      bill: "ขอเช็กบิล",
+    },
+    sent: (n) => `พนักงานกำลังไปที่โต๊ะ ${n}`,
+    recently: "กำลังไป",
   },
   footer: { rights: "สงวนลิขสิทธิ์" },
 }

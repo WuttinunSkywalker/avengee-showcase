@@ -34,7 +34,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 ## Showcase 3: Krua Yai (QR table ordering, `/[lang]/restaurant`)
 
 - [x] Krua Yai at `/[lang]/restaurant`: theme (banana-leaf green, turmeric, chilli for heat; Mitr + Sarabun), landing that takes a table number, QR menu at `?table=N` with 14 photographed dishes (CC0, Wikimedia Commons) in sticky sections, dish sheet with spice level, extras and a kitchen note, basket per table (sessionStorage) with a running bar and an order list to change quantities
-- [ ] Send the order to the kitchen, order status per round, call staff, split the bill
+- [x] Send to the kitchen in rounds; each dish moves from received to cooking to served on realistic prep times (salads 7, rice 10, curries 14, sweets 5 min, staggered down the ticket); status sheet with ETAs and the running total; a bar that follows the latest round; call staff for water, cutlery, a problem or the bill, once per reason every two minutes
+- [ ] Split the bill: evenly, or by who had what, with a PromptPay QR per person
 - [ ] Portal card for Krua Yai: screenshots, share card, icons, sitemap
 - [ ] Kitchen board (live columns: new, cooking, served) and simple sales summary
 

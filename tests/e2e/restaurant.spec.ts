@@ -82,6 +82,70 @@ test.describe("Krua Yai", () => {
     await expect(page.getByTestId("basket-bar")).toContainText("เลือกแล้ว 1 จาน")
   })
 
+  test("sends rounds to the kitchen and follows them to the table", async ({ page, consoleErrors }) => {
+    const order = async (name: string) => {
+      await page.getByRole("button", { name: `Add ${name}` }).first().click()
+      await page.getByRole("dialog").getByRole("button", { name: /^Add to Order/ }).click()
+    }
+    await page.goto("/en/restaurant?table=9")
+    await order("Green papaya salad")
+    await order("Green curry with beef")
+    await page.getByTestId("basket-bar").getByRole("button", { name: "View Order" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Send to Kitchen" }).click()
+    await expect(page.getByTestId("basket-sheet").getByText("Round 1 is in the kitchen")).toBeVisible()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Back to the Menu" }).click()
+
+    // The bar now follows the round: sent at 09:00 Bangkok, the curry takes about 16 minutes
+    const bar = page.getByTestId("status-bar")
+    await expect(bar).toContainText("Round 1, sent 09:00")
+    await expect(bar).toContainText("Kitchen has it, about 16 min")
+
+    // A second round
+    await order("Thai iced tea")
+    await page.getByTestId("basket-bar").getByRole("button", { name: "View Order" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Send to Kitchen" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Order Status" }).click()
+    const status = page.getByTestId("status-sheet")
+    await expect(status.getByTestId("status-round")).toHaveCount(2)
+    await expect(status.getByTestId("status-total")).toHaveText("฿295")
+
+    // Nine minutes later the salad is out and the curry is still cooking
+    await page.clock.setFixedTime(new Date("2026-11-04T02:09:00Z"))
+    await page.reload()
+    await page.getByRole("button", { name: "Order Status" }).first().click()
+    const lines = page.getByTestId("status-sheet").getByTestId("status-line")
+    await expect(lines.filter({ hasText: "Green papaya salad" })).toContainText("Served")
+    await expect(lines.filter({ hasText: "Green curry with beef" })).toContainText("Cooking")
+    await expect(lines.filter({ hasText: "Thai iced tea" })).toContainText("Served")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("calls staff once per reason until they've had time to come", async ({ page }) => {
+    await page.goto("/en/restaurant?table=5")
+    await page.getByRole("button", { name: "Call Staff" }).click()
+    const sheet = page.getByTestId("call-sheet")
+    await sheet.getByRole("button", { name: "Water or ice" }).click()
+    await expect(page.getByText("Someone's on the way to table 5")).toBeVisible()
+    await page.getByRole("button", { name: "Call Staff" }).click()
+    await expect(sheet.getByRole("button", { name: /Water or ice/ })).toBeDisabled()
+    await expect(sheet.getByRole("button", { name: /Water or ice/ })).toContainText("On the way")
+    await expect(sheet.getByRole("button", { name: "The bill, please" })).toBeEnabled()
+  })
+
+  test("order status and calling staff in Thai", async ({ page }) => {
+    await page.goto("/th/restaurant?table=2")
+    await page.getByRole("button", { name: "เพิ่ม ข้าวเหนียวมะม่วง" }).first().click()
+    await page.getByRole("dialog").getByRole("button", { name: /^ใส่ในรายการ/ }).click()
+    await page.getByTestId("basket-bar").getByRole("button", { name: "ดูรายการ" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "ส่งเข้าครัว" }).click()
+    await expect(page.getByTestId("basket-sheet")).toContainText("ส่งรอบที่ 1 เข้าครัวแล้ว")
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "กลับไปดูเมนู" }).click()
+    await expect(page.getByTestId("status-bar")).toContainText("รอบที่ 1 สั่งเมื่อ 09:00 น.")
+    await page.getByRole("button", { name: "เรียกพนักงาน" }).click()
+    await page.getByTestId("call-sheet").getByRole("button", { name: "ขอเช็กบิล" }).click()
+    await expect(page.getByText("พนักงานกำลังไปที่โต๊ะ 2")).toBeVisible()
+  })
+
   for (const path of ["/en/restaurant", "/th/restaurant?table=7"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)

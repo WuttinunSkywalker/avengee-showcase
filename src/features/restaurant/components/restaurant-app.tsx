@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useEffect, useId, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { LeafIcon, MinusIcon, PlusIcon, QrCodeIcon, ShoppingBasketIcon } from "lucide-react"
+import { BellRingIcon, ChefHatIcon, CheckIcon, LeafIcon, MinusIcon, PlusIcon, QrCodeIcon, ShoppingBasketIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -11,6 +11,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, D
 import { Field, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import type { Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
@@ -18,7 +19,23 @@ import { formatBaht } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ADD_ONS, CATEGORIES, dishes, getDish, restaurant, SPICE_LEVELS, type AddOnId, type Dish, type SpiceLevel } from "../data/menu"
 import { restaurantMessages } from "../i18n/messages"
-import { basketSummary, lineKey, lineTotal, MAX_QUANTITY, NOTE_MAX, parseTable, unitPrice, type BasketLine } from "../lib/order"
+import {
+  basketSummary,
+  CALL_REASONS,
+  canCall,
+  lineKey,
+  lineStatus,
+  lineTotal,
+  MAX_QUANTITY,
+  NOTE_MAX,
+  parseTable,
+  roundProgress,
+  roundsTotal,
+  unitPrice,
+  type BasketLine,
+  type DishStatus,
+  type Round,
+} from "../lib/order"
 import { useBasketStore } from "../store/basket-store"
 import { Chili, HeatRating } from "./chili"
 import { RestaurantHeader } from "./restaurant-header"
@@ -114,9 +131,16 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
   const hydrated = usePersistHydrated(useBasketStore.persist)
   const setTable = useBasketStore((state) => state.setTable)
   const lines = useBasketStore((state) => state.lines)
+  const rounds = useBasketStore((state) => state.rounds)
   const basketOpen = useBasketStore((state) => state.open)
   const setBasketOpen = useBasketStore((state) => state.setOpen)
   const [open, setOpen] = useState<Dish | null>(null)
+  const [statusOpen, setStatusOpen] = useState(false)
+  const [callOpen, setCallOpen] = useState(false)
+  const now = useNow()
+  const sent = hydrated ? rounds : []
+  const latest = sent.at(-1)
+  const progress = latest && now ? roundProgress(latest, now) : null
   const sections = [{ id: "popular" as const, items: dishes.filter((dish) => dish.popular) }, ...CATEGORIES.map((id) => ({ id, items: dishes.filter((dish) => dish.category === id) }))]
   const summary = basketSummary(hydrated ? lines : [])
 
@@ -130,6 +154,18 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
       <div className="flex flex-col gap-1 px-4 pt-6 pb-4">
         <h1 className="font-heading text-2xl font-semibold sm:text-3xl">{t.table.welcome(table)}</h1>
         <p className="text-muted-foreground">{t.table.hint}</p>
+        <div className="flex flex-wrap gap-2 pt-3">
+          <Button variant="outline" onClick={() => setCallOpen(true)}>
+            <BellRingIcon data-icon="inline-start" aria-hidden="true" />
+            {t.call.open}
+          </Button>
+          {sent.length > 0 && (
+            <Button variant="outline" onClick={() => setStatusOpen(true)}>
+              <ChefHatIcon data-icon="inline-start" aria-hidden="true" />
+              {t.status.open}
+            </Button>
+          )}
+        </div>
       </div>
 
       <nav aria-label={t.categoriesLabel} className="sticky top-16 z-20 border-b border-border bg-background/95 backdrop-blur">
@@ -179,7 +215,41 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
         </div>
       )}
 
-      <BasketSheet table={table} locale={locale} lines={hydrated ? lines : []} open={basketOpen} onOpenChange={setBasketOpen} />
+      {/* With nothing waiting to be sent, the bar follows the latest round instead. */}
+      {summary.items === 0 && latest && progress && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur" data-testid="status-bar">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-1">
+            <p className="flex items-center gap-2 text-sm" aria-live="polite">
+              <ChefHatIcon className="size-5 text-primary" aria-hidden="true" />
+              {progress.status === "served" ? (
+                <span>{t.status.allServed}</span>
+              ) : (
+                <span className="flex flex-col leading-tight">
+                  <span className="font-heading font-medium">{t.status.round(latest.number, bangkokTime(latest.sentAt))}</span>
+                  <span className="text-muted-foreground">{t.status.bar(t.status.statuses[progress.status], t.status.eta(progress.minutesLeft))}</span>
+                </span>
+              )}
+            </p>
+            <Button size="lg" variant="outline" onClick={() => setStatusOpen(true)}>
+              {t.status.open}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <BasketSheet
+        table={table}
+        locale={locale}
+        lines={hydrated ? lines : []}
+        open={basketOpen}
+        onOpenChange={setBasketOpen}
+        onShowStatus={() => {
+          setBasketOpen(false)
+          setStatusOpen(true)
+        }}
+      />
+      <StatusSheet table={table} locale={locale} rounds={sent} now={now} open={statusOpen} onOpenChange={setStatusOpen} />
+      <CallSheet table={table} locale={locale} now={now} open={callOpen} onOpenChange={setCallOpen} />
     </div>
   )
 }
@@ -349,20 +419,59 @@ function BasketSheet({
   lines,
   open,
   onOpenChange,
+  onShowStatus,
 }: {
   table: number
   locale: Locale
   lines: BasketLine[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  onShowStatus: () => void
 }) {
   const t = restaurantMessages[locale]
   const setQuantity = useBasketStore((state) => state.setQuantity)
+  const send = useBasketStore((state) => state.send)
+  const [sentRound, setSentRound] = useState<Round | null>(null)
   const summary = basketSummary(lines)
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next)
+        if (!next) setSentRound(null)
+      }}
+    >
       <DrawerContent className="mx-auto max-h-[92dvh] max-w-lg" data-testid="basket-sheet">
+        {sentRound ? (
+          <div className="flex flex-col items-start gap-4 px-4 pt-2 pb-8" role="status">
+            <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <CheckIcon className="size-6" aria-hidden="true" />
+            </span>
+            <DrawerTitle className="font-heading text-2xl font-semibold">{t.basket.sentTitle(sentRound.number)}</DrawerTitle>
+            <DrawerDescription className="text-base">{t.basket.sentBody}</DrawerDescription>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => {
+                  setSentRound(null)
+                  onOpenChange(false)
+                }}
+              >
+                {t.basket.backToMenu}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSentRound(null)
+                  onShowStatus()
+                }}
+              >
+                {t.status.open}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
         <DrawerHeader className="text-left">
           <DrawerTitle className="font-heading text-2xl font-semibold">{t.basket.title(table)}</DrawerTitle>
           <DrawerDescription>{t.basket.description}</DrawerDescription>
@@ -419,9 +528,143 @@ function BasketSheet({
                   {formatBaht(summary.total)}
                 </span>
               </p>
+              <Button size="xl" onClick={() => setSentRound(send(new Date()))}>
+                <ChefHatIcon data-icon="inline-start" aria-hidden="true" />
+                {t.basket.send}
+              </Button>
             </DrawerFooter>
           </>
         )}
+          </>
+        )}
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+/** "19:42" in Bangkok, whatever the phone's timezone. */
+function bangkokTime(iso: string): string {
+  const bangkok = new Date(Date.parse(iso) + 7 * 3_600_000)
+  return `${String(bangkok.getUTCHours()).padStart(2, "0")}:${String(bangkok.getUTCMinutes()).padStart(2, "0")}`
+}
+
+const statusTones: Record<DishStatus, string> = {
+  received: "bg-muted text-muted-foreground",
+  cooking: "bg-accent text-accent-foreground",
+  served: "bg-secondary text-primary",
+}
+
+function StatusChip({ status, locale }: { status: DishStatus; locale: Locale }) {
+  return (
+    <span className={cn("inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 font-heading text-xs font-medium", statusTones[status])}>
+      {restaurantMessages[locale].status.statuses[status]}
+    </span>
+  )
+}
+
+function StatusSheet({
+  table,
+  locale,
+  rounds,
+  now,
+  open,
+  onOpenChange,
+}: {
+  table: number
+  locale: Locale
+  rounds: Round[]
+  now: Date | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const t = restaurantMessages[locale]
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="mx-auto max-h-[92dvh] max-w-lg" data-testid="status-sheet">
+        <DrawerHeader className="text-left">
+          <DrawerTitle className="font-heading text-2xl font-semibold">{t.status.title(table)}</DrawerTitle>
+          <DrawerDescription>{t.status.description}</DrawerDescription>
+        </DrawerHeader>
+        <div className="flex flex-col gap-6 overflow-y-auto overscroll-contain px-4 pb-4">
+          {now &&
+            [...rounds].reverse().map((round) => {
+              const progress = roundProgress(round, now)
+              return (
+                <section key={round.number} aria-label={t.status.round(round.number, bangkokTime(round.sentAt))} data-testid="status-round">
+                  <div className="mb-2 flex items-baseline justify-between gap-3">
+                    <h3 className="font-heading font-medium">{t.status.round(round.number, bangkokTime(round.sentAt))}</h3>
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {progress.status === "served" ? t.status.served(progress.served, round.lines.length) : t.status.eta(progress.minutesLeft)}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col divide-y divide-border rounded-[calc(var(--radius)-0.25rem)] border border-border">
+                    {round.lines.map((line, index) => {
+                      const dish = getDish(line.dishId)
+                      if (!dish) return null
+                      const details = lineDetails(line, locale)
+                      return (
+                        <li key={index} className="flex items-center justify-between gap-3 px-3 py-2.5" data-testid="status-line">
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {dish.name[locale]} × {line.quantity}
+                            </p>
+                            {details && <p className="text-sm text-muted-foreground">{details}</p>}
+                          </div>
+                          <StatusChip status={lineStatus(round, index, now)} locale={locale} />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
+            })}
+        </div>
+        <DrawerFooter className="border-t border-border">
+          <p className="flex items-baseline justify-between font-heading">
+            <span>{t.status.soFar}</span>
+            <span className="text-2xl font-semibold tabular-nums" data-testid="status-total">
+              {formatBaht(roundsTotal(rounds))}
+            </span>
+          </p>
+          <p className="text-sm text-muted-foreground">{t.status.pay}</p>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+function CallSheet({ table, locale, now, open, onOpenChange }: { table: number; locale: Locale; now: Date | null; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = restaurantMessages[locale]
+  const calls = useBasketStore((state) => state.calls)
+  const call = useBasketStore((state) => state.call)
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="mx-auto max-w-lg" data-testid="call-sheet">
+        <DrawerHeader className="text-left">
+          <DrawerTitle className="font-heading text-2xl font-semibold">{t.call.title}</DrawerTitle>
+          <DrawerDescription>{t.call.description(table)}</DrawerDescription>
+        </DrawerHeader>
+        <div className="grid gap-2 px-4 pb-6 sm:grid-cols-2">
+          {CALL_REASONS.map((reason) => {
+            const waiting = !!now && !canCall(calls[reason], now)
+            return (
+              <Button
+                key={reason}
+                variant="outline"
+                size="xl"
+                disabled={waiting}
+                className="h-auto justify-between py-3 whitespace-normal"
+                onClick={() => {
+                  if (call(reason, new Date())) toast.success(t.call.sent(table))
+                  onOpenChange(false)
+                }}
+              >
+                <span className="text-left">{t.call.reasons[reason]}</span>
+                {waiting && <span className="shrink-0 text-xs text-primary">{t.call.recently}</span>}
+              </Button>
+            )
+          })}
+        </div>
       </DrawerContent>
     </Drawer>
   )
