@@ -34,6 +34,29 @@ const shots = [
       { key: "admin", path: "/shop/admin" },
     ],
   },
+  {
+    id: "sorn-studio",
+    path: "/studio",
+    // The hero drawing traces itself in over about three seconds
+    settle: 3200,
+    mobilePath: "/studio#work",
+    tour: [
+      { key: "drawings", path: "/studio?project=hua-hin-beach-house&view=section" },
+      {
+        key: "schedule",
+        path: "/studio",
+        // The schedule's bars draw in once it's in view
+        prepare: async (page) => {
+          await page.locator("#process").scrollIntoViewIfNeeded()
+          await page.waitForTimeout(2200)
+          const top = await page.locator("#process").evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+          await page.evaluate((y) => window.scrollTo(0, y - 64), top)
+          await page.waitForTimeout(300)
+        },
+        keepScroll: true,
+      },
+    ],
+  },
 ]
 
 const browser = await chromium.launch()
@@ -44,14 +67,14 @@ for (const shot of shots) {
     await page.clock.setFixedTime(fixedNow)
     await page.goto(`${base}/${locale}${shot.path}`, { waitUntil: "networkidle" })
     await page.addStyleTag({ content: hidePortalLink })
-    await page.waitForTimeout(800)
+    await page.waitForTimeout(shot.settle ?? 800)
     await page.screenshot({ path: `${outDir}${shot.id}-${locale}.jpg`, type: "jpeg", quality: 82 })
     for (const screen of shot.tour) {
       await page.goto(`${base}/${locale}${screen.path}`, { waitUntil: "networkidle" })
       await page.addStyleTag({ content: hidePortalLink })
       await screen.prepare?.(page)
-      await page.evaluate(() => window.scrollTo(0, 0))
-      await page.waitForTimeout(800)
+      if (!screen.keepScroll) await page.evaluate(() => window.scrollTo(0, 0))
+      await page.waitForTimeout(shot.settle ?? 800)
       await page.screenshot({ path: `${outDir}${shot.id}-${locale}-${screen.key}.jpg`, type: "jpeg", quality: 80 })
     }
     await desktop.close()

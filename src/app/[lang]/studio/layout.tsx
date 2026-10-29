@@ -12,7 +12,12 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/studio">
     title: { default: `${studio.name} | ${t.tagline}`, template: `%s | ${studio.name}` },
     description: t.hero.body,
     alternates: { languages: { en: "/en/studio", th: "/th/studio" } },
-    openGraph: { siteName: studio.name, description: t.hero.body },
+    openGraph: {
+      siteName: studio.name,
+      description: t.hero.body,
+      images: [{ url: `/og/studio-${locale}.png`, width: 1200, height: 630, alt: studio.name }],
+    },
+    twitter: { card: "summary_large_image", images: [`/og/studio-${locale}.png`] },
   }
 }
 

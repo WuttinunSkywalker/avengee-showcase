@@ -157,13 +157,37 @@ export const showcases: Showcase[] = [
   {
     id: "landing",
     kind: "landing",
-    status: "soon",
+    status: "live",
     name: "Sorn Studio",
     category: { en: "Architect portfolio site", th: "เว็บพอร์ตโฟลิโอสถาปนิก" },
     summary: {
-      en: "One fast page with a project gallery, services, and a contact form that lands in LINE.",
-      th: "เว็บหน้าเดียวโหลดไว มีแกลเลอรีผลงาน บริการ และฟอร์มติดต่อที่ส่งเข้า LINE",
+      en: "A small Bangkok practice on one fast page. Eight projects drawn as elevations, plans and sections, a week-by-week design schedule, and an enquiry form that asks the right questions.",
+      th: "สำนักงานสถาปนิกเล็ก ๆ ในกรุงเทพฯ บนเว็บหน้าเดียวที่โหลดไว ผลงาน 8 โปรเจกต์แสดงเป็นรูปด้าน แปลน และรูปตัด มีตารางเวลาออกแบบรายสัปดาห์ และฟอร์มเล่าโปรเจกต์ที่ถามตรงจุด",
     },
-    features: { en: ["Project gallery", "Contact to LINE", "SEO ready"], th: ["แกลเลอรีผลงาน", "ฟอร์มส่งเข้า LINE", "พร้อมทำ SEO"] },
+    features: {
+      en: ["Drawn project gallery", "Elevation, plan, section", "Design schedule", "Enquiry form", "Thai & English"],
+      th: ["แกลเลอรีแบบสถาปนิก", "รูปด้าน แปลน รูปตัด", "ตารางเวลาออกแบบ", "ฟอร์มเล่าโปรเจกต์", "ไทยและอังกฤษ"],
+    },
+    href: "/studio",
+    pages: ["/studio"],
+    images: {
+      desktop: { en: "/images/showcase/sorn-studio-en.jpg", th: "/images/showcase/sorn-studio-th.jpg" },
+      mobile: { en: "/images/showcase/sorn-studio-en-mobile.jpg", th: "/images/showcase/sorn-studio-th-mobile.jpg" },
+      alt: {
+        en: "Sorn Studio home page with a house elevation on a drawing sheet, and the project gallery on a phone",
+        th: "หน้าแรก Sorn Studio ที่มีแบบรูปด้านบ้านบนกระดาษเขียนแบบ และแกลเลอรีผลงานบนมือถือ",
+      },
+      phoneSide: "right",
+      tour: [
+        {
+          src: { en: "/images/showcase/sorn-studio-en-drawings.jpg", th: "/images/showcase/sorn-studio-th-drawings.jpg" },
+          label: { en: "Drawings", th: "แบบ" },
+        },
+        {
+          src: { en: "/images/showcase/sorn-studio-en-schedule.jpg", th: "/images/showcase/sorn-studio-th-schedule.jpg" },
+          label: { en: "Design schedule", th: "ตารางเวลา" },
+        },
+      ],
+    },
   },
 ]

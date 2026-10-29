@@ -104,7 +104,7 @@ function LiveCard({ showcase, locale }: { showcase: Showcase; locale: Locale }) 
           ))}
         </ul>
         {/* Same width side by side when there's room, stacked full width when there isn't. */}
-        <div className="reveal mt-auto grid gap-3 pt-2 @xs:grid-cols-2" style={stagger(4)}>
+        <div className={cn("reveal mt-auto grid gap-3 pt-2", showcase.adminHref ? "@xs:grid-cols-2" : "@xs:max-w-64")} style={stagger(4)}>
           {showcase.href && (
             <Button asChild size="xl" className="w-full">
               <Link href={localePath(locale, showcase.href)}>

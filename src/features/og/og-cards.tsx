@@ -10,6 +10,9 @@ import { CoffeeBag } from "@/features/shop/components/coffee-bag"
 import { getProduct } from "@/features/shop/data/products"
 import { shop } from "@/features/shop/data/shop"
 import { shopMessages } from "@/features/shop/i18n/messages"
+import { ProjectDrawing } from "@/features/studio/components/project-drawing"
+import { getProject, studio } from "@/features/studio/data/projects"
+import { studioMessages } from "@/features/studio/i18n/messages"
 import type { Locale } from "@/i18n/config"
 import heroImage from "../../../public/images/spa/hero-frangipani.webp"
 
@@ -17,7 +20,7 @@ import heroImage from "../../../public/images/spa/hero-frangipani.webp"
  * 1200×630 share cards, rendered by the browser (so Thai tone marks stack
  * correctly) and captured to public/og by `pnpm capture:og`.
  */
-export const ogCards = ["portal", "spa", "shop"] as const
+export const ogCards = ["portal", "spa", "shop", "studio"] as const
 export type OgCardId = (typeof ogCards)[number]
 
 export function PortalOgCard({ locale }: { locale: Locale }) {
@@ -76,6 +79,34 @@ export function ShopOgCard({ locale }: { locale: Locale }) {
       <div className="relative w-[360px] shrink-0">
         <CoffeeBag product={getProduct("doi-chang-washed")!} locale={locale} className="absolute top-4 -right-8 w-[80%] rotate-[7deg]" />
         <CoffeeBag product={getProduct("doi-pangkhon-natural")!} locale={locale} className="relative w-[86%] -rotate-[4deg]" />
+      </div>
+    </div>
+  )
+}
+
+export function StudioOgCard({ locale }: { locale: Locale }) {
+  const t = studioMessages[locale]
+  const project = getProject("ari-house")!
+  return (
+    <div className="flex size-full items-center gap-12 bg-background px-16 text-foreground">
+      <div className="flex w-[470px] shrink-0 flex-col gap-7">
+        <span className="text-3xl font-medium tracking-tight">{studio.name}</span>
+        <h1 className="text-[58px] leading-[1.05] font-light tracking-[-0.04em]">
+          <Phrased text={t.hero.title} />
+        </h1>
+        <span className="text-2xl text-leaf">{t.tagline}</span>
+      </div>
+      <div className="flex flex-1 flex-col border border-foreground/80 bg-card">
+        <div className="p-5">
+          <ProjectDrawing project={project} view="elevation" labels={t.drawing} title="" />
+        </div>
+        <div className="grid grid-cols-3 border-t border-foreground/80 text-base">
+          {[project.name[locale], t.lightbox.views.elevation, "1:100"].map((value, i) => (
+            <span key={value} className={`px-4 py-2.5 ${i ? "border-l border-foreground/80" : ""}`}>
+              {value}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   )

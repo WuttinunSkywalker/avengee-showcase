@@ -8,7 +8,7 @@ const base = process.argv[2] ?? "http://localhost:3200"
 const outDir = new URL("../public/og/", import.meta.url).pathname
 mkdirSync(outDir, { recursive: true })
 
-const apps = ["portal", "spa", "shop"]
+const apps = ["portal", "spa", "shop", "studio"]
 const browser = await chromium.launch()
 const context = await browser.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1, colorScheme: "light" })
 const page = await context.newPage()

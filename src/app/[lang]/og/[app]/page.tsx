@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { isLocale, locales } from "@/i18n/config"
-import { ogCards, PortalOgCard, ShopOgCard, SpaOgCard, type OgCardId } from "@/features/og/og-cards"
+import { ogCards, PortalOgCard, ShopOgCard, SpaOgCard, StudioOgCard, type OgCardId } from "@/features/og/og-cards"
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
@@ -20,6 +20,7 @@ export default async function OgCardPage({ params }: PageProps<"/[lang]/og/[app]
         {app === "portal" && <PortalOgCard locale={lang} />}
         {app === "spa" && <SpaOgCard locale={lang} />}
         {app === "shop" && <ShopOgCard locale={lang} />}
+        {app === "studio" && <StudioOgCard locale={lang} />}
       </div>
     </div>
   )

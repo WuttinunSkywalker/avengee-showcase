@@ -162,6 +162,17 @@ test.describe("showcase portal", () => {
     await expect(page.getByRole("heading", { level: 1, name: "กาแฟจากดอยทางเหนือ คั่วสดทุกวันอังคาร" })).toBeVisible()
   })
 
+  test("opens Sorn Studio from its card", async ({ page }) => {
+    await page.goto("/en")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Sorn Studio" }) })
+    await expect(card.getByText("Live")).toBeVisible()
+    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveCount(0)
+    await expect(card.getByRole("group", { name: "Sorn Studio screens" }).getByRole("button")).toHaveCount(3)
+    await card.getByRole("link", { name: /^Open App/ }).click()
+    await expect(page).toHaveURL(/\/en\/studio$/)
+    await expect(page.getByRole("heading", { level: 1, name: "Houses that stay cool without trying." })).toBeVisible()
+  })
+
   test("staff dashboard links open each app's admin", async ({ page }) => {
     for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/]] as const) {
       await page.goto("/en")
@@ -271,7 +282,7 @@ test.describe("showcase portal", () => {
   })
 
   test("apps never mention demos", async ({ page }) => {
-    for (const path of ["/en/spa", "/en/spa/book", "/en/spa/admin", "/th/spa", "/en/shop", "/th/shop", "/en/shop/admin", "/en/shop/admin/orders"]) {
+    for (const path of ["/en/spa", "/en/spa/book", "/en/spa/admin", "/th/spa", "/en/shop", "/th/shop", "/en/shop/admin", "/en/shop/admin/orders", "/en/studio", "/th/studio"]) {
       await page.goto(path)
       await expect(page.locator("#main")).not.toContainText(/demo|fictional/i)
     }
@@ -445,6 +456,8 @@ test.describe("metadata", () => {
     ["/th/spa", "/og/spa-th.png", /^\/-\/spa\/icon\.svg/],
     ["/en/shop", "/og/shop-en.png", /^\/-\/shop\/icon\.svg/],
     ["/th/shop", "/og/shop-th.png", /^\/-\/shop\/icon\.svg/],
+    ["/en/studio", "/og/studio-en.png", /^\/-\/studio\/icon\.svg/],
+    ["/th/studio", "/og/studio-th.png", /^\/-\/studio\/icon\.svg/],
   ] as const) {
     test(`${path} has a share image, icon and language alternates`, async ({ page, request }) => {
       await page.goto(path)
