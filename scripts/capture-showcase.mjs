@@ -1,8 +1,9 @@
 // Captures portal card screenshots of each live showcase from a running server.
-// Usage: node scripts/capture-showcase.mjs [baseUrl]   (default http://localhost:3200, a production build)
+// Usage: node scripts/capture-showcase.mjs [baseUrl] [id]   (default http://localhost:3200, a production build; id captures one app)
 import { chromium, devices } from "@playwright/test"
 
 const base = process.argv[2] ?? "http://localhost:3200"
+const only = process.argv[3]
 const outDir = new URL("../public/images/showcase/", import.meta.url).pathname
 // The corner link back to the portal isn't part of the app, so keep it out of the shots.
 const hidePortalLink = 'a[aria-label^="All Avengee"], a[aria-label^="ดูผลงานทั้งหมด"], nextjs-portal { display: none !important; }'
@@ -35,6 +36,35 @@ const shots = [
     ],
   },
   {
+    id: "krua-yai",
+    path: "/restaurant?table=7",
+    mobilePath: "/restaurant?table=7",
+    tour: [
+      {
+        key: "order",
+        path: "/restaurant?table=7",
+        // Table 7 sends a round, and nine minutes later the salad is out and the curry is still on
+        prepare: async (page) => {
+          const th = page.url().includes("/th/")
+          const dishes = th ? ["ส้มตำไทย", "แกงเขียวหวานเนื้อ", "ชาเย็น"] : ["Green papaya salad", "Green curry with beef", "Thai iced tea"]
+          for (const dish of dishes) {
+            await page.getByRole("button", { name: new RegExp(dish) }).first().click()
+            await page.getByRole("dialog").getByRole("button", { name: th ? /^ใส่ในรายการ/ : /^Add to Order/ }).click()
+          }
+          await page.getByTestId("basket-bar").getByRole("button").last().click()
+          await page.getByTestId("basket-sheet").getByRole("button", { name: th ? "ส่งเข้าครัว" : "Send to Kitchen" }).click()
+          await page.clock.setFixedTime(new Date(fixedNow.getTime() + 9 * 60_000))
+          await page.reload({ waitUntil: "networkidle" })
+          await page.addStyleTag({ content: hidePortalLink })
+          await page.getByRole("button", { name: th ? "สถานะออเดอร์" : "Order Status" }).first().click()
+          await page.waitForTimeout(600)
+        },
+        keepScroll: true,
+      },
+      { key: "kitchen", path: "/restaurant/kitchen" },
+    ],
+  },
+  {
     id: "sorn-studio",
     path: "/studio",
     // The hero drawing traces itself in over about three seconds
@@ -60,7 +90,7 @@ const shots = [
 ]
 
 const browser = await chromium.launch()
-for (const shot of shots) {
+for (const shot of shots.filter((s) => !only || s.id === only)) {
   for (const locale of ["en", "th"]) {
     const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale })
     const page = await desktop.newPage()

@@ -13,7 +13,12 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/restaura
     title: { default: `${name} | ${t.tagline}`, template: `%s | ${restaurant.name}` },
     description: t.landing.body,
     alternates: { languages: { en: "/en/restaurant", th: "/th/restaurant" } },
-    openGraph: { siteName: restaurant.name, description: t.landing.body },
+    openGraph: {
+      siteName: restaurant.name,
+      description: t.landing.body,
+      images: [{ url: `/og/restaurant-${locale}.png`, width: 1200, height: 630, alt: name }],
+    },
+    twitter: { card: "summary_large_image", images: [`/og/restaurant-${locale}.png`] },
   }
 }
 

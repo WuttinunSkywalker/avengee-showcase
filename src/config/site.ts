@@ -145,14 +145,38 @@ export const showcases: Showcase[] = [
   {
     id: "restaurant",
     kind: "restaurant",
-    status: "soon",
+    status: "live",
     name: "Krua Yai",
     category: { en: "QR table ordering", th: "สั่งอาหารผ่าน QR ที่โต๊ะ" },
     summary: {
-      en: "Scan the table QR, order from a photo menu, split the bill. The kitchen sees orders on a live board.",
-      th: "สแกน QR ที่โต๊ะ สั่งจากเมนูรูปภาพ หารบิลได้ ฝั่งครัวเห็นออเดอร์บนจอแบบเรียลไทม์",
+      en: "A busy Thai kitchen on Sukhumvit 49. Guests scan the table QR, order from a photo menu with their own spice level, follow each dish to the table and split the bill by PromptPay. The kitchen works from a live order screen with a week of sales.",
+      th: "ร้านอาหารไทยย่านสุขุมวิท 49 ลูกค้าสแกน QR ที่โต๊ะ สั่งจากเมนูรูปภาพ เลือกความเผ็ดเองได้ ดูได้ว่าแต่ละจานถึงไหนแล้ว และหารบิลจ่ายผ่านพร้อมเพย์ ส่วนในครัวดูออเดอร์บนจอแบบเรียลไทม์ พร้อมสรุปยอดขายทั้งสัปดาห์",
     },
-    features: { en: ["Photo menu", "Kitchen board", "Split bill"], th: ["เมนูรูปภาพ", "จอออเดอร์ในครัว", "หารบิล"] },
+    features: {
+      en: ["QR table menu", "Spice level & extras", "Live order status", "Split the bill", "Kitchen screen", "Thai & English"],
+      th: ["เมนู QR ที่โต๊ะ", "เลือกความเผ็ดและของเพิ่ม", "ติดตามออเดอร์สด", "หารบิล", "จอครัว", "ไทยและอังกฤษ"],
+    },
+    href: "/restaurant",
+    adminHref: "/restaurant/kitchen",
+    pages: ["/restaurant"],
+    images: {
+      desktop: { en: "/images/showcase/krua-yai-en.jpg", th: "/images/showcase/krua-yai-th.jpg" },
+      mobile: { en: "/images/showcase/krua-yai-en-mobile.jpg", th: "/images/showcase/krua-yai-th-mobile.jpg" },
+      alt: {
+        en: "Krua Yai's photo menu for table 7, and the same menu on a phone",
+        th: "เมนูรูปภาพของครัวใหญ่สำหรับโต๊ะ 7 บนจอคอมและมือถือ",
+      },
+      tour: [
+        {
+          src: { en: "/images/showcase/krua-yai-en-order.jpg", th: "/images/showcase/krua-yai-th-order.jpg" },
+          label: { en: "Order status", th: "สถานะออเดอร์" },
+        },
+        {
+          src: { en: "/images/showcase/krua-yai-en-kitchen.jpg", th: "/images/showcase/krua-yai-th-kitchen.jpg" },
+          label: { en: "Kitchen screen", th: "จอครัว" },
+        },
+      ],
+    },
   },
   {
     id: "landing",
