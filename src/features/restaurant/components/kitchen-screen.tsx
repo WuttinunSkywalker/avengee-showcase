@@ -22,7 +22,7 @@ import { formatBaht, formatBahtCompact, formatNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { getDish, restaurant } from "../data/menu"
 import { restaurantMessages } from "../i18n/messages"
-import { boardColumns, generateTickets, LATE_MINUTES, nextStatus, salesByDay, ticketAge, topDishes, type Ticket } from "../lib/kitchen"
+import { boardColumns, deviceTicketId, generateTickets, LATE_MINUTES, nextStatus, salesByDay, ticketAge, topDishes, type Ticket } from "../lib/kitchen"
 import { DISH_STATUSES, type DishStatus } from "../lib/order"
 import { useBasketStore } from "../store/basket-store"
 import { useKitchenStore } from "../store/kitchen-store"
@@ -108,7 +108,7 @@ function Board({ locale }: { locale: Locale }) {
     )
   }
 
-  const here: Ticket[] = table ? rounds.map((round) => ({ id: `here-${table}-${round.number}`, table, round, here: true })) : []
+  const here: Ticket[] = table ? rounds.map((round) => ({ id: deviceTicketId(table, round), table, round, here: true })) : []
   const columns = boardColumns([...seeded, ...here], now, overrides)
 
   return (

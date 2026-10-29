@@ -97,6 +97,27 @@ describe("rounds in the kitchen", () => {
     expect(roundProgress(round, at(16))).toEqual({ status: "served", minutesLeft: 0, served: 3 })
   })
 
+  it("follows the kitchen when it moves a round on early, never back", async () => {
+    const { laterStatus, lineStatus, roundProgress } = await import("@/features/restaurant/lib/order")
+    const { deviceTicketId, ticketStatus } = await import("@/features/restaurant/lib/kitchen")
+    expect(laterStatus("received", "cooking")).toBe("cooking")
+    expect(laterStatus("served", "cooking")).toBe("served")
+    expect(laterStatus("cooking")).toBe("cooking")
+    // Started straight away: cooking before the usual minute, and dishes still go out on time
+    expect(lineStatus(round, 0, at(0.5), "cooking")).toBe("cooking")
+    expect(roundProgress(round, at(9), "cooking")).toEqual({ status: "cooking", minutesLeft: 7, served: 2 })
+    // Marked served: everything is out, nothing left to wait for
+    expect(roundProgress(round, at(3), "served")).toEqual({ status: "served", minutesLeft: 0, served: 3 })
+    // The board reads the same rule for this device's tickets
+    const ticket = { id: deviceTicketId(7, round), table: 7, round, here: true }
+    expect(ticket.id).toBe(`here-7-${sentAt}`)
+    expect(ticketStatus(ticket, at(16), "cooking")).toBe("served")
+    expect(ticketStatus(ticket, at(0.5), "cooking")).toBe("cooking")
+    // Other tables' fresh tickets wait for a cook unless one has picked them up
+    expect(ticketStatus({ ...ticket, here: false }, at(1))).toBe("received")
+    expect(ticketStatus({ ...ticket, here: false }, at(1), "cooking")).toBe("cooking")
+  })
+
   it("adds up every round and limits calls to one per reason every two minutes", async () => {
     const { roundsTotal, canCall } = await import("@/features/restaurant/lib/order")
     expect(roundsTotal([round, { ...round, number: 2 }])).toBe((80 + 160 + 55 * 2) * 2)

@@ -1,6 +1,6 @@
 import { createRandom, pick, weightedPick } from "@/lib/random"
 import { dishes, restaurant, type AddOnId, type SpiceLevel } from "../data/menu"
-import { basketSummary, roundProgress, type BasketLine, type DishStatus, type Round } from "./order"
+import { basketSummary, laterStatus, roundProgress, type BasketLine, type DishStatus, type Round } from "./order"
 
 /** A ticket on the kitchen board: one round from one table. */
 export interface Ticket {
@@ -52,11 +52,15 @@ export function generateTickets(now: Date): Ticket[] {
 /** Other tables' tickets wait in New for a few minutes until a cook picks them up. */
 export const PICKUP_MINUTES = 3
 
-/** Where a ticket stands: its own timing, unless the kitchen has moved it on. */
+/** Where a ticket stands: its own timing, or further if the kitchen has moved it on. */
 export function ticketStatus(ticket: Ticket, now: Date, override?: DishStatus): DishStatus {
-  if (override) return override
-  if (!ticket.here && ticketAge(ticket, now) < PICKUP_MINUTES) return "received"
-  return roundProgress(ticket.round, now).status
+  if (!ticket.here && ticketAge(ticket, now) < PICKUP_MINUTES) return laterStatus("received", override)
+  return roundProgress(ticket.round, now, override).status
+}
+
+/** The board's id for a round sent from this browser, shared with the guest's order status. */
+export function deviceTicketId(table: number, round: Round): string {
+  return `here-${table}-${round.sentAt}`
 }
 
 /** What the kitchen can do next with a ticket. */

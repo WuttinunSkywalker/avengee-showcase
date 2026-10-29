@@ -95,21 +95,27 @@ export function readyTimes(round: Round): number[] {
   })
 }
 
-export function lineStatus(round: Round, index: number, now: Date): DishStatus {
+/** The further along of two statuses: the kitchen can move a dish on early, never back. */
+export function laterStatus(timed: DishStatus, kitchen?: DishStatus): DishStatus {
+  return kitchen && DISH_STATUSES.indexOf(kitchen) > DISH_STATUSES.indexOf(timed) ? kitchen : timed
+}
+
+/** Where a dish is: its prep time, or further if the kitchen has marked the round on. */
+export function lineStatus(round: Round, index: number, now: Date, kitchen?: DishStatus): DishStatus {
   const sent = Date.parse(round.sentAt)
-  if (now.getTime() < sent + ACCEPT_MINUTES * MINUTE) return "received"
-  return now.getTime() < readyTimes(round)[index] ? "cooking" : "served"
+  if (now.getTime() < sent + ACCEPT_MINUTES * MINUTE) return laterStatus("received", kitchen)
+  return laterStatus(now.getTime() < readyTimes(round)[index] ? "cooking" : "served", kitchen)
 }
 
 /** The round as a whole: its slowest dish, and roughly how many minutes are left. */
-export function roundProgress(round: Round, now: Date): { status: DishStatus; minutesLeft: number; served: number } {
-  const statuses = round.lines.map((_, index) => lineStatus(round, index, now))
+export function roundProgress(round: Round, now: Date, kitchen?: DishStatus): { status: DishStatus; minutesLeft: number; served: number } {
+  const statuses = round.lines.map((_, index) => lineStatus(round, index, now, kitchen))
   const order = (status: DishStatus) => DISH_STATUSES.indexOf(status)
   const status = statuses.reduce((slowest, current) => (order(current) < order(slowest) ? current : slowest), "served" as DishStatus)
   const last = Math.max(...readyTimes(round))
   return {
     status,
-    minutesLeft: Math.max(0, Math.ceil((last - now.getTime()) / MINUTE)),
+    minutesLeft: status === "served" ? 0 : Math.max(0, Math.ceil((last - now.getTime()) / MINUTE)),
     served: statuses.filter((s) => s === "served").length,
   }
 }

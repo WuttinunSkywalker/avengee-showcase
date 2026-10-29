@@ -26,7 +26,7 @@ test.describe("Krua Yai kitchen screen", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
-  test("an order sent from a table shows up on the board", async ({ page }) => {
+  test("an order sent from a table shows up on the board, and the table sees what the kitchen marks", async ({ page }) => {
     await page.goto("/en/restaurant?table=9")
     await page.getByRole("button", { name: "Add Green papaya salad" }).first().click()
     await page.getByRole("dialog").getByRole("button", { name: /^Add to Order/ }).click()
@@ -38,6 +38,17 @@ test.describe("Krua Yai kitchen screen", () => {
     const mine = page.getByTestId("ticket").filter({ hasText: "This device" })
     await expect(mine).toContainText("Table 9")
     await expect(mine).toContainText("Green papaya salad")
+
+    // The kitchen starts it straight away, and the guest's phone follows
+    await page.getByRole("button", { name: "Start Cooking: Table 9" }).click()
+    await page.goto("/en/restaurant?table=9")
+    await expect(page.getByTestId("status-bar")).toContainText("Cooking, about 7 min")
+    await page.goto("/en/restaurant/kitchen")
+    await page.getByRole("button", { name: "Mark Served: Table 9" }).click()
+    await page.goto("/en/restaurant?table=9")
+    await expect(page.getByTestId("status-bar")).toContainText("Everything's on the table")
+    await page.getByTestId("status-bar").getByRole("button", { name: "Order Status" }).click()
+    await expect(page.getByTestId("status-sheet").getByTestId("status-line")).toContainText("Served")
   })
 
   test("a week of sales", async ({ page, consoleErrors }) => {

@@ -36,7 +36,9 @@ import {
   type DishStatus,
   type Round,
 } from "../lib/order"
+import { deviceTicketId } from "../lib/kitchen"
 import { useBasketStore } from "../store/basket-store"
+import { useKitchenStore } from "../store/kitchen-store"
 import { BillSheet } from "./bill-sheet"
 import { Chili, HeatRating } from "./chili"
 import { RestaurantHeader } from "./restaurant-header"
@@ -140,9 +142,13 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
   const [callOpen, setCallOpen] = useState(false)
   const [billOpen, setBillOpen] = useState(false)
   const now = useNow()
+  const kitchenHydrated = usePersistHydrated(useKitchenStore.persist)
+  const overrides = useKitchenStore((state) => state.overrides)
+  // What the kitchen screen has marked for this table's rounds
+  const kitchen = (round: Round) => (kitchenHydrated ? overrides[deviceTicketId(table, round)] : undefined)
   const sent = hydrated ? rounds : []
   const latest = sent.at(-1)
-  const progress = latest && now ? roundProgress(latest, now) : null
+  const progress = latest && now ? roundProgress(latest, now, kitchen(latest)) : null
   const sections = [{ id: "popular" as const, items: dishes.filter((dish) => dish.popular) }, ...CATEGORIES.map((id) => ({ id, items: dishes.filter((dish) => dish.category === id) }))]
   const summary = basketSummary(hydrated ? lines : [])
 
@@ -254,6 +260,7 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
         table={table}
         locale={locale}
         rounds={sent}
+        kitchen={kitchen}
         now={now}
         open={statusOpen}
         onOpenChange={setStatusOpen}
@@ -580,6 +587,7 @@ function StatusSheet({
   table,
   locale,
   rounds,
+  kitchen,
   now,
   open,
   onOpenChange,
@@ -588,6 +596,7 @@ function StatusSheet({
   table: number
   locale: Locale
   rounds: Round[]
+  kitchen: (round: Round) => DishStatus | undefined
   now: Date | null
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -604,7 +613,7 @@ function StatusSheet({
         <div className="flex flex-col gap-6 overflow-y-auto overscroll-contain px-4 pb-4">
           {now &&
             [...rounds].reverse().map((round) => {
-              const progress = roundProgress(round, now)
+              const progress = roundProgress(round, now, kitchen(round))
               return (
                 <section key={round.number} aria-label={t.status.round(round.number, bangkokTime(round.sentAt))} data-testid="status-round">
                   <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -626,7 +635,7 @@ function StatusSheet({
                             </p>
                             {details && <p className="text-sm text-muted-foreground">{details}</p>}
                           </div>
-                          <StatusChip status={lineStatus(round, index, now)} locale={locale} />
+                          <StatusChip status={lineStatus(round, index, now, kitchen(round))} locale={locale} />
                         </li>
                       )
                     })}
