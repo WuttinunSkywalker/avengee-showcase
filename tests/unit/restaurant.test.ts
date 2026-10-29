@@ -105,3 +105,37 @@ describe("rounds in the kitchen", () => {
     expect(canCall(at(0).toISOString(), at(2))).toBe(true)
   })
 })
+
+describe("splitting the bill", () => {
+  it("splits evenly in whole baht that add back up", async () => {
+    const { splitEvenly } = await import("@/features/restaurant/lib/order")
+    expect(splitEvenly(1000, 3)).toEqual([334, 333, 333])
+    expect(splitEvenly(900, 3)).toEqual([300, 300, 300])
+    for (const people of [2, 5, 7, 12]) expect(splitEvenly(1237, people).reduce((a, b) => a + b, 0)).toBe(1237)
+  })
+
+  it("lists every portion of every round, with its extras", async () => {
+    const { billUnits } = await import("@/features/restaurant/lib/order")
+    const units = billUnits([
+      { number: 1, sentAt: "", lines: [{ dishId: "som-tam", quantity: 2, spice: 2, addOns: ["sticky-rice"], note: "" }] },
+      { number: 2, sentAt: "", lines: [{ dishId: "cha-yen", quantity: 1, spice: null, addOns: [], note: "" }] },
+    ])
+    expect(units.map((u) => [u.id, u.price, `${u.portion}/${u.of}`])).toEqual([
+      ["1-0-1", 95, "1/2"],
+      ["1-0-2", 95, "2/2"],
+      ["2-0-1", 55, "1/1"],
+    ])
+  })
+
+  it("splits by who had what, sharing plates and tracking what's left", async () => {
+    const { splitByItems } = await import("@/features/restaurant/lib/order")
+    const units = [
+      { id: "a", dishId: "som-tam", price: 95, portion: 1, of: 1 },
+      { id: "b", dishId: "green-curry", price: 160, portion: 1, of: 1 },
+      { id: "c", dishId: "cha-yen", price: 55, portion: 1, of: 1 },
+    ]
+    expect(splitByItems(units, { a: [0, 1], b: [1], c: [] }, 2)).toEqual({ perPerson: [48, 47 + 160], unassigned: 55 })
+    // People beyond the table size are ignored
+    expect(splitByItems(units, { a: [5] }, 2).unassigned).toBe(95 + 160 + 55)
+  })
+})

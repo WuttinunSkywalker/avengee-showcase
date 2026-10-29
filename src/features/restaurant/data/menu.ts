@@ -10,6 +10,8 @@ export const restaurant = {
     th: ["32 ซอยสุขุมวิท 49", "คลองตันเหนือ วัฒนา กรุงเทพฯ 10110"],
   },
   phone: "+66 2 662 3518",
+  /** PromptPay for the bill. All zeros: banking apps reject it, so no money moves. */
+  promptPayId: "0000000000",
 }
 
 export const CATEGORIES = ["rice", "curries", "salads", "sweets"] as const

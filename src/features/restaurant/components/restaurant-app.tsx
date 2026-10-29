@@ -37,6 +37,7 @@ import {
   type Round,
 } from "../lib/order"
 import { useBasketStore } from "../store/basket-store"
+import { BillSheet } from "./bill-sheet"
 import { Chili, HeatRating } from "./chili"
 import { RestaurantHeader } from "./restaurant-header"
 
@@ -137,6 +138,7 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
   const [open, setOpen] = useState<Dish | null>(null)
   const [statusOpen, setStatusOpen] = useState(false)
   const [callOpen, setCallOpen] = useState(false)
+  const [billOpen, setBillOpen] = useState(false)
   const now = useNow()
   const sent = hydrated ? rounds : []
   const latest = sent.at(-1)
@@ -248,7 +250,19 @@ function TableMenu({ table, locale }: { table: number; locale: Locale }) {
           setStatusOpen(true)
         }}
       />
-      <StatusSheet table={table} locale={locale} rounds={sent} now={now} open={statusOpen} onOpenChange={setStatusOpen} />
+      <StatusSheet
+        table={table}
+        locale={locale}
+        rounds={sent}
+        now={now}
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        onSplit={() => {
+          setStatusOpen(false)
+          setBillOpen(true)
+        }}
+      />
+      <BillSheet rounds={sent} locale={locale} open={billOpen} onOpenChange={setBillOpen} />
       <CallSheet table={table} locale={locale} now={now} open={callOpen} onOpenChange={setCallOpen} />
     </div>
   )
@@ -569,6 +583,7 @@ function StatusSheet({
   now,
   open,
   onOpenChange,
+  onSplit,
 }: {
   table: number
   locale: Locale
@@ -576,6 +591,7 @@ function StatusSheet({
   now: Date | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSplit: () => void
 }) {
   const t = restaurantMessages[locale]
   return (
@@ -627,6 +643,9 @@ function StatusSheet({
             </span>
           </p>
           <p className="text-sm text-muted-foreground">{t.status.pay}</p>
+          <Button variant="outline" size="lg" onClick={onSplit}>
+            {t.bill.open}
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

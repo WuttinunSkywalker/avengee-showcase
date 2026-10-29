@@ -128,3 +128,61 @@ export const CALL_COOLDOWN_MS = 2 * MINUTE
 export function canCall(lastCalledAt: string | undefined, now: Date): boolean {
   return !lastCalledAt || now.getTime() - Date.parse(lastCalledAt) >= CALL_COOLDOWN_MS
 }
+
+/* ---------- Splitting the bill ---------- */
+
+export const MIN_PEOPLE = 2
+export const MAX_PEOPLE = 12
+
+/** Whole baht each; the leftover baht go to the first people, so the parts always add up. */
+export function splitEvenly(total: number, people: number): number[] {
+  const base = Math.floor(total / people)
+  const extra = total - base * people
+  return Array.from({ length: people }, (_, i) => base + (i < extra ? 1 : 0))
+}
+
+/** One plate or glass on the bill: every portion of every round, so each can go to whoever had it. */
+export interface BillUnit {
+  id: string
+  dishId: string
+  price: number
+  /** Which portion of its line this is, e.g. 2 of 3. */
+  portion: number
+  of: number
+}
+
+export function billUnits(rounds: readonly Round[]): BillUnit[] {
+  return rounds.flatMap((round) =>
+    round.lines.flatMap((line, index) => {
+      const dish = getDish(line.dishId)
+      if (!dish) return []
+      const price = unitPrice(dish, line.addOns)
+      return Array.from({ length: line.quantity }, (_, n) => ({
+        id: `${round.number}-${index}-${n + 1}`,
+        dishId: line.dishId,
+        price,
+        portion: n + 1,
+        of: line.quantity,
+      }))
+    }),
+  )
+}
+
+/**
+ * Each person's share when plates are assigned to whoever had them. A shared
+ * plate is divided between its people (leftover baht to the first of them);
+ * plates nobody has claimed yet are reported as unassigned.
+ */
+export function splitByItems(units: readonly BillUnit[], assignments: Record<string, number[]>, people: number) {
+  const perPerson = Array.from({ length: people }, () => 0)
+  let unassigned = 0
+  for (const unit of units) {
+    const sharers = (assignments[unit.id] ?? []).filter((person) => person >= 0 && person < people)
+    if (!sharers.length) {
+      unassigned += unit.price
+      continue
+    }
+    splitEvenly(unit.price, sharers.length).forEach((share, i) => (perPerson[sharers[i]] += share))
+  }
+  return { perPerson, unassigned }
+}

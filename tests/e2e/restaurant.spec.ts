@@ -146,6 +146,63 @@ test.describe("Krua Yai", () => {
     await expect(page.getByText("พนักงานกำลังไปที่โต๊ะ 2")).toBeVisible()
   })
 
+  test("splits the bill evenly or by who had what, with a PromptPay QR each", async ({ page, consoleErrors }) => {
+    await page.goto("/en/restaurant?table=11")
+    // Two som tam (฿80 each) and a Thai iced tea (฿55): ฿215
+    await page.getByRole("button", { name: "Add Green papaya salad" }).first().click()
+    await page.getByRole("dialog").getByRole("button", { name: "One more" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: /^Add to Order/ }).click()
+    await page.getByRole("button", { name: "Add Thai iced tea" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: /^Add to Order/ }).click()
+    await page.getByTestId("basket-bar").getByRole("button", { name: "View Order" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Send to Kitchen" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "Order Status" }).click()
+    await page.getByTestId("status-sheet").getByRole("button", { name: "Split the Bill" }).click()
+
+    const bill = page.getByTestId("bill-sheet")
+    await expect(bill).toContainText("฿215 for the table")
+    await bill.getByRole("button", { name: "One more person" }).click()
+    const list = bill.getByTestId("bill-people-list")
+    await expect(list).toContainText("Person 1 pays ฿72")
+    await expect(list).toContainText("Person 3 pays ฿71")
+    await bill.getByRole("button", { name: "Show QR for person 1" }).click()
+    await expect(bill.getByTestId("bill-qr").getByRole("img", { name: "Person 1: ฿72" })).toBeVisible()
+    await bill.getByRole("button", { name: "Split the bill" }).click()
+
+    // By item: person 1 and 2 share the first som tam, person 3 has the second, nobody has claimed the tea yet
+    await bill.getByRole("radio", { name: "By what each person had" }).click()
+    const units = bill.getByTestId("bill-unit")
+    await expect(units).toHaveCount(3)
+    await units.nth(0).getByRole("button", { name: "Person 1" }).click()
+    await units.nth(0).getByRole("button", { name: "Person 2" }).click()
+    await units.nth(1).getByRole("button", { name: "Person 3" }).click()
+    await expect(bill.getByTestId("bill-unassigned")).toHaveText("฿55 not assigned yet")
+    await expect(bill.getByRole("button", { name: "Show QR for person 1" })).toBeDisabled()
+    await units.nth(2).getByRole("button", { name: "Person 2" }).click()
+    await expect(bill.getByTestId("bill-unassigned")).toHaveText("Everything's assigned")
+    await expect(list).toContainText("Person 1 pays ฿40")
+    await expect(list).toContainText("Person 2 pays ฿95")
+    await expect(list).toContainText("Person 3 pays ฿80")
+    await bill.getByRole("button", { name: "Show QR for person 2" }).click()
+    await expect(bill.getByTestId("bill-qr").getByRole("img", { name: "Person 2: ฿95" })).toBeVisible()
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("splits the bill in Thai", async ({ page }) => {
+    await page.goto("/th/restaurant?table=6")
+    await page.getByRole("button", { name: "เพิ่ม ต้มยำกุ้งน้ำใส" }).first().click()
+    await page.getByRole("dialog").getByRole("button", { name: /^ใส่ในรายการ/ }).click()
+    await page.getByTestId("basket-bar").getByRole("button", { name: "ดูรายการ" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "ส่งเข้าครัว" }).click()
+    await page.getByTestId("basket-sheet").getByRole("button", { name: "สถานะออเดอร์" }).click()
+    await page.getByTestId("status-sheet").getByRole("button", { name: "หารบิล" }).click()
+    const bill = page.getByTestId("bill-sheet")
+    await expect(bill).toContainText("ยอดทั้งโต๊ะ ฿220")
+    await expect(bill.getByTestId("bill-people-list")).toContainText("คนที่ 2 จ่าย ฿110")
+    await bill.getByRole("radio", { name: "แยกตามที่แต่ละคนกิน" }).click()
+    await expect(bill.getByTestId("bill-unassigned")).toHaveText("ยังไม่ได้เลือกคนจ่ายอีก ฿220")
+  })
+
   for (const path of ["/en/restaurant", "/th/restaurant?table=7"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)
