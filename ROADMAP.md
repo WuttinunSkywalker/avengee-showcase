@@ -36,7 +36,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Admin inventory at `/[lang]/shop/admin/inventory`: every size with stock level, restock or stocktake count per size (with undo), seeded Tuesday restock log plus this device's changes; overview stock alerts and reset include them
 - [x] Admin customers at `/[lang]/shop/admin/customers`: customer count, returning share, average spend; search by name, email or phone; sort by spend, recency or orders; regulars marked; customer sheet with contact, address, favourite coffee and order history linking to each order; order sheet links back. Seeded orders now come from a pool of 300 customers (regulars, occasional, one-off; many Thai names in Thai script) with fixed addresses
 - [x] Live stock per device: orders placed here draw stock down (cancelling puts it back) and admin restocks/counts reach the product page, catalogue and cart (`useLiveProducts`); e2e buys the last bags, cancels, restocks
-- [ ] Home page product cards are server-rendered with printed stock, and checkout doesn't re-check cart quantities against live stock before taking payment
+- [x] Home page and "pairs well with" product cards follow live stock (`LiveProductCard`); checkout checks the cart against live stock, blocks payment and offers "Update My Cart" when a size ran low or sold out
 - [ ] Daily revenue chart ends on today, which is only partly over, so the last point always dips; mark it "today so far" or end at yesterday
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
 

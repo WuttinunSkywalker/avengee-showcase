@@ -74,3 +74,31 @@ export function cartLines(items: readonly CartItem[], list: readonly Product[] =
     return [{ ...item, key: lineKey(item), product, size, lineTotal: size.price * item.quantity }]
   })
 }
+
+export interface StockShortage {
+  key: string
+  product: Product
+  amount: number
+  wanted: number
+  /** What can still be bought: zero when the size has sold out. */
+  left: number
+}
+
+/** Lines asking for more than is on the shelf now, e.g. after the last bags sold elsewhere. */
+export function stockShortages(items: readonly CartItem[], list: readonly Product[]): StockShortage[] {
+  return items.flatMap((item) => {
+    const { product, size } = findSize(list, item.productId, item.amount)
+    if (!product || !size) return []
+    const left = maxQuantity(size)
+    return item.quantity > left ? [{ key: lineKey(item), product, amount: item.amount, wanted: item.quantity, left }] : []
+  })
+}
+
+/** Trims every line to what's on the shelf and drops sizes that sold out. */
+export function fitToStock(items: readonly CartItem[], list: readonly Product[]): CartItem[] {
+  return items.flatMap((item) => {
+    const { size } = findSize(list, item.productId, item.amount)
+    const left = size ? maxQuantity(size) : 0
+    return left === 0 ? [] : [{ ...item, quantity: Math.min(item.quantity, left) }]
+  })
+}

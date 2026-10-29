@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CheckIcon, ChevronsUpDownIcon, ShoppingBagIcon } from "lucide-react"
+import { CheckIcon, ChevronsUpDownIcon, ShoppingBagIcon, TriangleAlertIcon } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
@@ -23,7 +24,7 @@ import { isValidPhone } from "@/lib/phone"
 import { cn } from "@/lib/utils"
 import { getProvince, postcodeMatchesProvince, provinces } from "../../data/thailand"
 import { shopMessages, type ShopMessages } from "../../i18n/messages"
-import { cartLines } from "../../lib/cart"
+import { cartLines, stockShortages } from "../../lib/cart"
 import {
   applyShopPromo,
   CARRIERS,
@@ -41,6 +42,7 @@ import {
   type Carrier,
 } from "../../lib/checkout"
 import { formatBaht } from "../../lib/format"
+import { useLiveProducts } from "../../hooks/use-live-products"
 import { useCartStore } from "../../store/cart-store"
 import { useOrdersStore } from "../../store/orders-store"
 import { PromoField } from "../cart/promo-field"
@@ -116,7 +118,11 @@ export function Checkout() {
   const form = useForm<CheckoutValues>({ resolver: zodResolver(schema), defaultValues: defaults, mode: "onTouched" })
   const [carrier, method] = useWatch({ control: form.control, name: ["carrier", "method"] })
 
+  const live = useLiveProducts()
+  const fitCart = useCartStore((state) => state.fitToStock)
   const lines = hydrated ? cartLines(items) : []
+  // Stock can drop while someone is checking out (another order, a stocktake): never take payment for bags we don't have.
+  const shortages = hydrated && !placing ? stockShortages(items, live) : []
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0)
   const promo = promoCode ? applyShopPromo(promoCode, subtotal) : null
   const totals = orderTotals(lines, { promo, carrier })
@@ -152,6 +158,10 @@ export function Checkout() {
   }
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (stockShortages(useCartStore.getState().items, live).length) {
+      document.getElementById("stock-shortage")?.focus()
+      return
+    }
     setPlacing(true)
     await new Promise((resolve) => setTimeout(resolve, PROCESSING_MS))
     const now = new Date()
@@ -372,6 +382,37 @@ export function Checkout() {
 
       <aside className="flex flex-col gap-5 self-start rounded-lg border border-border bg-card p-5 lg:sticky lg:top-24">
         <h2 className="font-heading text-xl font-bold">{t.checkout.summary}</h2>
+        {shortages.length > 0 && (
+          <div
+            id="stock-shortage"
+            tabIndex={-1}
+            role="alert"
+            data-testid="stock-shortage"
+            className="flex flex-col gap-3 rounded-md border border-primary/40 bg-primary/5 p-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <p className="flex items-center gap-2 font-medium">
+              <TriangleAlertIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+              {t.checkout.shortage.title}
+            </p>
+            <p className="text-muted-foreground">{t.checkout.shortage.body}</p>
+            <ul className="flex flex-col gap-1">
+              {shortages.map((shortage) => (
+                <li key={shortage.key}>{t.checkout.shortage.line(shortage.product.name, t.detail.sizeLabel(shortage.amount, shortage.product.kind), shortage.wanted, shortage.left)}</li>
+              ))}
+            </ul>
+            <Button
+              type="button"
+              variant="outline"
+              className="self-start"
+              onClick={() => {
+                fitCart(live)
+                toast.success(t.checkout.shortage.fixed)
+              }}
+            >
+              {t.checkout.shortage.fix}
+            </Button>
+          </div>
+        )}
         <ul className="flex flex-col gap-3">
           {lines.map((line) => (
             <li key={line.key} className="flex items-center gap-3 text-sm">
@@ -408,7 +449,7 @@ export function Checkout() {
             {formatBaht(totals.total)}
           </dd>
         </dl>
-        <Button type="submit" size="xl" disabled={placing}>
+        <Button type="submit" size="xl" disabled={placing || shortages.length > 0}>
           {placing && <Spinner data-icon="inline-start" />}
           {placing ? t.checkout.placing : t.checkout.place(formatBaht(totals.total))}
         </Button>

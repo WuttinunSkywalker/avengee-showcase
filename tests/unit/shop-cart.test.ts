@@ -121,3 +121,25 @@ describe("cart against live stock", () => {
     expect(cartLines([{ ...item, quantity: 1 }], restocked)[0].size.stock).toBe(3)
   })
 })
+
+describe("stock shortages at checkout", () => {
+  it("finds lines that ask for more than is left and trims them", async () => {
+    const { withAdjustments } = await import("@/features/shop/lib/inventory")
+    const { stockShortages, fitToStock } = await import("@/features/shop/lib/cart")
+    const live = withAdjustments([{ id: "c", productId: "khun-chang-khian-anaerobic", amount: 250, kind: "count", delta: -2, note: "", at: "" }])
+    const items = [
+      { productId: "khun-chang-khian-anaerobic", amount: 250, grind: "whole" as const, quantity: 4 },
+      { productId: "doi-pangkhon-natural", amount: 250, grind: "whole" as const, quantity: 1 },
+      { productId: "doi-inthanon-washed", amount: 500, grind: "whole" as const, quantity: 1 },
+    ]
+    expect(stockShortages(items, live).map((s) => [s.product.id, s.wanted, s.left])).toEqual([
+      ["khun-chang-khian-anaerobic", 4, 2],
+      ["doi-inthanon-washed", 1, 0],
+    ])
+    expect(fitToStock(items, live)).toEqual([
+      { ...items[0], quantity: 2 },
+      items[1],
+    ])
+    expect(stockShortages(fitToStock(items, live), live)).toEqual([])
+  })
+})

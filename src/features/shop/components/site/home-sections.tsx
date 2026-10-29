@@ -8,7 +8,7 @@ import { shop } from "../../data/shop"
 import { shopMessages } from "../../i18n/messages"
 import { formatMinutes, formatNumber } from "../../lib/format"
 import { CoffeeBag } from "../coffee-bag"
-import { ProductCard } from "../product-card"
+import { LiveProductCard } from "../live-product-card"
 
 export function ShopHero({ locale }: { locale: Locale }) {
   const t = shopMessages[locale]
@@ -68,7 +68,7 @@ export function CoffeeGrid({ locale }: { locale: Locale }) {
         <ul className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
           {products.filter((product) => product.featured || product.limited).map((product) => (
             <li key={product.id}>
-              <ProductCard product={product} locale={locale} />
+              <LiveProductCard product={product} locale={locale} />
             </li>
           ))}
         </ul>

@@ -174,6 +174,14 @@ const en = {
     summary: "Order summary",
     place: (total: string) => `Place Order, ${total}`,
     placing: "Placing Order…",
+    shortage: {
+      title: "Some coffee just ran low",
+      body: "Stock changed while you were shopping. Update your cart to what's left, then place the order.",
+      line: (name: string, size: string, wanted: number, left: number) =>
+        left === 0 ? `${name}, ${size}: sold out` : `${name}, ${size}: ${left} left, you have ${wanted}`,
+      fix: "Update My Cart",
+      fixed: "Cart updated to what's in stock",
+    },
     emptyTitle: "There's nothing to check out",
     emptyBody: "Your cart is empty. Pick a coffee first.",
     errors: {
@@ -597,6 +605,13 @@ const th: ShopMessages = {
     summary: "สรุปคำสั่งซื้อ",
     place: (total) => `สั่งซื้อ ${total}`,
     placing: "กำลังสั่งซื้อ…",
+    shortage: {
+      title: "กาแฟบางตัวเพิ่งเหลือน้อย",
+      body: "สต็อกเพิ่งเปลี่ยนระหว่างที่คุณเลือกของ ปรับตะกร้าให้ตรงกับของที่เหลือ แล้วค่อยกดสั่งซื้อนะ",
+      line: (name, size, wanted, left) => (left === 0 ? `${name} ${size}: หมดแล้ว` : `${name} ${size}: เหลือ ${left} ในตะกร้ามี ${wanted}`),
+      fix: "ปรับตะกร้าตามของที่มี",
+      fixed: "ปรับตะกร้าตามของที่มีแล้ว",
+    },
     emptyTitle: "ยังไม่มีอะไรให้ชำระเงิน",
     emptyBody: "ตะกร้ายังว่างอยู่ ไปเลือกกาแฟก่อนนะ",
     errors: {

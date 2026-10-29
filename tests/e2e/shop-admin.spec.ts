@@ -284,5 +284,33 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await expect(page.getByTestId("cart-count")).toHaveText("1")
     expectNoConsoleErrors(consoleErrors)
   })
+
+  test("checkout catches a stocktake that leaves fewer bags than the cart holds, in Thai", async ({ page, consoleErrors }) => {
+    await page.goto("/th/shop/coffee/khun-chang-khian-anaerobic")
+    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "เพิ่มจำนวน" }).click()
+    await page.getByRole("button", { name: "ใส่ตะกร้า" }).click()
+    await expect(page.getByTestId("cart-count")).toHaveText("4")
+
+    // Meanwhile staff count the shelf and find only 2 bags
+    await page.goto("/th/shop/admin/inventory")
+    await page.getByRole("button", { name: "แก้สต็อก Khun Chang Khian Anaerobic 250 กรัม" }).click()
+    await page.getByRole("dialog").getByRole("radio", { name: "นับของจริง" }).click()
+    await page.getByRole("dialog").getByLabel("จำนวนที่นับได้").fill("2")
+    await page.getByRole("dialog").getByRole("button", { name: "บันทึกสต็อก" }).click()
+
+    await page.goto("/th/shop/checkout")
+    const alert = page.getByTestId("stock-shortage")
+    await expect(alert).toContainText("Khun Chang Khian Anaerobic 250 กรัม: เหลือ 2 ในตะกร้ามี 4")
+    await expect(page.getByRole("button", { name: /^สั่งซื้อ/ })).toBeDisabled()
+    await alert.getByRole("button", { name: "ปรับตะกร้าตามของที่มี" }).click()
+    await expect(alert).toBeHidden()
+    await expect(page.getByRole("button", { name: /^สั่งซื้อ/ })).toBeEnabled()
+    await expect(page.getByTestId("cart-count")).toHaveText("2")
+
+    // The home page's coffee cards follow live stock too
+    await page.goto("/th/shop")
+    await expect(page.getByRole("article", { name: "Khun Chang Khian Anaerobic" })).toContainText(/เหลือ(แค่)? 2/)
+    expectNoConsoleErrors(consoleErrors)
+  })
 })
 

@@ -177,3 +177,28 @@ describe("CartDrawer", () => {
     expect(within(drawer).getByRole("heading", { name: "ตะกร้าของคุณ" })).toBeInTheDocument()
   })
 })
+
+describe("Checkout stock check", () => {
+  it("warns when the shelf runs low, blocks payment, and trims the cart on request", async () => {
+    const { useInventoryStore } = await import("@/features/shop/store/inventory-store")
+    const { useShopAdminStore } = await import("@/features/shop/store/admin-store")
+    useShopAdminStore.setState({ overrides: {} })
+    useCartStore.setState({ items: [{ productId: "khun-chang-khian-anaerobic", amount: 250, grind: "whole", quantity: 4 }] })
+    // A stocktake found only 2 bags
+    useInventoryStore.setState({
+      adjustments: [{ id: "count", productId: "khun-chang-khian-anaerobic", amount: 250, kind: "count", delta: -2, note: "", at: "2026-11-04T01:00:00.000Z" }],
+    })
+    const user = userEvent.setup()
+    renderWithLocale(<Checkout />)
+
+    const alert = await screen.findByTestId("stock-shortage")
+    expect(alert).toHaveTextContent("Khun Chang Khian Anaerobic, 250 g: 2 left, you have 4")
+    expect(screen.getByRole("button", { name: /^Place Order/ })).toBeDisabled()
+
+    await user.click(within(alert).getByRole("button", { name: "Update My Cart" }))
+    expect(useCartStore.getState().items[0].quantity).toBe(2)
+    await waitFor(() => expect(screen.queryByTestId("stock-shortage")).not.toBeInTheDocument())
+    expect(screen.getByRole("button", { name: /^Place Order/ })).toBeEnabled()
+    useInventoryStore.setState({ adjustments: [] })
+  })
+})

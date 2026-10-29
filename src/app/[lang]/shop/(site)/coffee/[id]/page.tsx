@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { isLocale, localePath, locales } from "@/i18n/config"
-import { ProductCard } from "@/features/shop/components/product-card"
+import { LiveProductCard } from "@/features/shop/components/live-product-card"
 import { ProductGallery } from "@/features/shop/components/product/product-gallery"
 import { PurchasePanel } from "@/features/shop/components/product/purchase-panel"
 import { RoastMeter } from "@/features/shop/components/roast-meter"
@@ -129,7 +129,7 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/shop/co
         <ul className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3">
           {pairs.map((pair) => (
             <li key={pair.id}>
-              <ProductCard product={pair} locale={lang} />
+              <LiveProductCard product={pair} locale={lang} />
             </li>
           ))}
         </ul>
