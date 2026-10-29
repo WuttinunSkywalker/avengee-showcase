@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { ShopInventory } from "@/features/shop/components/admin/shop-inventory"
 import { ShopOrders } from "@/features/shop/components/admin/shop-orders"
 import { PromoField } from "@/features/shop/components/cart/promo-field"
 import { TrackingTimeline } from "@/features/shop/components/checkout/tracking-timeline"
@@ -10,6 +11,7 @@ import { fulfilmentStatus, generateShopOrders } from "@/features/shop/lib/admin"
 import { trackingTimeline } from "@/features/shop/lib/tracking"
 import { useShopAdminStore } from "@/features/shop/store/admin-store"
 import { useCartStore } from "@/features/shop/store/cart-store"
+import { useInventoryStore } from "@/features/shop/store/inventory-store"
 import { renderWithLocale } from "./render"
 
 // The orders table reads and writes its state in the URL; let each test set it.
@@ -25,6 +27,7 @@ const NOW = new Date("2026-11-04T02:00:00Z") // Wed 09:00 Bangkok
 beforeEach(() => {
   useCartStore.setState({ items: [], promoCode: null, open: false })
   useShopAdminStore.setState({ overrides: {} })
+  useInventoryStore.setState({ adjustments: [] })
   navigation.params = new URLSearchParams()
   navigation.replace.mockClear()
 })
@@ -204,5 +207,66 @@ describe("orders store upgrade", () => {
     useOrdersStore.getState().markPaid("KR-1027-H7QP", "2026-10-27T04:30:00.000Z")
     expect(useOrdersStore.getState().orders[0].paidAt).toBe("2026-10-27T04:30:00.000Z")
     useOrdersStore.setState({ orders: [] })
+  })
+})
+
+describe("ShopInventory", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it("restocks a sold-out size, then undoes it from the log", async () => {
+    const user = userEvent.setup()
+    renderWithLocale(<ShopInventory />)
+    const soldOut = await screen.findByTestId("inventory-out")
+    const before = Number(soldOut.textContent)
+    expect(before).toBeGreaterThan(0)
+
+    await user.click(screen.getByRole("button", { name: "Update stock for Doi Inthanon Washed, 500 g" }))
+    const dialog = screen.getByRole("dialog")
+    expect(within(dialog).getByText("0 on the shelf now.")).toBeInTheDocument()
+    await user.type(within(dialog).getByLabelText("How many came in"), "24")
+    expect(within(dialog).getByTestId("stock-preview")).toHaveTextContent("Stock goes from 0 to 24.")
+    await user.type(within(dialog).getByLabelText("Note (optional)"), "Extra roast")
+    await user.click(within(dialog).getByRole("button", { name: "Save Stock" }))
+
+    expect(useInventoryStore.getState().adjustments).toMatchObject([{ productId: "doi-inthanon-washed", amount: 500, kind: "restock", delta: 24, note: "Extra roast" }])
+    await waitFor(() => expect(screen.getByTestId("inventory-out")).toHaveTextContent(String(before - 1)))
+    expect(within(screen.getByTestId("restock-log")).getByText(/Extra roast/)).toBeInTheDocument()
+  })
+
+  it("sets the counted stock and refuses a count that changes nothing", async () => {
+    const user = userEvent.setup()
+    renderWithLocale(<ShopInventory />)
+    await user.click(await screen.findByRole("button", { name: "Update stock for Mae Taeng Honey, 500 g" }))
+    const dialog = screen.getByRole("dialog")
+    await user.click(within(dialog).getByRole("radio", { name: "Counted" }))
+    const field = within(dialog).getByLabelText("How many are on the shelf")
+    await user.type(field, "9")
+    await user.click(within(dialog).getByRole("button", { name: "Save Stock" }))
+    expect(within(dialog).getByText("That's already the count on the shelf.")).toBeInTheDocument()
+
+    await user.clear(field)
+    await user.type(field, "abc")
+    expect(field).toHaveValue("")
+    await user.click(within(dialog).getByRole("button", { name: "Save Stock" }))
+    expect(within(dialog).getByText("Enter a whole number from 0 to 500.")).toBeInTheDocument()
+
+    await user.type(field, "6")
+    await user.click(within(dialog).getByRole("button", { name: "Save Stock" }))
+    expect(useInventoryStore.getState().adjustments[0]).toMatchObject({ kind: "count", delta: -3 })
+  })
+
+  it("filters to sold-out sizes and speaks Thai", async () => {
+    const user = userEvent.setup()
+    renderWithLocale(<ShopInventory />, "th")
+    expect(await screen.findByRole("heading", { level: 1, name: "สต็อกสินค้า" })).toBeInTheDocument()
+    await user.click(screen.getByRole("radio", { name: "หมดแล้ว" }))
+    const rows = screen.getAllByTestId("inventory-row")
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) expect(row).toHaveAttribute("data-level", "out")
+    expect(within(screen.getByTestId("restock-log")).getAllByText(/คั่ววันอังคาร|แพ็กดริปซองเสร็จ/).length).toBeGreaterThan(0)
   })
 })

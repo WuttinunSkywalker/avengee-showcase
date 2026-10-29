@@ -45,7 +45,7 @@ export function ShopOverview() {
   const kpis = shopKpis(orders, statuses, now)
   const series = revenueByDay(orders, statuses, now)
   const plan = roastPlan(orders, statuses)
-  const alerts = stockAlerts()
+  const alerts = stockAlerts(data.products)
   const roastDate = bangkokDate(nextRoastDate(now))
   const change = formatChange(kpis.revenue30, kpis.revenuePrev30)
   const up = kpis.revenue30 >= kpis.revenuePrev30
@@ -142,6 +142,11 @@ export function ShopOverview() {
           <CardHeader>
             <CardTitle>{t.overview.stockTitle}</CardTitle>
             <CardDescription>{t.overview.stockBody}</CardDescription>
+            <CardAction>
+              <Button asChild variant="ghost" size="sm">
+                <Link href={localePath(locale, "/shop/admin/inventory")}>{t.nav.inventory}</Link>
+              </Button>
+            </CardAction>
           </CardHeader>
           <CardContent>
             <ul className="flex flex-col divide-y divide-border" data-testid="stock-alerts">

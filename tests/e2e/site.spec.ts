@@ -314,6 +314,8 @@ const pagesToAudit = [
   { name: "shop orders (empty)", path: "/th/shop/orders" },
   { name: "shop admin overview", path: "/en/shop/admin" },
   { name: "shop admin orders (th)", path: "/th/shop/admin/orders" },
+  { name: "shop admin inventory", path: "/en/shop/admin/inventory" },
+  { name: "shop admin inventory (th)", path: "/th/shop/admin/inventory" },
   { name: "shop admin orders (filtered)", path: "/en/shop/admin/orders?status=to-roast" },
 ]
 

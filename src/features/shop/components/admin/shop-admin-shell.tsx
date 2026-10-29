@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ExternalLinkIcon, LayoutDashboardIcon, PackageIcon, RotateCcwIcon } from "lucide-react"
+import { BoxesIcon, ExternalLinkIcon, LayoutDashboardIcon, PackageIcon, RotateCcwIcon } from "lucide-react"
 import { toast } from "sonner"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { ShowcaseReturn } from "@/components/showcase-return"
@@ -40,6 +40,7 @@ import { useLocale } from "@/i18n/locale-provider"
 import { shop } from "../../data/shop"
 import { shopMessages } from "../../i18n/messages"
 import { useShopAdminStore } from "../../store/admin-store"
+import { useInventoryStore } from "../../store/inventory-store"
 
 /** Closes the phone sidebar after navigating. Forwards the props SidebarMenuButton's Slot passes in. */
 function NavLink({ onClick, ...props }: React.ComponentProps<typeof Link>) {
@@ -59,6 +60,7 @@ function ResetButton() {
   const locale = useLocale()
   const t = shopMessages[locale].admin
   const reset = useShopAdminStore((state) => state.reset)
+  const resetInventory = useInventoryStore((state) => state.reset)
   const { isMobile, setOpenMobile } = useSidebar()
   return (
     <AlertDialog>
@@ -78,6 +80,7 @@ function ResetButton() {
           <AlertDialogAction
             onClick={() => {
               reset()
+              resetInventory()
               if (isMobile) setOpenMobile(false)
               toast.success(t.resetDone)
             }}
@@ -97,6 +100,7 @@ export function ShopAdminShell({ children }: { children: React.ReactNode }) {
   const nav = [
     { href: localePath(locale, "/shop/admin"), label: t.nav.overview, icon: LayoutDashboardIcon },
     { href: localePath(locale, "/shop/admin/orders"), label: t.nav.orders, icon: PackageIcon },
+    { href: localePath(locale, "/shop/admin/inventory"), label: t.nav.inventory, icon: BoxesIcon },
   ]
   const current = nav.find((item) => item.href === pathname)
 

@@ -33,7 +33,9 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Unknown product ids are answered with 404 in `src/proxy.ts`, built from the product data; `tests/unit/proxy.test.ts` checks every listed coffee passes, unknown ids and extra segments 404, and bare URLs redirect by language. If products ever come from an API, the proxy needs a cached id list
 - [x] Orders saved under `kaffa:orders:v1` are upgraded on first load (card orders paid at checkout, PromptPay left to confirm, line `kind` from product data), saved under v2 and the old key removed; unit, integration and e2e cover it
 - [x] Integration tests for the checkout form (every field error, province picker and postcode check, carrier fee, card formatting, real-card refusal, card order saved with brand + last 4 only, Thai) and cart drawer (lines, free-shipping progress, quantities, remove, Thai) in `tests/integration/shop-checkout.test.tsx`
-- [ ] Admin: inventory page (adjust stock per size, restock log) and a customers view; stock alerts currently read static product data
+- [x] Admin inventory at `/[lang]/shop/admin/inventory`: every size with stock level, restock or stocktake count per size (with undo), seeded Tuesday restock log plus this device's changes; overview stock alerts and reset include them
+- [ ] Admin customers view: repeat buyers, total spend, last order, province; link from order sheet
+- [ ] Stock changes in the admin are per device (`kaffa:inventory:v1`) and don't reach the storefront's sold-out states, and orders don't draw stock down; decide whether the storefront should read them
 - [ ] Daily revenue chart ends on today, which is only partly over, so the last point always dips; mark it "today so far" or end at yesterday
 - [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page
 

@@ -104,7 +104,7 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await openAdminNav(page)
     await page.getByRole("button", { name: "Reset changes" }).click()
     await page.getByRole("alertdialog").getByRole("button", { name: "Undo Changes" }).click()
-    await expect(page.getByText("Status changes undone")).toBeVisible()
+    await expect(page.getByText("Changes undone")).toBeVisible()
     await expect(rows(page).first()).toContainText("To roast")
   })
 
@@ -160,4 +160,43 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await expect(page.locator("#main")).not.toContainText(/demo|fictional|ตัวอย่าง/i)
     expectNoConsoleErrors(consoleErrors)
   })
+
+  test("restocking a sold-out size clears its alert on the overview, and reset brings it back", async ({ page, consoleErrors }) => {
+    await page.goto("/en/shop/admin")
+    await expect(page.getByTestId("stock-alerts")).toContainText("Doi Inthanon Washed")
+    await page.getByTestId("stock-alerts").locator("..").locator("..").getByRole("link", { name: "Inventory" }).click()
+    await expect(page).toHaveURL(/\/en\/shop\/admin\/inventory$/)
+    await expect(page.getByRole("heading", { level: 1, name: "Inventory" })).toBeVisible()
+
+    await page.getByRole("button", { name: "Update stock for Doi Inthanon Washed, 500 g" }).click()
+    const dialog = page.getByRole("dialog")
+    await dialog.getByLabel("How many came in").fill("24")
+    await expect(dialog.getByTestId("stock-preview")).toHaveText("Stock goes from 0 to 24.")
+    await dialog.getByRole("button", { name: "Save Stock" }).click()
+    await expect(page.getByText("Doi Inthanon Washed, 500 g: 24 in stock")).toBeVisible()
+    await expect(page.getByTestId("restock-log").getByText(/This device/)).toBeVisible()
+
+    // Survives a reload and reaches the overview
+    await page.reload()
+    await openAdminNav(page)
+    await page.getByRole("link", { name: "Overview" }).click()
+    await expect(page.getByTestId("stock-alerts")).not.toContainText("Doi Inthanon Washed")
+
+    await openAdminNav(page)
+    await page.getByRole("button", { name: "Reset changes" }).click()
+    await page.getByRole("alertdialog").getByRole("button", { name: "Undo Changes" }).click()
+    await expect(page.getByTestId("stock-alerts")).toContainText("Doi Inthanon Washed")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("inventory speaks Thai and filters to what's running low", async ({ page }) => {
+    await page.goto("/th/shop/admin/inventory")
+    await expect(page.getByRole("heading", { level: 1, name: "สต็อกสินค้า" })).toBeVisible()
+    await page.getByRole("radio", { name: "ใกล้หมด" }).click()
+    const rows = page.getByTestId("inventory-row")
+    await expect(rows.first()).toBeVisible()
+    for (const level of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-level")))) expect(level).not.toBe("ok")
+    await expect(page.getByTestId("restock-log")).toContainText("คั่ววันอังคาร")
+  })
 })
+

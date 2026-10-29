@@ -3,20 +3,34 @@
 import { useMemo } from "react"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import type { Product } from "../data/products"
 import { fulfilmentStatus, generateShopOrders, type FulfilmentStatus } from "../lib/admin"
+import { withAdjustments, type StockAdjustment } from "../lib/inventory"
 import { bangkokDate } from "../lib/tracking"
 import { useShopAdminStore } from "../store/admin-store"
+import { useInventoryStore } from "../store/inventory-store"
 import { useOrdersStore, type ShopOrder } from "../store/orders-store"
 
 export type AdminData =
   | { ready: false }
-  | { ready: true; now: Date; orders: ShopOrder[]; statuses: Map<string, FulfilmentStatus>; placedHere: Set<string> }
+  | {
+      ready: true
+      now: Date
+      orders: ShopOrder[]
+      statuses: Map<string, FulfilmentStatus>
+      placedHere: Set<string>
+      /** Products with this device's restocks and stocktakes applied. */
+      products: Product[]
+      adjustments: StockAdjustment[]
+    }
 
 /** Seeded order history plus orders placed in this browser, with each order's fulfilment status. */
 export function useShopAdminData(): AdminData {
   const now = useNow()
   const ordersReady = usePersistHydrated(useOrdersStore.persist)
   const adminReady = usePersistHydrated(useShopAdminStore.persist)
+  const inventoryReady = usePersistHydrated(useInventoryStore.persist)
+  const adjustments = useInventoryStore((state) => state.adjustments)
   const deviceOrders = useOrdersStore((state) => state.orders)
   const overrides = useShopAdminStore((state) => state.overrides)
 
@@ -25,9 +39,17 @@ export function useShopAdminData(): AdminData {
   const seed = useMemo(() => (day ? generateShopOrders(new Date()) : []), [day])
 
   return useMemo(() => {
-    if (!now || !ordersReady || !adminReady) return { ready: false }
+    if (!now || !ordersReady || !adminReady || !inventoryReady) return { ready: false }
     const orders = [...deviceOrders, ...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     const statuses = new Map(orders.map((order) => [order.reference, fulfilmentStatus(order, now, overrides[order.reference])]))
-    return { ready: true, now, orders, statuses, placedHere: new Set(deviceOrders.map((order) => order.reference)) }
-  }, [now, ordersReady, adminReady, deviceOrders, seed, overrides])
+    return {
+      ready: true,
+      now,
+      orders,
+      statuses,
+      placedHere: new Set(deviceOrders.map((order) => order.reference)),
+      products: withAdjustments(adjustments),
+      adjustments,
+    }
+  }, [now, ordersReady, adminReady, inventoryReady, deviceOrders, seed, overrides, adjustments])
 }
