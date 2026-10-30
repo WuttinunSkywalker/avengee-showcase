@@ -35,10 +35,11 @@ export function SiteHeader() {
     { href: href("/spa#treatments"), label: t.nav.treatments },
     { href: href("/spa#therapists"), label: t.nav.therapists },
     { href: href("/spa#visit"), label: t.nav.visit },
+    { href: href("/spa/gift"), label: t.nav.gift },
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <header className="sticky top-0 z-40 print:hidden border-b border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Wordmark />
         <nav aria-label={t.nav.main} className="hidden items-center gap-1 md:flex">

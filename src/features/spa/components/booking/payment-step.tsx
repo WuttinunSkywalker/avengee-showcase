@@ -11,9 +11,8 @@ import { buildPromptPayPayload } from "../../lib/promptpay"
 import { useBookingDraft, type PaymentChoice } from "../../store/booking-draft-store"
 
 export function PaymentStep({ quote }: { quote: Quote }) {
-  const { locale, t } = useSpaI18n()
+  const { t } = useSpaI18n()
   const { payment, setPayment } = useBookingDraft()
-  const payload = buildPromptPayPayload(spa.promptPayId, quote.deposit)
 
   return (
     <div className="flex flex-col gap-8">
@@ -41,32 +40,39 @@ export function PaymentStep({ quote }: { quote: Quote }) {
         </RadioGroup>
       </FieldSet>
 
-      {payment === "promptpay" && (
-        <section
-          aria-labelledby="qr-title"
-          className="grid gap-6 rounded-lg border border-border bg-card p-5 sm:grid-cols-[auto_1fr] sm:items-center"
-        >
-          <div className="mx-auto flex flex-col items-center gap-2 rounded-md bg-white p-3 ring-1 ring-border">
-            <span className="rounded-sm bg-[#113566] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-white" translate="no">
-              PromptPay
-            </span>
-            <QRCodeSVG value={payload} size={176} level="M" title={t.payment.qrTitle(formatBaht(quote.deposit))} />
-          </div>
-          <div className="flex flex-col gap-3">
-            <h3 id="qr-title" className="font-heading text-xl">
-              {t.payment.scan}
-            </h3>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              <dt className="text-muted-foreground">{t.payment.amount}</dt>
-              <dd className="font-medium tabular-nums" data-testid="deposit-amount">
-                {formatBaht(quote.deposit)}
-              </dd>
-              <dt className="text-muted-foreground">{t.payment.payTo}</dt>
-              <dd>{spa.fullName[locale]}</dd>
-            </dl>
-          </div>
-        </section>
-      )}
+      {payment === "promptpay" && <PromptPayPanel amount={quote.deposit} testId="deposit-amount" />}
     </div>
+  )
+}
+
+/** QR, amount and payee for a PromptPay transfer to the spa. */
+export function PromptPayPanel({ amount, testId }: { amount: number; testId?: string }) {
+  const { locale, t } = useSpaI18n()
+  const payload = buildPromptPayPayload(spa.promptPayId, amount)
+  return (
+    <section
+      aria-labelledby="qr-title"
+      className="grid gap-6 rounded-lg border border-border bg-card p-5 sm:grid-cols-[auto_1fr] sm:items-center"
+    >
+      <div className="mx-auto flex flex-col items-center gap-2 rounded-md bg-white p-3 ring-1 ring-border">
+        <span className="rounded-sm bg-[#113566] px-2 py-0.5 text-[0.65rem] font-semibold tracking-wide text-white" translate="no">
+          PromptPay
+        </span>
+        <QRCodeSVG value={payload} size={176} level="M" title={t.payment.qrTitle(formatBaht(amount))} />
+      </div>
+      <div className="flex flex-col gap-3">
+        <h3 id="qr-title" className="font-heading text-xl">
+          {t.payment.scan}
+        </h3>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+          <dt className="text-muted-foreground">{t.payment.amount}</dt>
+          <dd className="font-medium tabular-nums" data-testid={testId}>
+            {formatBaht(amount)}
+          </dd>
+          <dt className="text-muted-foreground">{t.payment.payTo}</dt>
+          <dd>{spa.fullName[locale]}</dd>
+        </dl>
+      </div>
+    </section>
   )
 }

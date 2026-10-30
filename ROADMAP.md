@@ -96,7 +96,12 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Portal: the "Live" dot on the process stepper's server icon is green (a new `--online` token) instead of the yellow accent
 - [x] Mobile date strip: the chosen day is centred in the strip (only the strip scrolls, never the page), and a "next free day" button under the times jumps past full days
 - [x] Found while building it: e2e locators like `{ name: "ถัดไป" }` match any button containing that word ("ดูวันว่างถัดไป"); Thai wizard buttons are now matched with `exact: true`
-- [ ] Gift vouchers purchase flow
+- [x] Gift vouchers purchase flow (`/spa/gift`): amount with "enough for" hint, three card designs (teak, indigo, jasmine) with a live preview, message, send to me or straight to them, PromptPay for the full amount, then a printable voucher with a `BLG-XXXX-XXXX` code valid 12 months
+- [ ] Gift vouchers, next slice: redeem a code at the booking payment step (balance covers the deposit or total; partial balance carries over)
+- [ ] Gift vouchers, next slice: an admin vouchers page (issued, balance, expiry) next to customers
+- [ ] Gift vouchers on phones: the preview sits above the form, so it scrolls away while the buyer types the message; consider a small sticky preview or showing it again above the payment
+- [x] Found while building it: a Radix `RadioGroupItem` inside a `<form>`, wrapped in `FieldLabel htmlFor`, has no accessible name for axe (button-name); the gift form names each item with `aria-labelledby`/`aria-describedby`. The booking payment step uses the same pattern outside a form and passes
+- [x] Found while building it: a submit button disabled until a store hydrates fails axe colour contrast while it fades in from 50% opacity; the gift form waits for hydration inside submit instead
 - [ ] Therapist avatars show Latin initials (KS, PC) on the Thai site; use the Thai nickname's first letter there
 - [x] The portal corner button now hides while scrolling down and returns on scroll up
 
