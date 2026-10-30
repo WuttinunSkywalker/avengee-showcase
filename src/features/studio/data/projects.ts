@@ -40,6 +40,8 @@ export interface Project {
   rooms: { room: Room; bays: number }[]
   /** Each floor above, from the first up, laid out the same way. "void" is open to the floor below. */
   upper?: { room: Room; bays: number }[][]
+  /** A light well open to the sky at the back of one bay, through every floor. */
+  lightWell?: { bay: number; depth: number }
   /** Where it stands: for the site plan and its sun path. */
   site: {
     latitude: number
@@ -129,6 +131,7 @@ export const projects: Project[] = [
         { room: "stair", bays: 1 },
       ],
     ],
+    lightWell: { bay: 0, depth: 2.4 },
     site: { latitude: 13.73, facing: 90, plot: [7, 17], frontage: "road" },
     summary: {
       en: "A 1960s shophouse turned into a ground-floor print shop with a home above, keeping the original facade and terrazzo floors.",

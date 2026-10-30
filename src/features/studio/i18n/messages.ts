@@ -167,6 +167,7 @@ const en = {
       void: "Open to below",
     } satisfies Record<Room, string>,
     north: "North",
+    lightWell: "Light well",
     sun: "Sun at noon",
     breeze: "Breeze",
     site: {
@@ -351,6 +352,7 @@ const th: StudioMessages = {
       void: "เปิดโล่งถึงชั้นล่าง",
     },
     north: "ทิศเหนือ",
+    lightWell: "ช่องแสง",
     sun: "แดดเที่ยง",
     breeze: "ทางลม",
     site: {

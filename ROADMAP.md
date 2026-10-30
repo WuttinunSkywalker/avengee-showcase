@@ -56,7 +56,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [x] "Site and sun" drawing for every project: the plot and footprint turned to the house's real bearing, its frontage named (soi, road, beach, view), under the sun's path at its latitude on 21 June, the equinoxes and 21 December, with hours marked and the low afternoon sun shaded. In Thailand the June noon sun is to the north, and the drawing shows it. Projects gained site data (latitude, facing, plot, frontage); the floor plan's north arrow now turns with the house too. Sun maths in `src/features/studio/lib/sun.ts`, tested against the equinox and solstice noon positions
 - [x] Upper-floor plans for the six multi-storey projects, with a floor switcher on the Plan view (`?floor=2…4`, resets when the project or drawing changes, falls back to the ground floor if out of range). Upper floors have no front door; "open to below" is drawn with a dashed X over Ari House's courtyard and Hua Hin's pool. The stair stays in the same bay on every floor (unit-tested); Hua Hin's ground floor gained the stair it was missing
-- [ ] Talat Noi Shophouse's notes mention a light well through all four floors; the plans don't show it yet (needs a part-bay void at the back of the plan)
+- [x] Talat Noi Shophouse's light well is drawn on all four floor plans: a 2.4 m void at the back of the shop bay with its own wall, open-to-sky X and label (projects take an optional `lightWell`). On phones the drawing buttons leave room for the dialog's close button
 - [ ] Sorn Studio enquiries could land in a small studio inbox page (like the shops' staff dashboards) so the form has somewhere to go
 
 ## Showcase 2: Kaffa Roasters (online shop, `/[lang]/shop`)

@@ -226,6 +226,19 @@ test.describe("Sorn Studio", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("the shophouse's light well runs through every floor", async ({ page }) => {
+    const dialog = page.getByRole("dialog")
+    for (const floor of [1, 2, 3, 4]) {
+      await page.goto(`/en/studio?project=talat-noi-shophouse&view=plan${floor > 1 ? `&floor=${floor}` : ""}`)
+      await expect(dialog.getByTestId("light-well"), `floor ${floor}`).toHaveText("Light well")
+    }
+    await page.goto("/th/studio?project=talat-noi-shophouse&view=plan&floor=3")
+    await expect(dialog.getByTestId("light-well")).toHaveText("ช่องแสง")
+    // Other projects have none
+    await page.goto("/en/studio?project=ari-house&view=plan")
+    await expect(dialog.getByTestId("light-well")).toHaveCount(0)
+  })
+
   test("floors in Thai", async ({ page }) => {
     await page.goto("/th/studio?project=nonthaburi-family-home&view=plan&floor=3")
     const dialog = page.getByRole("dialog")

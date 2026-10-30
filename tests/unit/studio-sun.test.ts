@@ -103,3 +103,19 @@ describe("upper floors", async () => {
     expect(huaHin.rooms[0]).toEqual({ room: "pool", bays: 2 })
   })
 })
+
+describe("light wells", async () => {
+  const { projects } = await import("@/features/studio/data/projects")
+
+  it("sit inside the plan, at the back of a real bay", () => {
+    const withWells = projects.filter((project) => project.lightWell)
+    expect(withWells.map((project) => project.id)).toEqual(["talat-noi-shophouse"])
+    for (const project of withWells) {
+      const { bay, depth } = project.lightWell!
+      expect(bay).toBeGreaterThanOrEqual(0)
+      expect(bay).toBeLessThan(project.bays)
+      expect(depth).toBeGreaterThan(1)
+      expect(depth).toBeLessThan(project.depth / 3)
+    }
+  })
+})

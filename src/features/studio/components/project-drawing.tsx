@@ -10,6 +10,7 @@ export type DrawingView = (typeof DRAWING_VIEWS)[number]
 export interface DrawingLabels {
   rooms: Record<Room, string>
   north: string
+  lightWell: string
   sun: string
   breeze: string
   site: {
@@ -168,6 +169,8 @@ export function floorRooms(project: Project, floor: number): Project["rooms"] {
 function Plan({ project, labels, floor }: { project: Project; labels: DrawingLabels; floor: number }) {
   const p = planLayout({ ...project, rooms: floorRooms(project, floor) })
   const ground = floor === 1
+  // The light well sits at the back of the plan (its top edge), the same on every floor
+  const well = project.lightWell ? { x: p.x + project.lightWell.bay * BAY * p.scale, h: project.lightWell.depth * p.scale } : null
   const bayW = BAY * p.scale
   const entrance = p.rooms.find((room) => room.room !== "court" && room.room !== "pool" && room.room !== "stair") ?? p.rooms[0]
   const doorW = Math.min(1.1 * p.scale, entrance.w - 6)
@@ -206,6 +209,20 @@ function Plan({ project, labels, floor }: { project: Project; labels: DrawingLab
           </text>
         </g>
       ))}
+      {/* A light well at the back, open to the sky through every floor */}
+      {well && (
+        <g data-testid="light-well">
+          <rect x={well.x} y={p.y} width={bayW} height={well.h} fill="var(--glass)" opacity={0.5} className="wash" />
+          <line x1={well.x} y1={p.y + well.h} x2={well.x + bayW} y2={p.y + well.h} stroke="var(--line)" strokeWidth={1.6} {...ink(450)} />
+          <g stroke="var(--line)" strokeWidth={0.6} strokeDasharray="4 3" opacity={0.8}>
+            <line x1={well.x + 3} y1={p.y + 3} x2={well.x + bayW - 3} y2={p.y + well.h - 3} {...ink(520)} />
+            <line x1={well.x + bayW - 3} y1={p.y + 3} x2={well.x + 3} y2={p.y + well.h - 3} {...ink(580)} />
+          </g>
+          <text x={well.x + bayW / 2} y={p.y + well.h / 2} textAnchor="middle" dominantBaseline="middle" fontSize={8} className="drawing-note fill-foreground" {...halo}>
+            {labels.lightWell}
+          </text>
+        </g>
+      )}
       {/* Outer walls, with the front door left open on the ground floor */}
       <g fill="none" stroke="var(--line)" strokeWidth={wall} strokeLinecap="square">
         {ground ? (

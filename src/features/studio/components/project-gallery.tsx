@@ -140,7 +140,8 @@ export function ProjectGallery() {
                   value={view}
                   onValueChange={(value) => value && go({ view: value === "elevation" ? null : value, floor: null })}
                   aria-label={t.lightbox.viewsLabel}
-                  className="flex-wrap justify-start"
+                  // On phones the dialog's close button sits at the end of this row
+                  className="flex-wrap justify-start pr-8 lg:pr-0"
                 >
                   {DRAWING_VIEWS.map((value) => (
                     <ToggleGroupItem key={value} value={value} className="px-3">
