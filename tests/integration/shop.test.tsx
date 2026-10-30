@@ -125,7 +125,7 @@ describe("TrackingTimeline", () => {
     const current = within(list).getAllByRole("listitem").find((item) => item.getAttribute("aria-current") === "step")!
     expect(current).toHaveTextContent("Roasting")
     expect(current).toHaveTextContent("Tue 10 Nov 08:00")
-    expect(current).toHaveTextContent("Your beans go in the roaster on Tuesday morning.")
+    expect(current).toHaveTextContent("Roasted to order on our Tuesday roast, in small batches.")
   })
 
   it("waits for a PromptPay transfer, in Thai", () => {

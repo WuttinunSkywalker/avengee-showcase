@@ -13,13 +13,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import { useStorageSync } from "@/hooks/use-storage-sync"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { buildPromptPayPayload } from "@/lib/promptpay"
 import { getProvince } from "@/lib/thailand"
 import { shopMessages } from "../../i18n/messages"
 import { formatBaht, formatLongDate } from "../../lib/format"
-import { bangkokDate, currentStep, deliveryWindow, trackingNumber, trackingTimeline } from "../../lib/tracking"
+import { bangkokDate, currentStep, deliveryWindow, trackingNumber } from "../../lib/tracking"
+import { useStaffUpdates } from "../../hooks/use-staff-updates"
 import { useOrdersStore } from "../../store/orders-store"
 import { TrackingTimeline } from "./tracking-timeline"
 
@@ -37,8 +39,11 @@ export function OrderConfirmation() {
   const markPaid = useOrdersStore((state) => state.markPaid)
   const now = useNow()
   const [confirming, setConfirming] = useState(false)
+  // Changes the roastery makes in the staff dashboard show up here, even from another tab
+  const staff = useStaffUpdates()
+  useStorageSync(useOrdersStore.persist)
 
-  if (!hydrated || !now) {
+  if (!hydrated || !now || !staff.ready) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-16" aria-busy="true">
         <Skeleton className="h-12 w-80" />
@@ -70,10 +75,11 @@ export function OrderConfirmation() {
 
   const province = getProvince(order.address.provinceId)
   const firstName = order.contact.name.split(/\s+/)[0]
-  const steps = trackingTimeline(order, now)
+  const steps = staff.timeline(order, now)
   const headline = currentStep(steps)
   const arrival = deliveryWindow(order)
-  const unpaid = !order.paidAt
+  const cancelled = staff.cancelled(order)
+  const unpaid = !staff.paid(order)
 
   async function confirmTransfer() {
     if (!order) return
@@ -94,7 +100,15 @@ export function OrderConfirmation() {
           <Phrased text={t.order.title(firstName)} />
         </h1>
         <p className="text-muted-foreground" data-testid="order-status">
-          {t.tracking.status(headline.id === "paid" && unpaid ? t.tracking.awaitingPayment : t.tracking.steps[headline.id])}
+          {t.tracking.status(
+            cancelled
+              ? t.tracking.cancelled
+              : staff.packed(order)
+                ? t.tracking.packed
+                : headline.id === "paid" && unpaid
+                  ? t.tracking.awaitingPayment
+                  : t.tracking.steps[headline.id],
+          )}
         </p>
       </div>
 
@@ -117,7 +131,14 @@ export function OrderConfirmation() {
         </div>
       </div>
 
-      {order.payment.method === "promptpay" && unpaid ? (
+      {cancelled ? (
+        <section aria-labelledby="cancelled-title" className="flex flex-col gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-6" data-testid="order-cancelled">
+          <h2 id="cancelled-title" className="font-heading text-xl font-bold">
+            {t.tracking.cancelledTitle}
+          </h2>
+          <p className="text-sm">{t.tracking.cancelledBody}</p>
+        </section>
+      ) : order.payment.method === "promptpay" && unpaid ? (
         <section aria-labelledby="pay-title" className="grid gap-6 rounded-lg border border-border p-6 sm:grid-cols-[auto_1fr] sm:items-center">
           <div className="mx-auto rounded-md bg-white p-3 ring-1 ring-border">
             <QRCodeSVG
@@ -147,6 +168,7 @@ export function OrderConfirmation() {
         </p>
       )}
 
+      {!cancelled && (
       <section aria-labelledby="tracking-title" className="flex flex-col gap-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="tracking-title" className="font-heading text-xl font-bold">
@@ -168,6 +190,7 @@ export function OrderConfirmation() {
           </p>
         )}
       </section>
+      )}
 
       <section aria-labelledby="items-title" className="flex flex-col gap-4">
         <h2 id="items-title" className="font-heading text-xl font-bold">

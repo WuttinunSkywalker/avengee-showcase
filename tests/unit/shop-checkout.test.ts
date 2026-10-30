@@ -138,3 +138,34 @@ describe("orders", () => {
     expect(nextRoastDate(new Date("2026-11-10T07:00:00Z")).toISOString().slice(0, 10)).toBe("2026-11-17")
   })
 })
+
+describe("tracking after the roastery moves an order on", async () => {
+  const { trackingTimeline, withStaffStatus, currentStep } = await import("@/features/shop/lib/tracking")
+  // Paid Wednesday morning: roasted the following Tuesday, so the clock alone says "paid"
+  const order = { reference: "KF-261104-TEST", createdAt: "2026-11-04T02:00:00.000Z", paidAt: "2026-11-04T02:05:00.000Z", carrier: "kerry" as const }
+  const now = new Date("2026-11-05T03:00:00Z")
+  const steps = trackingTimeline(order, now)
+
+  it("leaves the timeline alone without a staff change", () => {
+    expect(currentStep(withStaffStatus(steps, undefined, undefined)).id).toBe(currentStep(steps).id)
+    expect(currentStep(withStaffStatus(steps, "awaiting-payment", "2026-11-05T02:00:00Z")).id).toBe(currentStep(steps).id)
+  })
+
+  it("brings steps forward to the staff status, at the time staff changed it", () => {
+    const changed = "2026-11-05T02:30:00.000Z"
+    const shipped = withStaffStatus(steps, "shipped", changed)
+    expect(currentStep(shipped).id).toBe("out-for-delivery")
+    expect(shipped.find((step) => step.id === "roasting")).toMatchObject({ state: "done", at: changed })
+    // Steps that had already happened keep their own time
+    expect(shipped.find((step) => step.id === "paid")).toMatchObject({ state: "done", at: order.paidAt })
+    expect(shipped.filter((step) => step.state === "current")).toHaveLength(1)
+    expect(withStaffStatus(steps, "delivered", changed).every((step) => step.state === "done")).toBe(true)
+  })
+
+  it("counts an unpaid order moved to roasting as paid by the roastery", () => {
+    const unpaid = { ...order, paidAt: null }
+    const moved = withStaffStatus(trackingTimeline(unpaid, now), "to-roast", "2026-11-05T02:00:00.000Z")
+    expect(moved.find((step) => step.id === "paid")).toMatchObject({ state: "done", at: "2026-11-05T02:00:00.000Z" })
+    expect(currentStep(moved).id).toBe("roasting")
+  })
+})

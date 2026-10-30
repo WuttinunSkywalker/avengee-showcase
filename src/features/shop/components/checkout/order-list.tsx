@@ -12,7 +12,8 @@ import { useLocale } from "@/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 import { shopMessages } from "../../i18n/messages"
 import { formatBaht, formatLongDate } from "../../lib/format"
-import { bangkokDate, currentStep, trackingTimeline } from "../../lib/tracking"
+import { bangkokDate, currentStep } from "../../lib/tracking"
+import { useStaffUpdates } from "../../hooks/use-staff-updates"
 import { useOrdersStore } from "../../store/orders-store"
 
 export function OrderList() {
@@ -21,6 +22,8 @@ export function OrderList() {
   const hydrated = usePersistHydrated(useOrdersStore.persist)
   const orders = useOrdersStore((state) => state.orders)
   const now = useNow()
+  // The roastery's changes in the staff dashboard, kept in step across tabs
+  const staff = useStaffUpdates()
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-12 sm:px-6 lg:py-16">
@@ -28,7 +31,7 @@ export function OrderList() {
         <h1 className="font-heading text-4xl font-extrabold tracking-tight [font-stretch:112%] sm:text-5xl">{t.orders.title}</h1>
         <p className="text-muted-foreground">{t.orders.intro}</p>
       </div>
-      {!hydrated || !now ? (
+      {!hydrated || !now || !staff.ready ? (
         <div className="flex flex-col gap-3" aria-busy="true">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -51,7 +54,9 @@ export function OrderList() {
       ) : (
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {orders.map((order) => {
-            const step = currentStep(trackingTimeline(order, now))
+            const step = currentStep(staff.timeline(order, now))
+            const cancelled = staff.cancelled(order)
+            const unpaid = !staff.paid(order)
             const count = order.lines.reduce((sum, line) => sum + line.quantity, 0)
             return (
               <li key={order.reference} className="relative flex flex-wrap items-center justify-between gap-4 py-5">
@@ -70,10 +75,11 @@ export function OrderList() {
                   <span
                     className={cn(
                       "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      step.id === "paid" && !order.paidAt ? "bg-primary/10 text-primary" : "bg-leaf/12 text-leaf",
+                      cancelled ? "bg-destructive/10 text-destructive" : step.id === "paid" && unpaid ? "bg-primary/10 text-primary" : "bg-leaf/12 text-leaf",
                     )}
+                    data-testid="order-list-status"
                   >
-                    {step.id === "paid" && !order.paidAt ? t.tracking.awaitingPayment : t.tracking.steps[step.id]}
+                    {cancelled ? t.tracking.cancelled : staff.packed(order) ? t.tracking.packed : step.id === "paid" && unpaid ? t.tracking.awaitingPayment : t.tracking.steps[step.id]}
                   </span>
                   <span className="font-medium tabular-nums">{formatBaht(order.totals.total)}</span>
                 </div>

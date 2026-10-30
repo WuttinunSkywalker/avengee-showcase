@@ -1,4 +1,5 @@
 import { createRandom } from "@/lib/random"
+import type { FulfilmentStatus } from "./admin"
 import { carrierInfo, nextRoastDate, type Carrier } from "./checkout"
 
 export const TRACKING_STEPS = ["placed", "paid", "roasting", "shipped", "out-for-delivery", "delivered"] as const
@@ -73,6 +74,40 @@ export function trackingTimeline(order: TrackableOrder, now: Date): TrackingStep
       currentFound = true
     }
     return { id, state, at: at ? at.toISOString() : null }
+  })
+}
+
+/** How far a staff status takes the timeline: every step up to this one is done. */
+const staffReaches: Partial<Record<FulfilmentStatus, TrackingStepId>> = {
+  "to-roast": "paid",
+  "ready-to-ship": "roasting",
+  shipped: "shipped",
+  delivered: "delivered",
+}
+
+/**
+ * The timeline once the roastery has moved the order on by hand. Staff can
+ * only move an order forward, so their status is a floor: steps it covers are
+ * done (at the time they changed it, if the clock hadn't got there yet), and
+ * the clock carries on from there.
+ */
+export function withStaffStatus(steps: readonly TrackingStep[], status: FulfilmentStatus | undefined, changedAt: string | undefined): TrackingStep[] {
+  const reaches = status ? staffReaches[status] : undefined
+  if (!reaches) return [...steps]
+  const floor = TRACKING_STEPS.indexOf(reaches)
+  const marked = steps.map((step, index) => {
+    if (index > floor || step.state === "done") return step
+    const at = step.at && changedAt && step.at < changedAt ? step.at : (changedAt ?? step.at)
+    return { ...step, state: "done" as const, at }
+  })
+  let currentFound = false
+  return marked.map((step) => {
+    if (step.state === "done" && !currentFound) return step
+    if (!currentFound) {
+      currentFound = true
+      return { ...step, state: "current" as const }
+    }
+    return { ...step, state: "upcoming" as const }
   })
 }
 

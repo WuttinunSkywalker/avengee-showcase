@@ -84,7 +84,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Kaffa Roasters follow-ups
 
-- [ ] Admin status overrides are per device (`kaffa:admin:v1`); a staff change is not reflected on the customer's tracking page (the `useStorageSync` hook from Krua Yai fits here)
+- [x] The customer's tracking page and order list follow the roastery desk, live across tabs: staff statuses act as a floor on the timeline (steps they cover are done, stamped with when staff changed them), an unpaid order moved on counts as paid, "Packed, waiting for the courier" when marked packed, and a cancelled order shows a notice with refund timing instead of tracking. The admin store records when each change was made. The roasting step's text no longer reads as future once it's done
 
 ## Baan Lamai improvements
 

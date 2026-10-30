@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import { useStorageSync } from "@/hooks/use-storage-sync"
 import type { Product } from "../data/products"
 import { fulfilmentStatus, generateShopOrders, type FulfilmentStatus } from "../lib/admin"
 import { liveProducts, type StockAdjustment } from "../lib/inventory"
@@ -30,6 +31,9 @@ export function useShopAdminData(): AdminData {
   const ordersReady = usePersistHydrated(useOrdersStore.persist)
   const adminReady = usePersistHydrated(useShopAdminStore.persist)
   const inventoryReady = usePersistHydrated(useInventoryStore.persist)
+  // Orders placed in another tab, and changes made from another dashboard, show up without a reload
+  useStorageSync(useOrdersStore.persist)
+  useStorageSync(useShopAdminStore.persist)
   const adjustments = useInventoryStore((state) => state.adjustments)
   const deviceOrders = useOrdersStore((state) => state.orders)
   const overrides = useShopAdminStore((state) => state.overrides)

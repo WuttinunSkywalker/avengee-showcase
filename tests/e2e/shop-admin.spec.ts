@@ -252,6 +252,44 @@ test.describe("Kaffa Roasters roastery desk", () => {
     await expect(page.getByTestId("customer-row")).toHaveCount(20)
   })
 
+  test("the customer's tracking page follows what the roastery does, even in another tab", async ({ page, context }) => {
+    await page.goto("/en/shop/coffee/doi-chang-washed")
+    await page.getByRole("button", { name: "Add to Cart" }).click()
+    const reference = await checkoutByCard(page)
+    const status = page.getByTestId("order-status")
+    await expect(status).toHaveText("Status: Roasting")
+
+    // Staff work in their own tab; the customer's page updates without a reload
+    const desk = await context.newPage()
+    await desk.goto(`/en/shop/admin/orders?order=${reference}`)
+    await desk.locator("html[data-hydrated]").waitFor({ state: "attached" })
+    await desk.getByRole("dialog").getByRole("button", { name: "Mark Packed" }).click()
+    await expect(status).toHaveText("Status: Packed, waiting for the courier")
+
+    await desk.goto(`/en/shop/admin/orders?order=${reference}`)
+    await desk.getByRole("dialog").getByRole("button", { name: "Mark Shipped" }).click()
+    await expect(status).toHaveText("Status: Out for delivery")
+    await expect(page.getByTestId("tracking-number")).toBeVisible()
+
+    await page.goto("/en/shop/orders")
+    await expect(page.getByTestId("order-list-status").first()).toHaveText("Out for delivery")
+    await desk.close()
+  })
+
+  test("a cancelled order says so on the customer's page", async ({ page }) => {
+    await page.goto("/en/shop/coffee/doi-chang-washed")
+    await page.getByRole("button", { name: "Add to Cart" }).click()
+    const reference = await checkoutByCard(page)
+    await page.goto(`/en/shop/admin/orders?order=${reference}`)
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel Order" }).click()
+    await page.goto(`/en/shop/order?ref=${reference}`)
+    await expect(page.getByTestId("order-status")).toHaveText("Status: Cancelled")
+    await expect(page.getByTestId("order-cancelled")).toContainText("the refund reaches your account within 3–5 working days")
+    await expect(page.getByRole("heading", { name: "Tracking" })).toHaveCount(0)
+    await page.goto("/th/shop/order?ref=" + reference)
+    await expect(page.getByTestId("order-cancelled")).toContainText("ออเดอร์นี้ถูกยกเลิกแล้ว")
+  })
+
   test("the storefront follows real stock: buying the last bags, cancelling, restocking", async ({ page, consoleErrors }) => {
     // Khun Chang Khian comes in one size with 4 bags left: buy them all
     await page.goto("/en/shop/coffee/khun-chang-khian-anaerobic")
