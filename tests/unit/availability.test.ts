@@ -6,6 +6,7 @@ import {
   getSlots,
   isBookableDate,
   isTherapistFree,
+  nextOpenDay,
   overlaps,
   timeOfDay,
 } from "@/features/spa/lib/availability"
@@ -171,5 +172,25 @@ describe("timeOfDay", () => {
     expect(timeOfDay(12 * 60)).toBe("afternoon")
     expect(timeOfDay(16 * 60 + 30)).toBe("afternoon")
     expect(timeOfDay(17 * 60)).toBe("evening")
+  })
+})
+
+describe("nextOpenDay", () => {
+  const open = { start: 600, therapistIds: ["nok"] }
+  const full = { start: 600, therapistIds: [] }
+  const days = [
+    { date: "2026-11-04", slots: [full] },
+    { date: "2026-11-05", slots: [open] },
+    { date: "2026-11-06", slots: [full, full] },
+    { date: "2026-11-07", slots: [full, open] },
+  ]
+
+  it("finds the first day with a free time", () => {
+    expect(nextOpenDay(days)).toBe("2026-11-05")
+  })
+
+  it("skips full days after the given date", () => {
+    expect(nextOpenDay(days, "2026-11-05")).toBe("2026-11-07")
+    expect(nextOpenDay(days, "2026-11-07")).toBeUndefined()
   })
 })

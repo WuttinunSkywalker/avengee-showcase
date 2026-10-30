@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo } from "react"
-import { CalendarSearchIcon } from "lucide-react"
+import { useEffect, useMemo, useRef, type RefObject } from "react"
+import { ArrowRightIcon, CalendarSearchIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { FieldDescription, FieldLegend, FieldSet } from "@/components/ui/field"
@@ -11,13 +11,14 @@ import { cn } from "@/lib/utils"
 import { spa } from "../../data/spa"
 import { getTherapist } from "../../data/therapists"
 import { useSpaI18n } from "../../i18n/use-spa-i18n"
-import { candidateTherapists, getSlots, timeOfDay, type Slot, type TimeOfDay } from "../../lib/availability"
+import { candidateTherapists, getSlots, nextOpenDay, timeOfDay, type Slot, type TimeOfDay } from "../../lib/availability"
 import {
   addDays,
   dateRange,
   formatLongDate,
   formatMinutes,
   formatMonthShort,
+  formatShortDate,
   formatWeekday,
   type ISODate,
   type ZonedNow,
@@ -43,13 +44,13 @@ export function TimeStep({ bookings, now, duration }: { bookings: readonly Booki
     }))
   }, [serviceId, duration, therapist, bookings, now])
 
-  const firstOpenDay = days.find((day) => day.slots.some((slot) => slot.therapistIds.length > 0))?.date
+  const firstOpenDay = nextOpenDay(days)
   const activeDate: ISODate | undefined = date && days.some((day) => day.date === date) ? date : firstOpenDay
   const activeDay = days.find((day) => day.date === activeDate)
   const openSlots = activeDay?.slots.filter((slot) => slot.therapistIds.length > 0) ?? []
-  const nextOpenAfter = activeDate
-    ? days.find((day) => day.date > activeDate && day.slots.some((slot) => slot.therapistIds.length > 0))?.date
-    : undefined
+  const nextOpenAfter = activeDate ? nextOpenDay(days, activeDate) : undefined
+  const strip = useRef<HTMLDivElement>(null)
+  useCentredDay(strip, activeDate)
 
   return (
     <div className="flex flex-col gap-10">
@@ -78,7 +79,7 @@ export function TimeStep({ bookings, now, duration }: { bookings: readonly Booki
 
       <FieldSet>
         <FieldLegend className="font-heading text-2xl font-normal">{t.time.date}</FieldLegend>
-        <ScrollArea className="-mx-1 w-[calc(100%+0.5rem)]">
+        <ScrollArea ref={strip} className="-mx-1 w-[calc(100%+0.5rem)]">
           <ToggleGroup
             type="single"
             value={activeDate ?? ""}
@@ -95,6 +96,7 @@ export function TimeStep({ bookings, now, duration }: { bookings: readonly Booki
                 <ToggleGroupItem
                   key={day.date}
                   value={day.date}
+                  data-day={day.date}
                   disabled={available === 0}
                   aria-label={available === 0 ? t.time.dayFull(longDate) : t.time.dayFree(longDate, available)}
                   className="h-auto w-[4.5rem] flex-col gap-0.5 rounded-lg border border-border bg-card py-2.5 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
@@ -150,11 +152,39 @@ export function TimeStep({ bookings, now, duration }: { bookings: readonly Booki
                 />
               )
             })}
+            {nextOpenAfter && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-5">
+                <p className="text-sm text-muted-foreground">{t.time.noneSuit}</p>
+                <Button variant="outline" onClick={() => setDate(nextOpenAfter)}>
+                  {t.time.nextFree(formatShortDate(nextOpenAfter, locale))}
+                  <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </FieldSet>
     </div>
   )
+}
+
+/**
+ * Keeps the chosen day centred in the horizontal date strip, so a day picked
+ * from elsewhere (a stored draft, the next-free-day button) is never off-screen
+ * on a phone. Only the strip scrolls, never the page.
+ */
+function useCentredDay(root: RefObject<HTMLDivElement | null>, date: ISODate | undefined) {
+  const first = useRef(true)
+  useEffect(() => {
+    const viewport = root.current?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')
+    const item = date ? viewport?.querySelector<HTMLElement>(`[data-day="${date}"]`) : null
+    if (!viewport || !item) return
+    const offset = item.getBoundingClientRect().left - viewport.getBoundingClientRect().left
+    const left = viewport.scrollLeft + offset - (viewport.clientWidth - item.offsetWidth) / 2
+    const still = first.current || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    first.current = false
+    viewport.scrollTo?.({ left: Math.max(0, left), behavior: still ? "auto" : "smooth" })
+  }, [root, date])
 }
 
 function SlotGroup({

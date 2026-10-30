@@ -155,6 +155,8 @@ const en = {
     emptyAny: "Every qualified therapist is booked. Try another day.",
     emptyOne: (name: string) => `${name} is booked or off this day. Try another day, or choose any therapist.`,
     goTo: (date: string) => `Go to ${date}`,
+    noneSuit: "None of these times suit you?",
+    nextFree: (date: string) => `Next free day: ${date}`,
   },
   details: {
     title: "Your details",
@@ -601,6 +603,8 @@ const th: SpaMessages = {
     emptyAny: "หมอนวดที่ทำเมนูนี้ได้ติดคิวหมดแล้ว ลองเลือกวันอื่นนะคะ",
     emptyOne: (name) => `พี่${name}คิวเต็มหรือหยุดวันนี้ ลองวันอื่น หรือเลือก “ใครก็ได้” ดูนะคะ`,
     goTo: (date) => `ไปที่${date}`,
+    noneSuit: "ยังไม่มีเวลาที่สะดวกใช่ไหมคะ",
+    nextFree: (date) => `ดูวันว่างถัดไป ${date}`,
   },
   details: {
     title: "ข้อมูลผู้จอง",

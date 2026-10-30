@@ -108,3 +108,8 @@ export function timeOfDay(minutes: number): TimeOfDay {
   if (minutes < 17 * 60) return "afternoon"
   return "evening"
 }
+
+/** The first day after `after` (or the first day at all) that still has a free time. */
+export function nextOpenDay(days: readonly { date: ISODate; slots: readonly Slot[] }[], after?: ISODate): ISODate | undefined {
+  return days.find((day) => (!after || day.date > after) && day.slots.some((slot) => slot.therapistIds.length > 0))?.date
+}

@@ -356,18 +356,18 @@ test.describe("languages", () => {
     await expect(page.getByRole("heading", { level: 1, name: "นวดไทยในบ้านไม้สัก กลางซอยอารีย์" })).toBeVisible()
     await page.getByRole("link", { name: "จองคิวนวด" }).first().click()
     await page.getByRole("radio", { name: /นวดฝ่าเท้า/ }).click()
-    await page.getByRole("button", { name: "ถัดไป" }).click()
+    await page.getByRole("button", { name: "ถัดไป", exact: true }).click()
     await expect(page.getByRole("heading", { level: 1, name: "สะดวกวันไหน เวลาไหน" })).toBeVisible()
     await page.getByRole("radio", { name: /^วันพฤหัสบดีที่ 5 พฤศจิกายน 2569/ }).click()
     await page.getByRole("radiogroup", { name: /^เวลา/ }).first().getByRole("radio").first().click()
-    await page.getByRole("button", { name: "ถัดไป" }).click()
+    await page.getByRole("button", { name: "ถัดไป", exact: true }).click()
     await expect(page.getByRole("heading", { level: 1, name: "ขอข้อมูลผู้จองหน่อยนะคะ" })).toBeVisible()
 
     // Validation speaks Thai
-    await page.getByRole("button", { name: "ถัดไป" }).click()
+    await page.getByRole("button", { name: "ถัดไป", exact: true }).click()
     await expect(page.getByText("กรอกชื่อด้วยนะคะ หมอนวดจะได้ทักถูกคน")).toBeVisible()
     await fillGuestDetails(page, "th")
-    await page.getByRole("button", { name: "ถัดไป" }).click()
+    await page.getByRole("button", { name: "ถัดไป", exact: true }).click()
 
     await expect(page.getByRole("heading", { level: 1, name: "ตรวจสอบและชำระเงิน" })).toBeVisible()
     await expect(page.getByTestId("deposit-amount")).toHaveText("฿140")

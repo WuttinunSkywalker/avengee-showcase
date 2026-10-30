@@ -94,7 +94,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] Customers page in the spa admin (`/[lang]/spa/admin/customers`): every guest from the booking history with visits, total spend, last and next visit; search by name, email or phone digits, sort by spend, visits, last visit or name (all in the URL); a profile sheet with contact links, spend, usual treatment and therapist, a notes field for the team (seeded for a few regulars in the language staff wrote them in) and the full visit history
 - [x] Found while building it: the seed spread every booking over 60 known customers, so regulars showed 75 visits in 90 days. Bookings now mostly go to one-off guests (tourists and first-timers, generated per booking without disturbing anything else in the seed), and regulars come about weekly
 - [x] Portal: the "Live" dot on the process stepper's server icon is green (a new `--online` token) instead of the yellow accent
-- [ ] Mobile date strip: scroll the selected date into view; show "next free day" shortcut
+- [x] Mobile date strip: the chosen day is centred in the strip (only the strip scrolls, never the page), and a "next free day" button under the times jumps past full days
+- [x] Found while building it: e2e locators like `{ name: "ถัดไป" }` match any button containing that word ("ดูวันว่างถัดไป"); Thai wizard buttons are now matched with `exact: true`
 - [ ] Gift vouchers purchase flow
 - [ ] Therapist avatars show Latin initials (KS, PC) on the Thai site; use the Thai nickname's first letter there
 - [x] The portal corner button now hides while scrolling down and returns on scroll up
