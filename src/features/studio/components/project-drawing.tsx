@@ -157,8 +157,17 @@ function Elevation({ project }: { project: Project }) {
   )
 }
 
-function Plan({ project, labels }: { project: Project; labels: DrawingLabels }) {
-  const p = planLayout(project)
+/** A paper-coloured outline behind small labels, so they stay legible where they cross linework. */
+const halo = { stroke: "var(--card)", strokeWidth: 3, paintOrder: "stroke" as const, strokeLinejoin: "round" as const }
+
+/** The rooms on one floor: the ground floor, or one of the floors above. */
+export function floorRooms(project: Project, floor: number): Project["rooms"] {
+  return floor > 1 ? (project.upper?.[floor - 2] ?? project.rooms) : project.rooms
+}
+
+function Plan({ project, labels, floor }: { project: Project; labels: DrawingLabels; floor: number }) {
+  const p = planLayout({ ...project, rooms: floorRooms(project, floor) })
+  const ground = floor === 1
   const bayW = BAY * p.scale
   const entrance = p.rooms.find((room) => room.room !== "court" && room.room !== "pool" && room.room !== "stair") ?? p.rooms[0]
   const doorW = Math.min(1.1 * p.scale, entrance.w - 6)
@@ -176,6 +185,12 @@ function Plan({ project, labels }: { project: Project; labels: DrawingLabels }) 
               <circle cx={x + w / 2} cy={p.y + p.d * 0.4} r={Math.min(w, p.d) * 0.28} fill="none" stroke="var(--line)" strokeWidth={0.8} {...ink(500)} />
             </>
           )}
+          {room === "void" && (
+            <g stroke="var(--line)" strokeWidth={0.6} strokeDasharray="4 3" opacity={0.8}>
+              <line x1={x + 4} y1={p.y + 4} x2={x + w - 4} y2={p.y + p.d - 4} {...ink(500)} />
+              <line x1={x + w - 4} y1={p.y + 4} x2={x + 4} y2={p.y + p.d - 4} {...ink(560)} />
+            </g>
+          )}
           {room === "pool" && <rect x={x + 6} y={p.y + 6} width={w - 12} height={p.d - 12} fill="var(--glass)" stroke="var(--line)" strokeWidth={0.8} {...ink(500)} />}
           {room === "stair" && (
             <g stroke="var(--line)" strokeWidth={0.6}>
@@ -186,16 +201,20 @@ function Plan({ project, labels }: { project: Project; labels: DrawingLabels }) 
             </g>
           )}
           {i > 0 && <line x1={x} y1={p.y} x2={x} y2={p.y + p.d} stroke="var(--line)" strokeWidth={1.6} {...ink(300 + i * 60)} />}
-          <text x={x + w / 2} y={room === "stair" ? p.y + p.d * 0.1 : p.y + p.d * 0.62} textAnchor="middle" fontSize={Math.min(11, Math.max(8, w / 7))} className="drawing-note fill-foreground">
+          <text x={x + w / 2} y={room === "stair" ? p.y + p.d * 0.1 : p.y + p.d * 0.62} textAnchor="middle" fontSize={Math.min(11, Math.max(8, w / 7))} className="drawing-note fill-foreground" {...halo}>
             {labels.rooms[room]}
           </text>
         </g>
       ))}
-      {/* Outer walls, with the front door left open */}
+      {/* Outer walls, with the front door left open on the ground floor */}
       <g fill="none" stroke="var(--line)" strokeWidth={wall} strokeLinecap="square">
-        <polyline points={points([[doorX, front], [p.x, front], [p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, front], [doorX + doorW, front]])} {...ink(0)} />
+        {ground ? (
+          <polyline points={points([[doorX, front], [p.x, front], [p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, front], [doorX + doorW, front]])} {...ink(0)} />
+        ) : (
+          <rect x={p.x} y={p.y} width={p.w} height={p.d} {...ink(0)} />
+        )}
       </g>
-      <path d={`M ${doorX} ${front} L ${doorX} ${front - doorW} A ${doorW} ${doorW} 0 0 1 ${doorX + doorW} ${front}`} fill="none" stroke="var(--line)" strokeWidth={0.7} {...ink(700)} />
+      {ground && <path d={`M ${doorX} ${front} L ${doorX} ${front - doorW} A ${doorW} ${doorW} 0 0 1 ${doorX + doorW} ${front}`} fill="none" stroke="var(--line)" strokeWidth={0.7} {...ink(700)} />}
       {/* Column grid at every bay */}
       <g fill="var(--line)">
         {Array.from({ length: project.bays + 1 }, (_, b) => (
@@ -308,8 +327,6 @@ function viewBoxFor(project: Project, view: DrawingView): string {
 }
 
 const SITE = { cx: 250, cy: 150, r: 112 }
-/** A paper-coloured outline behind small labels, so they stay legible where they cross linework. */
-const halo = { stroke: "var(--card)", strokeWidth: 3, paintOrder: "stroke" as const, strokeLinejoin: "round" as const }
 const dateStyle: Record<SunDate, { width: number; dash?: string }> = { june: { width: 1, dash: "5 3" }, equinox: { width: 1.6 }, december: { width: 1, dash: "1.5 3" } }
 
 /** Turns a local point (front of the plot at +y) to face `angle` degrees, about the site centre. */
@@ -474,6 +491,7 @@ export function ProjectDrawing({
   labels,
   title,
   animate = false,
+  floor = 1,
   className,
 }: {
   project: Project
@@ -481,6 +499,8 @@ export function ProjectDrawing({
   labels: DrawingLabels
   title: string
   animate?: boolean
+  /** Which floor the plan shows, 1 being the ground floor. */
+  floor?: number
   className?: string
 }) {
   return (
@@ -494,7 +514,7 @@ export function ProjectDrawing({
       className={cn("h-auto w-full overflow-visible", animate && "drawing-animate", className)}
     >
       {view === "elevation" && <Elevation project={project} />}
-      {view === "plan" && <Plan project={project} labels={labels} />}
+      {view === "plan" && <Plan project={project} labels={labels} floor={floor} />}
       {view === "section" && <Section project={project} labels={labels} />}
       {view === "site" && <Site project={project} labels={labels} />}
     </svg>

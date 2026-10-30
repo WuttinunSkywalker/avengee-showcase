@@ -200,6 +200,39 @@ test.describe("Sorn Studio", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("walks up through the floors of a house, all in the URL", async ({ page, consoleErrors }) => {
+    await page.goto("/en/studio?project=ari-house&view=plan")
+    const dialog = page.getByRole("dialog")
+    const floors = dialog.getByRole("radiogroup", { name: "Floor" })
+    await expect(floors.getByRole("radio")).toHaveText(["Ground floor", "First floor"])
+    await expect(dialog.getByRole("img", { name: "Ari House, Plan, Ground floor" })).toContainText("Courtyard")
+    await floors.getByRole("radio", { name: "First floor" }).click()
+    await expect(page).toHaveURL(/view=plan&floor=2/)
+    const upstairs = dialog.getByRole("img", { name: "Ari House, Plan, First floor" })
+    await expect(upstairs).toContainText("Open to below")
+    await expect(upstairs).toContainText("Stair")
+
+    // The shophouse goes up four floors; other drawings have no floors to pick
+    await page.goto("/en/studio?project=talat-noi-shophouse&view=plan&floor=4")
+    await expect(dialog.getByRole("img", { name: "Talat Noi Shophouse, Plan, Third floor" })).toContainText("Terrace")
+    await dialog.getByRole("radio", { name: "Section" }).click()
+    await expect(page).not.toHaveURL(/floor=/)
+    await expect(dialog.getByRole("radiogroup", { name: "Floor" })).toHaveCount(0)
+
+    // A one-storey retreat has just the one plan, and a floor that doesn't exist falls back to the ground
+    await page.goto("/en/studio?project=chiang-dao-retreat&view=plan&floor=3")
+    await expect(dialog.getByRole("img", { name: "Chiang Dao Retreat, Plan" })).toBeVisible()
+    await expect(dialog.getByRole("radiogroup", { name: "Floor" })).toHaveCount(0)
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("floors in Thai", async ({ page }) => {
+    await page.goto("/th/studio?project=nonthaburi-family-home&view=plan&floor=3")
+    const dialog = page.getByRole("dialog")
+    await expect(dialog.getByRole("radiogroup", { name: "ชั้น" }).getByRole("radio")).toHaveText(["ชั้น 1", "ชั้น 2", "ชั้น 3"])
+    await expect(dialog.getByRole("img", { name: /แปลนพื้น ชั้น 3$/ })).toContainText("ห้องทำงาน")
+  })
+
   test("the site plan in Thai", async ({ page }) => {
     await page.goto("/th/studio?project=chiang-dao-retreat&view=site")
     const drawing = page.getByRole("dialog").getByRole("img", { name: /ผังและแดด/ })
@@ -218,7 +251,7 @@ test.describe("Sorn Studio", () => {
     expect(serious.map((v) => `${v.id} → ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`)).toEqual([])
   })
 
-  for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan", "/en/studio?project=hua-hin-beach-house&view=site"]) {
+  for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan", "/en/studio?project=hua-hin-beach-house&view=site", "/en/studio?project=ari-house&view=plan&floor=2"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)
       await page.waitForLoadState("networkidle")

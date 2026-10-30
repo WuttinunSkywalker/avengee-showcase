@@ -64,3 +64,42 @@ describe("project sites", async () => {
     expect(projects.find((project) => project.id === "ari-house")?.site.facing).toBe(270)
   })
 })
+
+describe("upper floors", async () => {
+  const { projects } = await import("@/features/studio/data/projects")
+  const { floorRooms } = await import("@/features/studio/components/project-drawing")
+  const stairBay = (rooms: { room: string; bays: number }[]) => {
+    let bay = 0
+    for (const { room, bays } of rooms) {
+      if (room === "stair") return bay
+      bay += bays
+    }
+    return -1
+  }
+
+  it("draws a plan for every storey, each spanning the full width", () => {
+    for (const project of projects) {
+      const floors = [project.rooms, ...(project.upper ?? [])]
+      expect(floors, project.id).toHaveLength(project.storeys)
+      for (const rooms of floors) expect(rooms.reduce((sum, { bays }) => sum + bays, 0), project.id).toBe(project.bays)
+    }
+  })
+
+  it("keeps the stair in the same bay all the way up", () => {
+    for (const project of projects.filter((entry) => entry.storeys > 1)) {
+      const bays = [project.rooms, ...(project.upper ?? [])].map(stairBay)
+      expect(bays[0], project.id).toBeGreaterThanOrEqual(0)
+      expect(new Set(bays).size, project.id).toBe(1)
+    }
+  })
+
+  it("opens the upstairs over Ari House's courtyard and Hua Hin's pool", () => {
+    const ari = projects.find((project) => project.id === "ari-house")!
+    expect(floorRooms(ari, 2).map(({ room }) => room)).toContain("void")
+    expect(floorRooms(ari, 1)).toBe(ari.rooms)
+    expect(floorRooms(ari, 9)).toBe(ari.rooms)
+    const huaHin = projects.find((project) => project.id === "hua-hin-beach-house")!
+    expect(floorRooms(huaHin, 2)[0]).toEqual({ room: "void", bays: 2 })
+    expect(huaHin.rooms[0]).toEqual({ room: "pool", bays: 2 })
+  })
+})

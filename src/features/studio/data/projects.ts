@@ -5,7 +5,7 @@ export type ProjectType = (typeof PROJECT_TYPES)[number]
 
 export type Roof = "flat" | "gable" | "shed" | "butterfly"
 
-export const ROOMS = ["living", "kitchen", "bed", "bath", "court", "study", "shop", "cafe", "terrace", "pool", "clinic", "waiting", "garage", "stair"] as const
+export const ROOMS = ["living", "kitchen", "bed", "bath", "court", "study", "shop", "cafe", "terrace", "pool", "clinic", "waiting", "garage", "stair", "void"] as const
 export type Room = (typeof ROOMS)[number]
 
 export const FRONTAGES = ["soi", "road", "sea", "view"] as const
@@ -38,6 +38,8 @@ export interface Project {
   trees: number
   /** Ground-floor rooms, left to right, each spanning a number of bays. */
   rooms: { room: Room; bays: number }[]
+  /** Each floor above, from the first up, laid out the same way. "void" is open to the floor below. */
+  upper?: { room: Room; bays: number }[][]
   /** Where it stands: for the site plan and its sun path. */
   site: {
     latitude: number
@@ -72,6 +74,14 @@ export const projects: Project[] = [
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    upper: [
+      [
+        { room: "bed", bays: 2 },
+        { room: "void", bays: 1 },
+        { room: "bath", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+    ],
     site: { latitude: 13.78, facing: 270, plot: [18, 24], frontage: "soi" },
     summary: {
       en: "A family house on a narrow soi lot, wrapped in teak louvres and opened around a small courtyard with a mango tree.",
@@ -104,6 +114,20 @@ export const projects: Project[] = [
     rooms: [
       { room: "shop", bays: 1 },
       { room: "stair", bays: 1 },
+    ],
+    upper: [
+      [
+        { room: "study", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+      [
+        { room: "bed", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+      [
+        { room: "terrace", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
     ],
     site: { latitude: 13.73, facing: 90, plot: [7, 17], frontage: "road" },
     summary: {
@@ -172,8 +196,17 @@ export const projects: Project[] = [
     rooms: [
       { room: "pool", bays: 2 },
       { room: "terrace", bays: 1 },
-      { room: "living", bays: 2 },
+      { room: "living", bays: 1 },
       { room: "kitchen", bays: 1 },
+      { room: "stair", bays: 1 },
+    ],
+    upper: [
+      [
+        { room: "void", bays: 2 },
+        { room: "bed", bays: 2 },
+        { room: "bath", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
     ],
     site: { latitude: 12.57, facing: 90, plot: [26, 32], frontage: "sea" },
     summary: {
@@ -208,6 +241,13 @@ export const projects: Project[] = [
       { room: "cafe", bays: 2 },
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
+    ],
+    upper: [
+      [
+        { room: "cafe", bays: 2 },
+        { room: "terrace", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
     ],
     site: { latitude: 18.80, facing: 180, plot: [16, 18], frontage: "soi" },
     summary: {
@@ -279,6 +319,19 @@ export const projects: Project[] = [
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    upper: [
+      [
+        { room: "bed", bays: 2 },
+        { room: "bath", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+      [
+        { room: "bed", bays: 1 },
+        { room: "study", bays: 1 },
+        { room: "bath", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+    ],
     site: { latitude: 13.82, facing: 180, plot: [16, 22], frontage: "soi" },
     summary: {
       en: "Three generations under one gable roof: grandparents on the ground floor, parents and children above, sharing one long kitchen.",
@@ -312,6 +365,18 @@ export const projects: Project[] = [
       { room: "waiting", bays: 1 },
       { room: "clinic", bays: 1 },
       { room: "stair", bays: 1 },
+    ],
+    upper: [
+      [
+        { room: "clinic", bays: 1 },
+        { room: "clinic", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
+      [
+        { room: "study", bays: 1 },
+        { room: "bath", bays: 1 },
+        { room: "stair", bays: 1 },
+      ],
     ],
     site: { latitude: 13.73, facing: 0, plot: [12, 18], frontage: "road" },
     summary: {

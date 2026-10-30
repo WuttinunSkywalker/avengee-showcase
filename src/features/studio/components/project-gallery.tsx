@@ -74,6 +74,10 @@ export function ProjectGallery() {
   const viewParam = searchParams.get("view")
   const view: DrawingView = DRAWING_VIEWS.includes(viewParam as DrawingView) ? (viewParam as DrawingView) : "elevation"
   const open = openId ? projects.find((project) => project.id === openId) : undefined
+  // Plans of houses with more than one storey can show any floor (?floor=2); everything else is the ground floor.
+  const floorCount = open && view === "plan" ? 1 + (open.upper?.length ?? 0) : 1
+  const floorParam = Number(searchParams.get("floor"))
+  const floor = Number.isInteger(floorParam) && floorParam >= 2 && floorParam <= floorCount ? floorParam : 1
   // Arrows move through the projects the visitor is looking at, wrapping round.
   const sequence = open && visible.includes(open) ? visible : projects
   const position = open ? sequence.indexOf(open) : -1
@@ -90,7 +94,7 @@ export function ProjectGallery() {
 
   const step = (delta: number) => {
     const target = sequence[(position + delta + sequence.length) % sequence.length]
-    go({ project: target.id })
+    go({ project: target.id, floor: null })
   }
 
   return (
@@ -134,7 +138,7 @@ export function ProjectGallery() {
                   type="single"
                   variant="outline"
                   value={view}
-                  onValueChange={(value) => value && go({ view: value === "elevation" ? null : value })}
+                  onValueChange={(value) => value && go({ view: value === "elevation" ? null : value, floor: null })}
                   aria-label={t.lightbox.viewsLabel}
                   className="flex-wrap justify-start"
                 >
@@ -144,13 +148,31 @@ export function ProjectGallery() {
                     </ToggleGroupItem>
                   ))}
                 </ToggleGroup>
+                {floorCount > 1 && (
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    size="sm"
+                    value={String(floor)}
+                    onValueChange={(value) => value && go({ floor: value === "1" ? null : value })}
+                    aria-label={t.lightbox.floorsLabel}
+                    className="flex-wrap justify-start"
+                  >
+                    {Array.from({ length: floorCount }, (_, i) => (
+                      <ToggleGroupItem key={i} value={String(i + 1)} className="px-3">
+                        {t.lightbox.floor(i + 1)}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                )}
                 <div className="flex aspect-[16/10] items-center border border-border bg-card p-3 sm:p-5">
                   <ProjectDrawing
-                    key={`${open.id}-${view}`}
+                    key={`${open.id}-${view}-${floor}`}
                     project={open}
                     view={view}
+                    floor={floor}
                     labels={t.drawing}
-                    title={t.lightbox.drawingTitle(open.name[locale], t.lightbox.views[view])}
+                    title={t.lightbox.drawingTitle(open.name[locale], floorCount > 1 ? t.lightbox.viewOfFloor(t.lightbox.views[view], t.lightbox.floor(floor)) : t.lightbox.views[view])}
                     animate
                     className="max-h-full"
                   />
