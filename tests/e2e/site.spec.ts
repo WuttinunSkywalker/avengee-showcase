@@ -269,6 +269,8 @@ test.describe("showcase portal", () => {
     await steps.scrollIntoViewIfNeeded()
     await expect(steps).toHaveAttribute("data-inview", "true")
     await expect(page.getByTestId("process-live")).toContainText("Live")
+    // The status dot is the green people read as "online"
+    await expect(page.getByTestId("live-dot")).toHaveCSS("background-color", "rgb(34, 179, 94)")
     // How much of each visible track is filled: 1 once the line has run through it
     await expect
       .poll(

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDaysIcon, CalendarRangeIcon, ExternalLinkIcon, LayoutDashboardIcon, RotateCcwIcon } from "lucide-react"
+import { CalendarDaysIcon, CalendarRangeIcon, ExternalLinkIcon, LayoutDashboardIcon, RotateCcwIcon, UsersIcon } from "lucide-react"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -95,6 +95,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { href: href("/spa/admin"), label: t.admin.overview, icon: LayoutDashboardIcon },
     { href: href("/spa/admin/bookings"), label: t.admin.bookings, icon: CalendarDaysIcon },
     { href: href("/spa/admin/schedule"), label: t.admin.week.nav, icon: CalendarRangeIcon },
+    { href: href("/spa/admin/customers"), label: t.admin.customers.nav, icon: UsersIcon },
   ]
   const current = nav.find((item) => item.href === pathname)
 

@@ -51,8 +51,15 @@ describe("generateSeedBookings", () => {
       expect(getService(b.serviceId)).toBeDefined()
       expect(getServiceOption(b.serviceId, b.serviceMinutes)).toBeDefined()
       expect(getTherapist(b.therapistId)?.skills).toContain(b.serviceId)
-      expect(getCustomer(b.guest.customerId!)).toBeDefined()
+      // Known customers are real; everyone else is a one-off guest with a .example email
+      if (b.guest.customerId) expect(getCustomer(b.guest.customerId)).toBeDefined()
+      else expect(b.guest.email).toMatch(/@mail\.example$/)
+      expect(b.guest.name.split(" ").length).toBeGreaterThanOrEqual(2)
     }
+    // Most guests come once; the regulars come about weekly
+    const known = bookings.filter((b) => b.guest.customerId)
+    expect(known.length / bookings.length).toBeLessThan(0.35)
+    expect(known.length).toBeGreaterThan(100)
   })
 
   it("schedules within shifts and opening hours on working days", () => {

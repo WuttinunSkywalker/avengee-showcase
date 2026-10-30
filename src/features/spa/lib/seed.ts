@@ -1,5 +1,5 @@
 import { createRandom, randomCode, weightedPick, type Random } from "@/lib/random"
-import { customers } from "../data/customers"
+import { customers, oneOffGuest } from "../data/customers"
 import { addOns, getService } from "../data/services"
 import { spa } from "../data/spa"
 import { therapists, type Therapist } from "../data/therapists"
@@ -106,6 +106,11 @@ function bookTherapistDay(therapist: Therapist, date: ISODate, now: ZonedNow): B
     const status: BookingStatus = ended ? pastStatus : started ? "confirmed" : futureStatus
     const channel = pickChannel(detail, offset < 0)
     const customer = weightedPick(detail, customerWeights)
+    // Whether it really is that customer comes from its own generator, so the rest of the
+    // booking stays as it was. Regulars come about weekly; most others are one-off guests.
+    const who = createRandom(`${id}:guest`)
+    const known = who() < (customer.regular ? 0.2 : 0.12)
+    const guest: Booking["guest"] = known ? { name: customer.name, email: customer.email, phone: customer.phone, customerId: customer.id } : oneOffGuest(who)
     const paymentRoll = detail()
     const leadRoll = detail()
 
@@ -138,7 +143,7 @@ function bookTherapistDay(therapist: Therapist, date: ISODate, now: ZonedNow): B
       serviceMinutes: option.minutes,
       addOnIds,
       therapistId: therapist.id,
-      guest: { name: customer.name, email: customer.email, phone: customer.phone, customerId: customer.id },
+      guest,
       status,
       channel,
       total: quote.total,

@@ -101,3 +101,28 @@ export const customers: Customer[] = seeds.map(([name, country, phone, regular],
 export function getCustomer(id: string): Customer | undefined {
   return customers.find((customer) => customer.id === id)
 }
+
+/* ---------- One-off guests ---------- */
+
+const firstNames = [
+  ["Kanokwan", "TH"], ["Supachai", "TH"], ["Duangjai", "TH"], ["Phichit", "TH"], ["Waraporn", "TH"], ["Teerapat", "TH"], ["Nuntiya", "TH"], ["Somsak", "TH"],
+  ["Laura", "DE"], ["Nina", "NL"], ["Tom", "GB"], ["Grace", "AU"], ["Leo", "FR"], ["Hana", "JP"], ["Min-jun", "KR"], ["Wei", "CN"], ["Maya", "IN"], ["Ben", "US"], ["Clara", "ES"], ["Anna", "SE"],
+] as const
+const lastNames: Record<string, string[]> = {
+  TH: ["Srisuk", "Chaiyaporn", "Boonmee", "Thongchai", "Wattana", "Pongsiri", "Sukjai", "Kaewmanee"],
+  DE: ["Schmidt", "Keller"], NL: ["de Vries", "Jansen"], GB: ["Hughes", "Turner"], AU: ["Mitchell", "Walsh"], FR: ["Lefèvre", "Girard"], JP: ["Kobayashi", "Ito"], KR: ["Choi", "Lee"],
+  CN: ["Zhang", "Liu"], IN: ["Iyer", "Shah"], US: ["Carter", "Brooks"], ES: ["López", "Navarro"], SE: ["Berg", "Lund"],
+}
+const phonePrefix: Record<string, string> = { TH: "+66 8", DE: "+49 15", NL: "+31 6", GB: "+44 7700 9", AU: "+61 4", FR: "+33 6", JP: "+81 90", KR: "+82 10", CN: "+86 13", IN: "+91 98", US: "+1 415 555 0", ES: "+34 6", SE: "+46 70" }
+
+/**
+ * Someone who came once: tourists on a short stay and locals trying the
+ * place out. Most of a spa's guests are like this.
+ */
+export function oneOffGuest(random: () => number): { name: string; email: string; phone: string } {
+  const [first, country] = firstNames[Math.floor(random() * firstNames.length)]
+  const last = lastNames[country][Math.floor(random() * lastNames[country].length)]
+  const digits = Array.from({ length: 7 }, () => Math.floor(random() * 10)).join("")
+  const slug = `${first}.${last}`.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z.]/g, "")
+  return { name: `${first} ${last}`, email: `${slug}${digits.slice(0, 2)}@mail.example`, phone: `${phonePrefix[country]}${digits}`.replace(/(\d{3})(\d{4})$/, " $1 $2") }
+}

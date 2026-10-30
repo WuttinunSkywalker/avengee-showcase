@@ -12,6 +12,7 @@
   --color-signal: var(--signal);
   --color-signal-foreground: var(--signal-foreground);
   --color-success: var(--success);
+  --color-online: var(--online);
   --color-warning: var(--warning);
   --color-celadon: var(--celadon);
   --color-celadon-deep: var(--celadon-deep);
@@ -92,6 +93,8 @@
   --signal: #ffc53d;
   --signal-foreground: #3d2c00;
   --success: #0e6b4c;
+  /* Status dots for "up and running": the green people read as online */
+  --online: #22b35e;
   --warning: #b54708;
   --chart-1: #2f5bea;
   --chart-2: #14213d;
@@ -130,6 +133,7 @@
   --input: #2b3a5e;
   --ring: #7c9bff;
   --success: #3ccb7f;
+  --online: #3ccb7f;
   --warning: #fdb022;
   --chart-1: #7c9bff;
   --chart-2: #e8ecf5;

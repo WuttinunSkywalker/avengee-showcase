@@ -94,8 +94,8 @@ export function ProcessSteps() {
             className="absolute -top-1 -right-1 flex size-3.5 opacity-0 transition-opacity duration-300 group-data-[inview]/steps:opacity-100 motion-reduce:transition-none"
             style={at(live + 0.2)}
           >
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-signal opacity-60 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-3.5 rounded-full border-2 border-background bg-signal" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-online opacity-60 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-3.5 rounded-full border-2 border-background bg-online" data-testid="live-dot" />
           </span>
         </span>
         <span
