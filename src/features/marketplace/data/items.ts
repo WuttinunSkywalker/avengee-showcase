@@ -18,6 +18,8 @@ export interface Item {
   /** When the dealer put it up, for "newest first". */
   listedAt: string
   sold?: boolean
+  /** Taken down by the dealer for now; not shown or sold. */
+  hidden?: boolean
   image: string
   /** Long textiles and wide dishes are shown whole; everything else fills its tile. */
   fit?: "contain"

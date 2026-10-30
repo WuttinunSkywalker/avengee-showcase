@@ -1,6 +1,7 @@
 import { createRandom } from "@/lib/random"
 import { getSeller } from "../data/sellers"
 import type { DealerOrder, Purchase } from "./basket"
+import { shippedAt as shippedOn } from "./listings"
 
 const DAY = 86_400_000
 const BANGKOK = 7 * 3_600_000
@@ -28,10 +29,10 @@ export interface ParcelProgress {
  * courier takes two days; the buyer's confirmation (or a week of silence)
  * releases the payment.
  */
-export function parcelProgress(order: DealerOrder, placedAt: string, now: Date): ParcelProgress {
+export function parcelProgress(order: DealerOrder, placedAt: string, now: Date, markedShipped?: string): ParcelProgress {
   const seller = getSeller(order.sellerId)
   const placed = Date.parse(placedAt)
-  const shippedAt = placed + (seller?.shipsIn[0] ?? 2) * DAY
+  const shippedAt = shippedOn(placed + (seller?.shipsIn[0] ?? 2) * DAY, markedShipped)
   const deliveredAt = shippedAt + 2 * DAY
   const autoAt = deliveredAt + AUTO_RELEASE_DAYS * DAY
   const confirmed = order.receivedAt ? Date.parse(order.receivedAt) : null
@@ -60,8 +61,8 @@ export function confirmReceived(purchase: Purchase, orderReference: string, now:
 }
 
 /** How many of a purchase's parcels are done, for the order list. */
-export function purchaseProgress(purchase: Purchase, now: Date) {
-  const stages = purchase.orders.map((order) => parcelProgress(order, purchase.placedAt, now).stage)
+export function purchaseProgress(purchase: Purchase, now: Date, shipped: Record<string, string> = {}) {
+  const stages = purchase.orders.map((order) => parcelProgress(order, purchase.placedAt, now, shipped[order.reference]).stage)
   return { received: stages.filter((stage) => stage === "received").length, total: stages.length }
 }
 

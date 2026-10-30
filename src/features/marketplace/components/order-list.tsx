@@ -15,6 +15,7 @@ import { formatBaht } from "@/lib/format"
 import { getItem } from "../data/items"
 import { marketplaceMessages } from "../i18n/messages"
 import { bangkokDay, purchaseProgress } from "../lib/orders"
+import { useListingEdits } from "../hooks/use-basket"
 import { usePurchasesStore } from "../store/basket-store"
 
 /** Every purchase made in this browser, newest first, with how many parcels have arrived. */
@@ -24,6 +25,7 @@ export function OrderList() {
   const ready = usePersistHydrated(usePurchasesStore.persist)
   const purchases = usePurchasesStore((state) => state.purchases)
   const now = useNow()
+  const { edits } = useListingEdits()
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-12 sm:px-6">
@@ -45,7 +47,7 @@ export function OrderList() {
       ) : (
         <ul className="flex flex-col divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
           {purchases.map((purchase) => {
-            const progress = purchaseProgress(purchase, now)
+            const progress = purchaseProgress(purchase, now, edits.shipped)
             const pieces = purchase.orders.flatMap((order) => order.itemIds)
             return (
               <li key={purchase.reference} className="relative flex items-center gap-4 p-4 hover:bg-muted/50" data-testid="order-row">

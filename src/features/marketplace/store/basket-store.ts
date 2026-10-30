@@ -3,6 +3,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import { addPiece, removePiece, type BasketLine, type Purchase } from "../lib/basket"
+import { emptyEdits, type ListingEdits } from "../lib/listings"
 import { confirmReceived } from "../lib/orders"
 
 interface BasketState {
@@ -54,5 +55,37 @@ export const usePurchasesStore = create<PurchasesState>()(
         })),
     }),
     { name: "talad:purchases:v1", storage: createJSONStorage(() => localStorage), version: 1, skipHydration: true },
+  ),
+)
+
+interface ListingsState extends ListingEdits {
+  setPrice: (itemId: string, price: number) => void
+  /** Takes a piece down, or puts it back up. */
+  toggleHidden: (itemId: string) => void
+  markShipped: (orderReference: string, now: Date) => void
+}
+
+/** The Seller Centre's changes: prices, pieces taken down, parcels sent. */
+export const useListingsStore = create<ListingsState>()(
+  persist(
+    (set) => ({
+      ...emptyEdits,
+      setPrice: (itemId, price) => set((state) => ({ prices: { ...state.prices, [itemId]: price } })),
+      toggleHidden: (itemId) =>
+        set((state) => {
+          const hidden = { ...state.hidden }
+          if (hidden[itemId]) delete hidden[itemId]
+          else hidden[itemId] = true
+          return { hidden }
+        }),
+      markShipped: (orderReference, now) => set((state) => (state.shipped[orderReference] ? state : { shipped: { ...state.shipped, [orderReference]: now.toISOString() } })),
+    }),
+    {
+      name: "talad:listings:v1",
+      storage: createJSONStorage(() => localStorage),
+      version: 1,
+      skipHydration: true,
+      partialize: ({ prices, hidden, shipped }) => ({ prices, hidden, shipped }),
+    },
   ),
 )

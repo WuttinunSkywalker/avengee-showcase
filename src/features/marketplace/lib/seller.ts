@@ -3,6 +3,7 @@ import { createRandom, pick, randomCode, weightedPick } from "@/lib/random"
 import { getItem } from "../data/items"
 import { getSeller, type Seller } from "../data/sellers"
 import type { Purchase } from "./basket"
+import { shippedAt as shippedOn } from "./listings"
 import { parcelProgress, type Stage } from "./orders"
 
 const HOUR = 3_600_000
@@ -106,8 +107,10 @@ const provinceWeights = [
 /** How often each dealer sells something, per day. */
 const salesPerDay: Record<string, number> = { "baan-sangkhalok": 0.4, "talat-noi-trading": 0.5, "pha-kao-nan": 0.6, "doi-saeng": 0.36 }
 
-function stageAt(seller: Seller, placedAt: number, now: number, random: () => number) {
-  const shippedAt = placedAt + (seller.shipsIn[0] + Math.floor(random() * (seller.shipsIn[1] - seller.shipsIn[0] + 1))) * DAY
+function stageAt(seller: Seller, placedAt: number, now: number, random: () => number, marked?: string) {
+  const expected = placedAt + (seller.shipsIn[0] + Math.floor(random() * (seller.shipsIn[1] - seller.shipsIn[0] + 1))) * DAY
+  // Marking it shipped early brings the rest of the journey forward with it
+  const shippedAt = shippedOn(expected, marked)
   const deliveredAt = shippedAt + (1 + random() * 2) * DAY
   // Most buyers confirm within a few days; some never do and the week runs out.
   const releasedAt = random() < 0.8 ? deliveredAt + random() * 3 * DAY : deliveredAt + 7 * DAY
@@ -119,7 +122,7 @@ function stageAt(seller: Seller, placedAt: number, now: number, random: () => nu
  * A dealer's last 90 days of sales: seeded day by day, so history never
  * shifts, plus anything bought from them in this browser.
  */
-export function dealerSales(sellerId: string, now: Date, purchases: readonly Purchase[] = []): Sale[] {
+export function dealerSales(sellerId: string, now: Date, purchases: readonly Purchase[] = [], shipped: Record<string, string> = {}): Sale[] {
   const seller = getSeller(sellerId)
   if (!seller) return []
   const sales: Sale[] = []
@@ -138,12 +141,12 @@ export function dealerSales(sellerId: string, now: Date, purchases: readonly Pur
     const buyer = { en: `${first.en} ${latin}.`, th: first.th === first.en ? `${first.en} ${latin}.` : `${first.th} ${thai}.` }
     const provinceId = weightedPick(random, provinceWeights)
     const reference = `TL-${new Date(placedAt + BANGKOK).toISOString().slice(2, 10).replaceAll("-", "")}-${randomCode(random)}-1`
-    sales.push({ reference, placedAt, piece: piece.name, price, shipping: seller.shipping, buyer, provinceId, ...stageAt(seller, placedAt, now.getTime(), random) })
+    sales.push({ reference, placedAt, piece: piece.name, price, shipping: seller.shipping, buyer, provinceId, ...stageAt(seller, placedAt, now.getTime(), random, shipped[reference]) })
   }
 
   for (const purchase of purchases) {
     for (const order of purchase.orders.filter((entry) => entry.sellerId === sellerId)) {
-      const progress = parcelProgress(order, purchase.placedAt, now)
+      const progress = parcelProgress(order, purchase.placedAt, now, shipped[order.reference])
       for (const id of order.itemIds) {
         const item = getItem(id)
         if (!item) continue

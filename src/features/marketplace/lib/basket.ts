@@ -39,10 +39,10 @@ export function removePiece(lines: readonly BasketLine[], itemId: string): Baske
  * What's still in the basket: holds that haven't run out, for pieces that
  * exist and haven't been sold (to someone else, or already to you).
  */
-export function liveLines(lines: readonly BasketLine[], now: Date, unavailable: ReadonlySet<string> = new Set()): BasketLine[] {
+export function liveLines(lines: readonly BasketLine[], now: Date, unavailable: ReadonlySet<string> = new Set(), lookup: (id: string) => Item | undefined = getItem): BasketLine[] {
   return lines.filter((line) => {
-    const item = getItem(line.itemId)
-    return item && !item.sold && !unavailable.has(item.id) && holdEndsAt(line) > now.getTime()
+    const item = lookup(line.itemId)
+    return item && !item.sold && !item.hidden && !unavailable.has(item.id) && holdEndsAt(line) > now.getTime()
   })
 }
 
@@ -57,11 +57,11 @@ export interface DealerGroup {
   total: number
 }
 
-/** Dealers in the order their first piece went into the basket. */
-export function groupByDealer(lines: readonly BasketLine[]): DealerGroup[] {
+/** Dealers in the order their first piece went into the basket, at each piece's current price. */
+export function groupByDealer(lines: readonly BasketLine[], lookup: (id: string) => Item | undefined = getItem): DealerGroup[] {
   const groups = new Map<string, DealerGroup>()
   for (const line of lines) {
-    const item = getItem(line.itemId)
+    const item = lookup(line.itemId)
     const seller = item && getSeller(item.seller)
     if (!item || !seller) continue
     const group = groups.get(seller.id) ?? { seller, items: [], subtotal: 0, shipping: seller.shipping, total: seller.shipping }

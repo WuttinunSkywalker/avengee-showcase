@@ -26,7 +26,8 @@ export function Browse({ seller }: { seller?: string }) {
   const pathname = usePathname()
   const params = useSearchParams()
   const query: Query = { ...parseQuery(params), ...(seller ? { seller } : {}) }
-  const pool = useLiveItems()
+  // Pieces a dealer has taken down aren't on the market
+  const pool = useLiveItems().filter((item) => !item.hidden)
   const results = search(query, pool)
   // A dealer's page only offers the kinds of piece that dealer sells.
   const categories = seller ? CATEGORIES.filter((category) => pool.some((item) => item.seller === seller && item.category === category)) : CATEGORIES

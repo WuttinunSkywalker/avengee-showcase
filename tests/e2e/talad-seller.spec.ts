@@ -58,6 +58,64 @@ test.describe("Talad Seller Centre", () => {
     await expect(page.getByTestId("recent-orders").getByRole("listitem").first()).toContainText("Red supplementary-weft shoulder cloth")
   })
 
+  test("changes a price and takes a piece down, and the market follows", async ({ page, consoleErrors }) => {
+    await page.goto("/en/marketplace/seller?dealer=pha-kao-nan&view=listings")
+    await expect(page.getByTestId("listings-count")).toHaveText("7 of 8 pieces for sale")
+    await page.getByRole("button", { name: "Change the price of Red supplementary-weft shoulder cloth" }).click()
+    const dialog = page.getByRole("dialog")
+    await dialog.getByLabel("Price in baht").fill("29")
+    await dialog.getByRole("button", { name: "Save Price" }).click()
+    await expect(dialog.getByText("Enter a whole number of baht, from 100 to 2,000,000.")).toBeVisible()
+    await dialog.getByLabel("Price in baht").fill("2,900")
+    await dialog.getByRole("button", { name: "Save Price" }).click()
+    await expect(page.getByText("Red supplementary-weft shoulder cloth is now ฿2,900")).toBeVisible()
+
+    await page.getByRole("button", { name: "Take Sarong with a diamond border down" }).click()
+    await expect(page.getByTestId("listings-count")).toHaveText("6 of 8 pieces for sale")
+
+    await page.goto("/en/marketplace/items/pha-biang-red")
+    await expect(page.getByTestId("buy-box")).toContainText("฿2,900")
+    await page.goto("/en/marketplace/items/pha-sin-diamond-border")
+    await expect(page.getByTestId("buy-box")).toContainText("The dealer has taken this piece down for now.")
+    await page.goto("/en/marketplace?q=sarong")
+    await expect(page.getByTestId("item-card").first()).toBeVisible()
+    await expect(page.getByTestId("item-card").filter({ hasText: "Sarong with a diamond border" })).toHaveCount(0)
+
+    await page.goto("/en/marketplace/seller?dealer=pha-kao-nan&view=listings")
+    await page.getByRole("button", { name: "Put Sarong with a diamond border back up" }).click()
+    await expect(page.getByTestId("listings-count")).toHaveText("7 of 8 pieces for sale")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("marking a parcel shipped moves it on for the buyer", async ({ page }) => {
+    await page.goto("/en/marketplace/items/karen-tall-basket")
+    await page.getByTestId("buy-box").getByRole("button", { name: "Add to Basket" }).click()
+    await page.goto("/en/marketplace/checkout")
+    await page.getByLabel("Full name").fill("Ploy Srisuk")
+    await page.getByLabel("Email").fill("ploy@mail.example")
+    await page.getByLabel("Mobile number").fill("081 234 5678")
+    await page.getByLabel("House number and street").fill("88 Soi Ari 4")
+    await page.getByLabel("Subdistrict").fill("Samsen Nai")
+    await page.getByLabel("District", { exact: true }).fill("Phaya Thai")
+    await page.getByRole("combobox", { name: "Province" }).click()
+    await page.getByRole("option", { name: "Bangkok" }).click()
+    await page.getByLabel("Postcode").fill("10400")
+    await page.getByRole("button", { name: /^Pay / }).click()
+    await page.getByRole("button", { name: "I've Paid" }).click()
+    await page.waitForURL(/\/order\?ref=/)
+    const orderUrl = page.url()
+    const reference = `${new URL(orderUrl).searchParams.get("ref")}-1`
+    await expect(page.getByTestId("dealer-order").locator("[aria-current=step]")).toHaveText("Being packed")
+
+    await page.goto("/en/marketplace/seller?dealer=doi-saeng&view=orders&stage=packing")
+    await page.getByRole("button", { name: `Mark ${reference} shipped` }).click()
+    await expect(page.getByText(`${reference} is on its way. The buyer can see it now.`)).toBeVisible()
+
+    await page.goto(orderUrl)
+    await expect(page.getByTestId("dealer-order").locator("[aria-current=step]")).toHaveText("On its way")
+    await expect(page.getByRole("button", { name: "I've Received It" })).toBeVisible()
+  })
+
   test("speaks Thai, with buyers' names as they typed them", async ({ page }) => {
     await page.goto("/th/marketplace/seller?dealer=pha-kao-nan&view=orders")
     await expect(page.getByRole("tab", { name: "ออเดอร์" })).toHaveAttribute("aria-selected", "true")
@@ -65,7 +123,7 @@ test.describe("Talad Seller Centre", () => {
     await expect(page.locator("body")).toContainText(/[ก-๙]+ [ก-๙]\./)
   })
 
-  for (const path of ["/en/marketplace/seller", "/th/marketplace/seller?dealer=talat-noi-trading&view=orders", "/en/marketplace/seller?view=payouts"]) {
+  for (const path of ["/en/marketplace/seller", "/th/marketplace/seller?dealer=talat-noi-trading&view=orders", "/en/marketplace/seller?view=payouts", "/th/marketplace/seller?dealer=doi-saeng&view=listings"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)
       await page.waitForLoadState("networkidle")

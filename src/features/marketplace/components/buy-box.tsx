@@ -16,26 +16,30 @@ import { PriceTag } from "./price-tag"
 export function BuyBox({ item }: { item: Item }) {
   const locale = useLocale()
   const t = marketplaceMessages[locale]
-  const { ready, now, lines, bought } = useBasket()
+  const { ready, now, lines, bought, lookup } = useBasket()
   const add = useBasketStore((state) => state.add)
   const setOpen = useBasketStore((state) => state.setOpen)
+  // The listing as it stands: the dealer may have changed the price or taken it down
+  const live = (ready && lookup(item.id)) || item
   const mine = bought.has(item.id)
   const sold = Boolean(item.sold) || mine
   const line = lines.find((entry) => entry.itemId === item.id)
 
   return (
     <div className="flex flex-col gap-3" data-testid="buy-box">
-      <PriceTag price={item.price} sold={sold} soldLabel={t.card.sold} size="lg" className="self-start" />
+      <PriceTag price={live.price} sold={sold} soldLabel={t.card.sold} size="lg" className="self-start" />
       {item.sold ? (
         <p className="text-sm text-muted-foreground">{t.item.soldNote}</p>
       ) : !ready || !now ? (
         <Skeleton className="h-11 w-full max-w-xs" />
+      ) : live.hidden ? (
+        <p className="text-sm text-muted-foreground">{t.basket.takenDown}</p>
       ) : mine ? (
         <p className="text-sm font-medium text-primary">{t.basket.yours}</p>
       ) : line ? (
         <div className="flex flex-col gap-2">
           <p className="text-sm">
-            <span className="font-medium">{t.basket.inBasket}.</span> <span className="text-muted-foreground">{t.basket.heldUntil(bangkokClock(Date.parse(line.heldAt) + HOLD_MINUTES * 60_000))}</span>
+            <span className="font-medium">{t.basket.inBasket}</span> <span className="text-muted-foreground">{t.basket.heldUntil(bangkokClock(Date.parse(line.heldAt) + HOLD_MINUTES * 60_000))}</span>
           </p>
           <Button size="lg" variant="outline" className="self-start" onClick={() => setOpen(true)}>
             <ShoppingBagIcon data-icon="inline-start" aria-hidden="true" />

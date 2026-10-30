@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ExternalLinkIcon } from "lucide-react"
+import { ExternalLinkIcon, TruckIcon } from "lucide-react"
+import { toast } from "sonner"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
+import { useStorageSync } from "@/hooks/use-storage-sync"
 import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatDayMonth, formatLongDate, formatShortDate } from "@/lib/dates"
@@ -27,10 +29,12 @@ import { sellers } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
 import { bangkokDay, STAGES, type Stage } from "../lib/orders"
 import { COMMISSION, dealerSales, netOf, overview, payoutSummary, weeklyPayouts, type Sale } from "../lib/seller"
-import { usePurchasesStore } from "../store/basket-store"
+import { useListingEdits } from "../hooks/use-basket"
+import { useListingsStore, usePurchasesStore } from "../store/basket-store"
+import { SellerListings as Listings } from "./seller-listings"
 import { TaladWordmark } from "./marketplace-header"
 
-const VIEWS = ["overview", "orders", "payouts"] as const
+const VIEWS = ["overview", "orders", "listings", "payouts"] as const
 type View = (typeof VIEWS)[number]
 
 const stageVariant: Record<Stage, "default" | "secondary" | "outline"> = { packing: "default", shipped: "secondary", delivered: "secondary", received: "outline" }
@@ -113,7 +117,12 @@ function CentreBody({ sellerId, view, stage, locale, onView, onStage }: { seller
   const ready = usePersistHydrated(usePurchasesStore.persist)
   const purchases = usePurchasesStore((state) => state.purchases)
   const minute = now ? Math.floor(now.getTime() / 60_000) : null
-  const sales = useMemo(() => (minute === null || !ready ? null : dealerSales(sellerId, new Date(minute * 60_000), purchases)), [sellerId, minute, ready, purchases])
+  const { ready: editsReady, edits } = useListingEdits()
+  useStorageSync(usePurchasesStore.persist)
+  const sales = useMemo(
+    () => (minute === null || !ready || !editsReady ? null : dealerSales(sellerId, new Date(minute * 60_000), purchases, edits.shipped)),
+    [sellerId, minute, ready, editsReady, purchases, edits.shipped],
+  )
 
   if (!now || !sales) {
     return (
@@ -133,6 +142,9 @@ function CentreBody({ sellerId, view, stage, locale, onView, onStage }: { seller
       </TabsContent>
       <TabsContent value="orders" className="pt-4">
         {view === "orders" && <Orders sales={sales} stage={stage} locale={locale} onStage={onStage} />}
+      </TabsContent>
+      <TabsContent value="listings" className="pt-4">
+        {view === "listings" && <Listings sellerId={sellerId} locale={locale} />}
       </TabsContent>
       <TabsContent value="payouts" className="pt-4">
         {view === "payouts" && <Payouts sales={sales} now={now} locale={locale} />}
@@ -273,6 +285,7 @@ function Orders({ sales, stage, locale, onStage }: { sales: Sale[]; stage: Stage
               <p className="font-medium">{sale.piece[locale]}</p>
               <StageBadge stage={sale.stage} locale={locale} />
             </div>
+            {sale.stage === "packing" && <ShipButton sale={sale} locale={locale} className="self-start" />}
             <p className="text-muted-foreground">
               {t.placedFrom(sale.buyer[locale], getProvince(sale.provinceId)?.name[locale] ?? "", day(sale.placedAt, locale))}
             </p>
@@ -321,7 +334,10 @@ function Orders({ sales, stage, locale, onStage }: { sales: Sale[]; stage: Stage
                     <TableCell className="max-w-56 truncate">{sale.piece[locale]}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatBaht(netOf(sale))}</TableCell>
                     <TableCell className="pr-4">
-                      <StageBadge stage={sale.stage} locale={locale} />
+                      <div className="flex items-center gap-2">
+                        <StageBadge stage={sale.stage} locale={locale} />
+                        {sale.stage === "packing" && <ShipButton sale={sale} locale={locale} />}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -392,5 +408,28 @@ function Payouts({ sales, now, locale }: { sales: Sale[]; now: Date; locale: Loc
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/** The dealer has handed the parcel to the courier: the buyer sees it move straight away. */
+function ShipButton({ sale, locale, className }: { sale: Sale; locale: Locale; className?: string }) {
+  const t = marketplaceMessages[locale].centre
+  const markShipped = useListingsStore((state) => state.markShipped)
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={className}
+      aria-label={t.markShippedLabel(sale.reference)}
+      onClick={() => {
+        // Stamped at the start of the previous minute: screens re-read the clock every 30–60 seconds,
+        // and a mark a few seconds "in the future" would leave the parcel looking unsent until then.
+        markShipped(sale.reference, new Date((Math.floor(Date.now() / 60_000) - 1) * 60_000))
+        toast.success(t.shippedToast(sale.reference))
+      }}
+    >
+      <TruckIcon data-icon="inline-start" aria-hidden="true" />
+      {t.markShipped}
+    </Button>
   )
 }

@@ -23,13 +23,15 @@ import type { Seller } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
 import type { DealerOrder, Purchase } from "../lib/basket"
 import { bangkokDay, canConfirm, parcelProgress, STAGES } from "../lib/orders"
+import { useListingEdits } from "../hooks/use-basket"
 import { usePurchasesStore } from "../store/basket-store"
 
 /** Where one dealer's parcel is, and the button that pays the dealer once it's arrived. */
 export function ParcelStatus({ purchase, order, seller, now, locale }: { purchase: Purchase; order: DealerOrder; seller: Seller; now: Date; locale: Locale }) {
   const t = marketplaceMessages[locale].order
   const confirm = usePurchasesStore((state) => state.confirm)
-  const progress = parcelProgress(order, purchase.placedAt, now)
+  const { edits } = useListingEdits()
+  const progress = parcelProgress(order, purchase.placedAt, now, edits.shipped[order.reference])
   const current = STAGES.indexOf(progress.stage)
   const dealer = seller.name[locale]
   const date = (at: number) => formatLongDate(bangkokDay(at), locale)

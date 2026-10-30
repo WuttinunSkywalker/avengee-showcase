@@ -218,3 +218,52 @@ describe("Talad seller centre", async () => {
     expect(overview(sales, now).orders30).toBe(sales.filter((sale) => sale.placedAt > now.getTime() - 30 * 86_400_000).length)
   })
 })
+
+describe("Talad listing edits", async () => {
+  const { applyEdits, emptyEdits, parsePrice, shippedAt, validPrice } = await import("@/features/marketplace/lib/listings")
+  const { addPiece, groupByDealer, liveLines, placePurchase } = await import("@/features/marketplace/lib/basket")
+  const { parcelProgress } = await import("@/features/marketplace/lib/orders")
+  const { dealerSales } = await import("@/features/marketplace/lib/seller")
+  const now = new Date("2026-11-04T02:00:00Z")
+
+  it("reads prices the way dealers type them and keeps them sensible", () => {
+    expect(parsePrice("18,500")).toBe(18500)
+    expect(parsePrice("฿ 2,400")).toBe(2400)
+    expect(parsePrice("18500.00")).toBe(18500)
+    expect(parsePrice("18.5k")).toBeNaN()
+    expect([99, 100, 2_000_000, 2_000_001, 150.5].map(validPrice)).toEqual([false, true, true, false, false])
+  })
+
+  it("applies new prices and take-downs, and the basket follows", () => {
+    const edits = { ...emptyEdits, prices: { "pha-biang-red": 2900 }, hidden: { "karen-tall-basket": true as const } }
+    const edited = applyEdits(items, edits)
+    const lookup = (id: string) => edited.find((item) => item.id === id)
+    expect(lookup("pha-biang-red")?.price).toBe(2900)
+    expect(lookup("karen-tall-basket")?.hidden).toBe(true)
+    expect(lookup("olive-glaze-jar")).toBe(items.find((item) => item.id === "olive-glaze-jar"))
+    const lines = ["pha-biang-red", "karen-tall-basket"].reduce((acc, id) => addPiece(acc, id, now), [] as ReturnType<typeof addPiece>)
+    const live = liveLines(lines, now, new Set(), lookup)
+    expect(live.map((line) => line.itemId)).toEqual(["pha-biang-red"])
+    expect(groupByDealer(live, lookup)[0].subtotal).toBe(2900)
+  })
+
+  it("lets a dealer ship early but never late, and the journey moves with it", () => {
+    expect(shippedAt(1000, undefined)).toBe(1000)
+    expect(shippedAt(Date.parse("2026-11-06T00:00:00Z"), "2026-11-04T01:59:00Z")).toBe(Date.parse("2026-11-04T01:59:00Z"))
+    expect(shippedAt(Date.parse("2026-11-04T00:00:00Z"), "2026-11-05T00:00:00Z")).toBe(Date.parse("2026-11-04T00:00:00Z"))
+
+    const buyer = { name: "Ploy Srisuk", email: "ploy@example.com", phone: "0812345678", line1: "88 Soi Ari 4", line2: "Samsen Nai", district: "Phaya Thai", provinceId: "bangkok", postcode: "10400" }
+    const purchase = placePurchase(groupByDealer(addPiece([], "karen-tall-basket", now)), buyer, now)
+    const order = purchase.orders[0]
+    expect(parcelProgress(order, purchase.placedAt, now).stage).toBe("packing")
+    const marked = "2026-11-04T01:59:00Z"
+    expect(parcelProgress(order, purchase.placedAt, now, marked).stage).toBe("shipped")
+    expect(dealerSales("doi-saeng", now, [purchase], { [order.reference]: marked }).find((sale) => sale.yours)?.stage).toBe("shipped")
+
+    // A seeded order still being packed moves on too
+    const packing = dealerSales("doi-saeng", now).find((sale) => sale.stage === "packing")!
+    const after = dealerSales("doi-saeng", now, [], { [packing.reference]: marked }).find((sale) => sale.reference === packing.reference)!
+    expect(after.stage).toBe("shipped")
+    expect(after.deliveredAt).toBeLessThan(packing.deliveredAt)
+  })
+})
