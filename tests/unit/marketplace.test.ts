@@ -308,3 +308,11 @@ describe("Talad new listings", async () => {
     expect(photoProblem({ type: "image/png", size: 16 * 1024 * 1024 })).toBe("size")
   })
 })
+
+describe("Talad stock counts", () => {
+  it("leaves pieces taken down out of both for sale and sold", () => {
+    const pool = items.map((item) => (item.id === "pha-biang-red" ? { ...item, hidden: true } : item.id === "pha-si-hem" ? { ...item, sold: true } : item))
+    expect(sellerStock("pha-kao-nan")).toEqual({ forSale: 7, sold: 1 })
+    expect(sellerStock("pha-kao-nan", pool)).toEqual({ forSale: 5, sold: 2 })
+  })
+})

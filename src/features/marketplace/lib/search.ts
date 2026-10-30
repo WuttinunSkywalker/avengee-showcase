@@ -104,5 +104,6 @@ export function queryString(query: Query): string {
 
 export function sellerStock(sellerId: string, pool: readonly Item[] = allItems) {
   const own = pool.filter((item) => item.seller === sellerId)
-  return { forSale: own.filter((item) => !item.sold).length, sold: own.filter((item) => item.sold).length }
+  // Pieces taken down are neither for sale nor sold
+  return { forSale: own.filter((item) => !item.sold && !item.hidden).length, sold: own.filter((item) => item.sold).length }
 }

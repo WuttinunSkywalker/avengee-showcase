@@ -57,6 +57,8 @@ const en = {
   },
   seller: {
     since: (year: number) => `Dealing since ${year}`,
+    where: (town: string, year: number) => `${town}, dealing since ${year}`,
+    intro: (town: string, year: number, speciality: string) => `${town}, dealing since ${year}. ${speciality}`,
     replies: (minutes: number) => (minutes < 60 ? `Usually replies within ${minutes} minutes` : `Usually replies within ${Math.round(minutes / 60)} ${minutes < 120 ? "hour" : "hours"}`),
     rating: (rating: string, reviews: number) => `${rating} from ${reviews} reviews`,
     stock: (forSale: number, sold: number) => `${forSale} for sale, ${sold} sold`,
@@ -325,6 +327,8 @@ const th: MarketplaceMessages = {
   },
   seller: {
     since: (year) => `เปิดร้านมาตั้งแต่ปี ${year + 543}`,
+    where: (town, year) => `${town} เปิดร้านมาตั้งแต่ปี ${year + 543}`,
+    intro: (town, year, speciality) => `ร้านที่${town} เปิดมาตั้งแต่ปี ${year + 543} เน้น${speciality}`,
     replies: (minutes) => (minutes < 60 ? `ปกติตอบภายใน ${minutes} นาที` : `ปกติตอบภายใน ${Math.round(minutes / 60)} ชั่วโมง`),
     rating: (rating, reviews) => `${rating} จาก ${reviews} รีวิว`,
     stock: (forSale, sold) => `พร้อมขาย ${forSale} ชิ้น ขายไปแล้ว ${sold} ชิ้น`,

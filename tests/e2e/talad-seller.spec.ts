@@ -154,6 +154,21 @@ test.describe("Talad Seller Centre", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("stock counts follow pieces taken down, listed and bought", async ({ page }) => {
+    await page.goto("/en/marketplace/dealers/pha-kao-nan")
+    await expect(page.getByText("7 for sale, 1 sold")).toBeVisible()
+    await page.goto("/en/marketplace")
+    await expect(page.getByText("27 pieces for sale")).toBeVisible()
+
+    await page.goto("/en/marketplace/seller?dealer=pha-kao-nan&view=listings")
+    await page.getByRole("button", { name: "Take Sarong with a diamond border down" }).click()
+    await page.goto("/en/marketplace/dealers/pha-kao-nan")
+    await expect(page.getByText("6 for sale, 1 sold")).toBeVisible()
+    await page.goto("/en/marketplace")
+    await expect(page.getByText("26 pieces for sale")).toBeVisible()
+    await expect(page.getByTestId("dealer-card").filter({ hasText: "Pha Kao Nan" })).toContainText("6 for sale, 1 sold")
+  })
+
   test("a new piece that isn't here shows a clear message", async ({ page }) => {
     await page.goto("/en/marketplace/piece?id=new-abcdef")
     await expect(page.getByText("We can't find that piece")).toBeVisible()

@@ -8,15 +8,14 @@ import { formatBaht } from "@/lib/format"
 import { getItem, items, type Item } from "../data/items"
 import { getSeller, sellers, type Seller } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
-import { sellerStock } from "../lib/search"
 import { ItemCard, ListingPhoto } from "./item-card"
+import { LivePiecesForSale, LiveSellerStock } from "./live-counts"
 import { BuyBox } from "./buy-box"
 
 const heroPieces = ["sangkhalok-lidded-jar", "pha-sin-gold-hem", "bencharong-bowl", "karen-carry-basket"]
 
 export function HomeHero({ locale }: { locale: Locale }) {
   const t = marketplaceMessages[locale]
-  const forSale = items.filter((item) => !item.sold).length
   return (
     <section className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-12 sm:px-6 md:grid-cols-[1.1fr_1fr] md:pt-16">
       <div className="flex flex-col gap-5">
@@ -26,7 +25,7 @@ export function HomeHero({ locale }: { locale: Locale }) {
         <p className="max-w-[52ch] text-lg text-muted-foreground text-pretty">
           <Phrased text={t.hero.body} />
         </p>
-        <p className="text-sm font-medium text-primary">{t.hero.pieces(forSale)}</p>
+        <p className="text-sm font-medium text-primary"><LivePiecesForSale locale={locale} /></p>
       </div>
       <ul className="grid grid-cols-4 gap-2 md:grid-cols-2 md:gap-3">
         {heroPieces.map((id, index) => {
@@ -49,7 +48,6 @@ export function HomeHero({ locale }: { locale: Locale }) {
 
 function SellerFacts({ seller, locale }: { seller: Seller; locale: Locale }) {
   const t = marketplaceMessages[locale].seller
-  const stock = sellerStock(seller.id)
   return (
     <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
       <li className="flex items-center gap-2">
@@ -60,7 +58,9 @@ function SellerFacts({ seller, locale }: { seller: Seller; locale: Locale }) {
         <ClockIcon className="size-4" aria-hidden="true" />
         {t.replies(seller.repliesWithin)}
       </li>
-      <li>{t.stock(stock.forSale, stock.sold)}</li>
+      <li>
+        <LiveSellerStock sellerId={seller.id} locale={locale} />
+      </li>
     </ul>
   )
 }
@@ -95,7 +95,7 @@ export function DealerCards({ locale }: { locale: Locale }) {
                       </Link>
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {seller.town[locale]}, {t.since(seller.since).toLowerCase()}
+                      {t.where(seller.town[locale], seller.since)}
                     </p>
                   </div>
                   <p className="text-sm">{seller.speciality[locale]}</p>
@@ -122,7 +122,7 @@ export function SellerProfile({ seller, locale }: { seller: Seller; locale: Loca
           </Link>
           <h1 className="font-heading text-4xl sm:text-5xl">{seller.name[locale]}</h1>
           <p className="text-muted-foreground">
-            {seller.town[locale]}, {t.seller.since(seller.since).toLowerCase()}. {seller.speciality[locale]}
+            {t.seller.intro(seller.town[locale], seller.since, seller.speciality[locale])}
           </p>
           <p className="max-w-[60ch] text-pretty">{seller.about[locale]}</p>
         </div>
