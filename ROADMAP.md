@@ -54,7 +54,8 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Sorn Studio follow-ups
 
-- [ ] Drawings: plans for upper floors; a site plan with sun path for each project
+- [x] "Site and sun" drawing for every project: the plot and footprint turned to the house's real bearing, its frontage named (soi, road, beach, view), under the sun's path at its latitude on 21 June, the equinoxes and 21 December, with hours marked and the low afternoon sun shaded. In Thailand the June noon sun is to the north, and the drawing shows it. Projects gained site data (latitude, facing, plot, frontage); the floor plan's north arrow now turns with the house too. Sun maths in `src/features/studio/lib/sun.ts`, tested against the equinox and solstice noon positions
+- [ ] Drawings: plans for upper floors (bedrooms, bathrooms and terraces above the ground floor)
 - [ ] Sorn Studio enquiries could land in a small studio inbox page (like the shops' staff dashboards) so the form has somewhere to go
 
 ## Showcase 2: Kaffa Roasters (online shop, `/[lang]/shop`)

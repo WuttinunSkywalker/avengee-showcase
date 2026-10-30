@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config"
-import type { ProjectType, Room, Service, StageId } from "../data/projects"
+import type { SunDate } from "../lib/sun"
+import type { Frontage, ProjectType, Room, Service, StageId } from "../data/projects"
 import type { Budget, ContactMethod, EnquiryErrors, Timing } from "../lib/enquiry"
 import type { DrawingView } from "../components/project-drawing"
 
@@ -133,7 +134,7 @@ const en = {
     },
   },
   lightbox: {
-    views: { elevation: "Elevation", plan: "Plan", section: "Section" } satisfies Record<DrawingView, string>,
+    views: { elevation: "Elevation", plan: "Plan", section: "Section", site: "Site and sun" } satisfies Record<DrawingView, string>,
     viewsLabel: "Drawing",
     previous: "Previous project",
     next: "Next project",
@@ -164,6 +165,14 @@ const en = {
     north: "North",
     sun: "Sun at noon",
     breeze: "Breeze",
+    site: {
+      frontage: { soi: "Soi", road: "Road", sea: "Beach", view: "View to the hills" } satisfies Record<Frontage, string>,
+      dates: { june: "21 June", equinox: "21 March, 23 September", december: "21 December" } satisfies Record<SunDate, string>,
+      compass: { n: "N", e: "E", s: "S", w: "W" },
+      afternoon: "Afternoon sun",
+      latitude: (degrees: string) => `Sun path at ${degrees}° N`,
+      plot: (w: string, d: string) => `Plot ${w} × ${d}`,
+    },
   },
   footer: {
     rights: "All rights reserved.",
@@ -305,7 +314,7 @@ const th: StudioMessages = {
     },
   },
   lightbox: {
-    views: { elevation: "รูปด้าน", plan: "แปลนพื้น", section: "รูปตัด" },
+    views: { elevation: "รูปด้าน", plan: "แปลนพื้น", section: "รูปตัด", site: "ผังและแดด" },
     viewsLabel: "แบบ",
     previous: "โปรเจกต์ก่อนหน้า",
     next: "โปรเจกต์ถัดไป",
@@ -336,6 +345,14 @@ const th: StudioMessages = {
     north: "ทิศเหนือ",
     sun: "แดดเที่ยง",
     breeze: "ทางลม",
+    site: {
+      frontage: { soi: "ซอย", road: "ถนน", sea: "ชายหาด", view: "วิวภูเขา" },
+      dates: { june: "21 มิ.ย.", equinox: "21 มี.ค. และ 23 ก.ย.", december: "21 ธ.ค." },
+      compass: { n: "เหนือ", e: "ออก", s: "ใต้", w: "ตก" },
+      afternoon: "แดดบ่าย",
+      latitude: (degrees) => `ทางเดินดวงอาทิตย์ที่ละติจูด ${degrees}° เหนือ`,
+      plot: (w, d) => `ที่ดิน ${w} × ${d}`,
+    },
   },
   footer: {
     rights: "สงวนลิขสิทธิ์",

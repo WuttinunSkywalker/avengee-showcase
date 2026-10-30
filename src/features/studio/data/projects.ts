@@ -8,6 +8,9 @@ export type Roof = "flat" | "gable" | "shed" | "butterfly"
 export const ROOMS = ["living", "kitchen", "bed", "bath", "court", "study", "shop", "cafe", "terrace", "pool", "clinic", "waiting", "garage", "stair"] as const
 export type Room = (typeof ROOMS)[number]
 
+export const FRONTAGES = ["soi", "road", "sea", "view"] as const
+export type Frontage = (typeof FRONTAGES)[number]
+
 /** Width of one structural bay, in metres. */
 export const BAY = 3
 /** Floor-to-floor height, in metres. */
@@ -35,6 +38,16 @@ export interface Project {
   trees: number
   /** Ground-floor rooms, left to right, each spanning a number of bays. */
   rooms: { room: Room; bays: number }[]
+  /** Where it stands: for the site plan and its sun path. */
+  site: {
+    latitude: number
+    /** Compass bearing the front of the house faces, degrees clockwise from north. */
+    facing: number
+    /** Plot width along the front and depth back from it, metres. */
+    plot: [number, number]
+    /** What the front of the plot looks onto. */
+    frontage: Frontage
+  }
   summary: Localized
   notes: Localized[]
 }
@@ -59,6 +72,7 @@ export const projects: Project[] = [
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    site: { latitude: 13.78, facing: 270, plot: [18, 24], frontage: "soi" },
     summary: {
       en: "A family house on a narrow soi lot, wrapped in teak louvres and opened around a small courtyard with a mango tree.",
       th: "บ้านครอบครัวบนที่ดินหน้าแคบในซอย หุ้มด้วยระแนงไม้สัก และเปิดทุกห้องออกสู่คอร์ตเล็ก ๆ ที่มีต้นมะม่วง",
@@ -91,6 +105,7 @@ export const projects: Project[] = [
       { room: "shop", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    site: { latitude: 13.73, facing: 90, plot: [7, 17], frontage: "road" },
     summary: {
       en: "A 1960s shophouse turned into a ground-floor print shop with a home above, keeping the original facade and terrazzo floors.",
       th: "รีโนเวตตึกแถวยุค 2500 ให้ชั้นล่างเป็นร้านงานพิมพ์ ชั้นบนเป็นบ้าน เก็บหน้าตึกและพื้นหินขัดเดิมไว้",
@@ -125,6 +140,7 @@ export const projects: Project[] = [
       { room: "bed", bays: 1 },
       { room: "bath", bays: 1 },
     ],
+    site: { latitude: 19.37, facing: 330, plot: [40, 30], frontage: "view" },
     summary: {
       en: "Four guest cabins under steep tin roofs at the foot of Doi Chiang Dao, raised off the ground and facing the mountain.",
       th: "บ้านพักสี่หลังหลังคาสังกะสีทรงสูงที่เชิงดอยเชียงดาว ยกพื้นสูงจากดิน และหันหน้ารับวิวภูเขา",
@@ -159,6 +175,7 @@ export const projects: Project[] = [
       { room: "living", bays: 2 },
       { room: "kitchen", bays: 1 },
     ],
+    site: { latitude: 12.57, facing: 90, plot: [26, 32], frontage: "sea" },
     summary: {
       en: "A weekend house a block from the sea, with a butterfly roof that collects rain for the garden and a pool on the shaded side.",
       th: "บ้านพักวันหยุดห่างทะเลหนึ่งช่วงถนน หลังคาทรงผีเสื้อรองน้ำฝนไว้รดสวน และสระว่ายน้ำอยู่ฝั่งที่มีร่มเงา",
@@ -192,6 +209,7 @@ export const projects: Project[] = [
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    site: { latitude: 18.80, facing: 180, plot: [16, 18], frontage: "soi" },
     summary: {
       en: "A small café and roastery with a mono-pitch roof and a brick screen that throws patterned shade on the counter.",
       th: "ร้านกาแฟและโรงคั่วขนาดเล็ก หลังคาเพิงหมาแหงน และผนังอิฐเว้นช่องที่ทอดเงาเป็นลายลงบนเคาน์เตอร์",
@@ -227,6 +245,7 @@ export const projects: Project[] = [
       { room: "court", bays: 1 },
       { room: "bed", bays: 2 },
     ],
+    site: { latitude: 14.62, facing: 0, plot: [36, 28], frontage: "view" },
     summary: {
       en: "A long single-storey house along a hillside, with a breezeway courtyard between the living rooms and the bedrooms.",
       th: "บ้านชั้นเดียวทอดยาวตามแนวเนิน มีคอร์ตเปิดโล่งให้ลมผ่านคั่นระหว่างส่วนนั่งเล่นกับห้องนอน",
@@ -260,6 +279,7 @@ export const projects: Project[] = [
       { room: "kitchen", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    site: { latitude: 13.82, facing: 180, plot: [16, 22], frontage: "soi" },
     summary: {
       en: "Three generations under one gable roof: grandparents on the ground floor, parents and children above, sharing one long kitchen.",
       th: "บ้านสามรุ่นใต้หลังคาจั่วเดียวกัน คุณตาคุณยายอยู่ชั้นล่าง พ่อแม่และลูกอยู่ชั้นบน ใช้ครัวยาวร่วมกัน",
@@ -293,6 +313,7 @@ export const projects: Project[] = [
       { room: "clinic", bays: 1 },
       { room: "stair", bays: 1 },
     ],
+    site: { latitude: 13.73, facing: 0, plot: [12, 18], frontage: "road" },
     summary: {
       en: "An old townhouse refitted as a calm dental clinic, with a perforated metal skin that softens the street noise and light.",
       th: "ปรับปรุงทาวน์เฮาส์เก่าเป็นคลินิกทันตกรรมที่เงียบสงบ หุ้มด้วยแผ่นเหล็กเจาะรูที่ช่วยกรองเสียงและแสงจากถนน",

@@ -176,6 +176,37 @@ test.describe("Sorn Studio", () => {
     await expect(sent).toContainText("เราจะติดต่อกลับทางโทรศัพท์ภายในวันศุกร์ที่ 6 พฤศจิกายน 2569")
   })
 
+  test("draws each site with its plot turned the right way under the sun's path", async ({ page, consoleErrors }) => {
+    await page.goto("/en/studio?project=ari-house&view=plan")
+    const dialog = page.getByRole("dialog")
+    // The plan's north arrow turns with the house: Ari House faces west, so north points left
+    await expect(dialog.getByTestId("plan-north")).toHaveAttribute("transform", /^rotate\(-450 /)
+    await dialog.getByRole("radio", { name: "Site and sun" }).click()
+    await expect(page).toHaveURL(/view=site/)
+    const drawing = dialog.getByRole("img", { name: "Ari House, Site and sun" })
+    await expect(drawing).toContainText("Sun path at 13.8° N")
+    await expect(drawing.getByTestId("site-frontage")).toHaveText("Soi")
+    await expect(drawing.getByTestId("site-plot")).toHaveAttribute("transform", /^rotate\(90 /)
+    for (const date of ["june", "equinox", "december"]) await expect(drawing.getByTestId(`sun-${date}`)).toBeAttached()
+
+    // The next project keeps the site view: the shophouse fronts its road
+    await dialog.getByRole("heading", { name: "Ari House" }).click()
+    await page.keyboard.press("ArrowRight")
+    await expect(page).toHaveURL(/project=talat-noi-shophouse&view=site/)
+    await expect(dialog.getByRole("img", { name: "Talat Noi Shophouse, Site and sun" }).getByTestId("site-frontage")).toHaveText("Road")
+    // …and Hua Hin faces the sea to the east
+    await page.goto("/en/studio?project=hua-hin-beach-house&view=site")
+    await expect(page.getByRole("dialog").getByTestId("site-frontage")).toHaveText("Beach")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("the site plan in Thai", async ({ page }) => {
+    await page.goto("/th/studio?project=chiang-dao-retreat&view=site")
+    const drawing = page.getByRole("dialog").getByRole("img", { name: /ผังและแดด/ })
+    await expect(drawing).toContainText("ทางเดินดวงอาทิตย์ที่ละติจูด 19.4° เหนือ")
+    await expect(drawing.getByTestId("site-frontage")).toHaveText("วิวภูเขา")
+  })
+
   test("dark mode keeps contrast, drawings included", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" })
     await page.goto("/th/studio?project=ari-house&view=section")
@@ -187,7 +218,7 @@ test.describe("Sorn Studio", () => {
     expect(serious.map((v) => `${v.id} → ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`)).toEqual([])
   })
 
-  for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan"]) {
+  for (const path of ["/en/studio", "/th/studio?project=nimman-cafe&view=plan", "/en/studio?project=hua-hin-beach-house&view=site"]) {
     test(`${path} has no serious axe violations`, async ({ page }) => {
       await page.goto(path)
       await page.waitForLoadState("networkidle")

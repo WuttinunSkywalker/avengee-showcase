@@ -136,7 +136,7 @@ export function ProjectGallery() {
                   value={view}
                   onValueChange={(value) => value && go({ view: value === "elevation" ? null : value })}
                   aria-label={t.lightbox.viewsLabel}
-                  className="justify-start"
+                  className="flex-wrap justify-start"
                 >
                   {DRAWING_VIEWS.map((value) => (
                     <ToggleGroupItem key={value} value={value} className="px-3">
