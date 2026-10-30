@@ -10,6 +10,9 @@ import { CoffeeBag } from "@/features/shop/components/coffee-bag"
 import { getProduct } from "@/features/shop/data/products"
 import { shop } from "@/features/shop/data/shop"
 import { shopMessages } from "@/features/shop/i18n/messages"
+import { PriceTag } from "@/features/marketplace/components/price-tag"
+import { getItem } from "@/features/marketplace/data/items"
+import { marketplaceMessages } from "@/features/marketplace/i18n/messages"
 import { getDish, restaurant } from "@/features/restaurant/data/menu"
 import { restaurantMessages } from "@/features/restaurant/i18n/messages"
 import { ProjectDrawing } from "@/features/studio/components/project-drawing"
@@ -22,7 +25,7 @@ import heroImage from "../../../public/images/spa/hero-frangipani.webp"
  * 1200×630 share cards, rendered by the browser (so Thai tone marks stack
  * correctly) and captured to public/og by `pnpm capture:og`.
  */
-export const ogCards = ["portal", "spa", "shop", "studio", "restaurant"] as const
+export const ogCards = ["portal", "spa", "shop", "studio", "restaurant", "marketplace"] as const
 export type OgCardId = (typeof ogCards)[number]
 
 export function PortalOgCard({ locale }: { locale: Locale }) {
@@ -140,6 +143,32 @@ export function RestaurantOgCard({ locale }: { locale: Locale }) {
         <span className="absolute top-1/2 left-1/2 -translate-1/2 rounded-full bg-signal px-7 py-3 font-heading text-3xl font-semibold text-signal-foreground shadow-lg">
           {t.table.label(7)}
         </span>
+      </div>
+    </div>
+  )
+}
+
+export function MarketplaceOgCard({ locale }: { locale: Locale }) {
+  const t = marketplaceMessages[locale]
+  const piece = getItem("sangkhalok-lidded-jar")!
+  return (
+    <div className="flex size-full items-center gap-14 bg-background px-16 text-foreground">
+      <div className="flex flex-1 flex-col gap-8">
+        <span className="flex items-center gap-3 font-heading text-4xl">
+          <svg viewBox="0 0 20 28" className="h-9 w-auto text-gilt" aria-hidden="true">
+            <path d="M10 1 19 9v18H1V9Z" fill="currentColor" />
+            <circle cx="10" cy="9" r="2.4" className="fill-background" />
+          </svg>
+          Talad
+        </span>
+        <h1 className={locale === "th" ? "font-heading text-[54px] leading-[1.3]" : "font-heading text-[58px] leading-[1.08]"}>
+          <Phrased text={t.hero.title} />
+        </h1>
+        <span className="text-2xl text-muted-foreground">{t.tagline}</span>
+      </div>
+      <div className="relative h-[470px] w-[420px] shrink-0 overflow-hidden rounded-[var(--radius)] bg-plinth">
+        <Image src={piece.image} alt="" fill sizes="420px" priority className="object-cover" />
+        <PriceTag price={piece.price} soldLabel="" size="lg" className="absolute bottom-6 left-6 shadow-md" />
       </div>
     </div>
   )

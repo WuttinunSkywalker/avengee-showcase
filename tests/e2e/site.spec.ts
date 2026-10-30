@@ -7,7 +7,11 @@ test.describe("showcase portal", () => {
     await expect(page).toHaveTitle(/Avengee Team/)
     await expect(page.getByRole("heading", { level: 1, name: "Pick an app. Use it like your customers would." })).toBeVisible()
     await expect(page.getByRole("heading", { name: "Baan Lamai" })).toBeVisible()
-    await expect(page.getByText("Coming soon").first()).toBeVisible()
+    // Every app is open now: each card says so, none says "Coming soon"
+    const cards = page.locator("#showcases li").filter({ has: page.locator("h3") })
+    await expect(cards).toHaveCount(5)
+    for (const card of await cards.all()) await expect(card).toContainText("Live")
+    await expect(page.getByText("Coming soon")).toHaveCount(0)
     await page.getByRole("listitem").filter({ hasText: "Baan Lamai" }).getByRole("link", { name: "Open App" }).click()
     await expect(page).toHaveURL(/\/en\/spa$/)
     await expect(page.getByRole("heading", { level: 1, name: "Thai massage in a teak house in Ari." })).toBeVisible()
@@ -184,6 +188,17 @@ test.describe("showcase portal", () => {
     await expect(page.getByRole("heading", { level: 1, name: "สั่งอาหารจากโต๊ะได้เลย" })).toBeVisible()
   })
 
+  test("opens Talad from its card", async ({ page }) => {
+    await page.goto("/en")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Talad" }) })
+    await expect(card.getByText("Live")).toBeVisible()
+    await expect(card.getByRole("group", { name: "Talad screens" }).getByRole("button")).toHaveCount(3)
+    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveCount(0)
+    await card.getByRole("link", { name: /^Open App/ }).click()
+    await expect(page).toHaveURL(/\/en\/marketplace$/)
+    await expect(page.getByRole("heading", { level: 1, name: /One of each/ })).toBeVisible()
+  })
+
   test("staff dashboard links open each app's admin", async ({ page }) => {
     for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/], ["Krua Yai", /\/en\/restaurant\/kitchen$/]] as const) {
       await page.goto("/en")
@@ -215,7 +230,7 @@ test.describe("showcase portal", () => {
     }
   })
 
-  test("lists open apps before the ones coming soon", async ({ page }) => {
+  test("leads with Baan Lamai and Kaffa Roasters", async ({ page }) => {
     await page.goto("/en")
     const names = await page.locator("#showcases li h3").allTextContents()
     expect(names.slice(0, 2)).toEqual(["Baan Lamai", "Kaffa Roasters"])

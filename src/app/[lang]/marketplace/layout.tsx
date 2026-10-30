@@ -11,7 +11,12 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/marketpl
     title: { default: `Talad | ${t.tagline}`, template: "%s | Talad" },
     description: t.hero.body,
     alternates: { languages: { en: "/en/marketplace", th: "/th/marketplace" } },
-    openGraph: { siteName: "Talad", description: t.hero.body },
+    openGraph: {
+      siteName: "Talad",
+      description: t.hero.body,
+      images: [{ url: `/og/marketplace-${locale}.png`, width: 1200, height: 630, alt: "Talad" }],
+    },
+    twitter: { card: "summary_large_image", images: [`/og/marketplace-${locale}.png`] },
   }
 }
 

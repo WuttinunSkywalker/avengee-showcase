@@ -65,6 +65,53 @@ const shots = [
     ],
   },
   {
+    id: "talad",
+    path: "/marketplace",
+    mobilePath: "/marketplace#browse",
+    tour: [
+      {
+        key: "basket",
+        path: "/marketplace/items/bencharong-bowl",
+        // Three pieces from three dealers, the basket open
+        prepare: async (page) => {
+          await holdPieces(page)
+          await page.getByTestId("basket-button").click()
+          await page.waitForTimeout(700)
+        },
+        keepScroll: true,
+      },
+      {
+        key: "parcels",
+        path: "/marketplace/items/bencharong-bowl",
+        // Paid, and a day and a half later two parcels are on their way
+        prepare: async (page) => {
+          const th = page.url().includes("/th/")
+          await holdPieces(page)
+          await page.goto(page.url().replace(/\/marketplace\/.*$/, "/marketplace/checkout"), { waitUntil: "networkidle" })
+          const fill = (label, value) => page.getByLabel(label, { exact: true }).fill(value)
+          await fill(th ? "ชื่อ-นามสกุล" : "Full name", th ? "พลอย ศรีสุข" : "Ploy Srisuk")
+          await fill(th ? "อีเมล" : "Email", "ploy@mail.example")
+          await fill(th ? "เบอร์มือถือ" : "Mobile number", "081 234 5678")
+          await fill(th ? "บ้านเลขที่ ถนน" : "House number and street", th ? "88 ซอยอารีย์ 4" : "88 Soi Ari 4")
+          await fill(th ? "แขวง/ตำบล" : "Subdistrict", th ? "สามเสนใน" : "Samsen Nai")
+          await fill(th ? "เขต/อำเภอ" : "District", th ? "พญาไท" : "Phaya Thai")
+          await page.getByRole("combobox", { name: th ? "จังหวัด" : "Province" }).click()
+          await page.getByRole("option", { name: th ? "กรุงเทพมหานคร" : "Bangkok" }).click()
+          await fill(th ? "รหัสไปรษณีย์" : "Postcode", "10400")
+          await page.getByRole("button", { name: th ? /^จ่าย/ : /^Pay/ }).click()
+          await page.getByRole("button", { name: th ? "จ่ายแล้ว" : "I've Paid" }).click()
+          await page.waitForURL(/\/order\?ref=/)
+          await page.clock.setFixedTime(new Date(fixedNow.getTime() + 36 * 3_600_000))
+          await page.reload({ waitUntil: "networkidle" })
+          await page.addStyleTag({ content: hidePortalLink })
+          await page.waitForTimeout(600)
+          await page.evaluate(() => window.scrollTo(0, 260))
+        },
+        keepScroll: true,
+      },
+    ],
+  },
+  {
     id: "sorn-studio",
     path: "/studio",
     // The hero drawing traces itself in over about three seconds
@@ -88,6 +135,15 @@ const shots = [
     ],
   },
 ]
+
+/** Holds a piece from each of three Talad dealers, starting from a piece page. */
+async function holdPieces(page) {
+  for (const id of ["pha-biang-red", "karen-lacquer-box", "bencharong-bowl"]) {
+    await page.goto(page.url().replace(/\/marketplace\/.*$/, `/marketplace/items/${id}`), { waitUntil: "networkidle" })
+    await page.getByTestId("buy-box").getByRole("button").first().click()
+  }
+  await page.addStyleTag({ content: hidePortalLink })
+}
 
 const browser = await chromium.launch()
 for (const shot of shots.filter((s) => !only || s.id === only)) {

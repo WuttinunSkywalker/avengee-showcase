@@ -1,4 +1,6 @@
 import type { Localized } from "@/i18n/config"
+import { items as marketItems } from "@/features/marketplace/data/items"
+import { sellers } from "@/features/marketplace/data/sellers"
 import { products as coffeeProducts } from "@/features/shop/data/products"
 
 /**
@@ -93,18 +95,6 @@ export const showcases: Showcase[] = [
     },
   },
   {
-    id: "marketplace",
-    kind: "marketplace",
-    status: "soon",
-    name: "Talad",
-    category: { en: "Antiques marketplace", th: "ตลาดของเก่าออนไลน์" },
-    summary: {
-      en: "Four antiques dealers, one checkout. Search every dealer at once, browse each dealer's shop, and buy one-of-a-kind pieces from several in one go.",
-      th: "ร้านของเก่าสี่ร้านในที่เดียว ค้นหาข้ามทุกร้านได้ เข้าไปดูหน้าร้านของแต่ละเจ้า แล้วซื้อของชิ้นเดียวในโลกจากหลายร้านได้ในตะกร้าเดียว",
-    },
-    features: { en: ["Search across dealers", "Dealer shops", "Multi-dealer cart"], th: ["ค้นหาข้ามทุกร้าน", "หน้าร้านของแต่ละเจ้า", "ตะกร้ารวมหลายร้าน"] },
-  },
-  {
     id: "shop",
     kind: "shop",
     status: "live",
@@ -174,6 +164,41 @@ export const showcases: Showcase[] = [
         {
           src: { en: "/images/showcase/krua-yai-en-kitchen.jpg", th: "/images/showcase/krua-yai-th-kitchen.jpg" },
           label: { en: "Kitchen screen", th: "จอครัว" },
+        },
+      ],
+    },
+  },
+  {
+    id: "marketplace",
+    kind: "marketplace",
+    status: "live",
+    name: "Talad",
+    category: { en: "Antiques marketplace", th: "ตลาดของเก่าออนไลน์" },
+    summary: {
+      en: "Four antiques dealers, one checkout. Search every dealer at once in Thai or English, hold one-of-a-kind pieces for 30 minutes, pay once by PromptPay and follow a parcel from each dealer until you confirm it arrived.",
+      th: "ร้านของเก่าสี่ร้านในที่เดียว ค้นหาข้ามทุกร้านได้ทั้งไทยและอังกฤษ ของทุกชิ้นมีชิ้นเดียว ใส่ตะกร้าแล้วจองไว้ให้ 30 นาที จ่ายครั้งเดียวผ่านพร้อมเพย์ แล้วติดตามพัสดุของแต่ละร้านจนกดยืนยันว่าได้รับของ",
+    },
+    features: {
+      en: ["Search across dealers", "Dealer shops", "30-minute holds", "Multi-dealer checkout", "Parcel tracking", "Thai & English"],
+      th: ["ค้นหาข้ามทุกร้าน", "หน้าร้านของแต่ละเจ้า", "จองของไว้ 30 นาที", "ตะกร้ารวมหลายร้าน", "ติดตามพัสดุ", "ไทยและอังกฤษ"],
+    },
+    href: "/marketplace",
+    pages: ["/marketplace", ...sellers.map((seller) => `/marketplace/dealers/${seller.id}`), ...marketItems.map((item) => `/marketplace/items/${item.id}`)],
+    images: {
+      desktop: { en: "/images/showcase/talad-en.jpg", th: "/images/showcase/talad-th.jpg" },
+      mobile: { en: "/images/showcase/talad-en-mobile.jpg", th: "/images/showcase/talad-th-mobile.jpg" },
+      alt: {
+        en: "Talad's home page with Sangkhalok jars, old textiles and Karen baskets, and the listings on a phone",
+        th: "หน้าแรก Talad ที่มีไหสังคโลก ผ้าทอเก่า และตะกร้ากะเหรี่ยง และรายการของบนมือถือ",
+      },
+      tour: [
+        {
+          src: { en: "/images/showcase/talad-en-basket.jpg", th: "/images/showcase/talad-th-basket.jpg" },
+          label: { en: "Basket by dealer", th: "ตะกร้าแยกตามร้าน" },
+        },
+        {
+          src: { en: "/images/showcase/talad-en-parcels.jpg", th: "/images/showcase/talad-th-parcels.jpg" },
+          label: { en: "Parcel tracking", th: "ติดตามพัสดุ" },
         },
       ],
     },
