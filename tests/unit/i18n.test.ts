@@ -4,6 +4,7 @@ import { spaMessages } from "@/features/spa/i18n/messages"
 import { portalMessages } from "@/features/portal/messages"
 import { shopMessages } from "@/features/shop/i18n/messages"
 import { studioMessages } from "@/features/studio/i18n/messages"
+import { marketplaceMessages } from "@/features/marketplace/i18n/messages"
 import { restaurantMessages } from "@/features/restaurant/i18n/messages"
 import { formatDayMonth, formatLongDate, formatMonthShort, formatShortDate, formatWeekday } from "@/lib/dates"
 import { formatDuration } from "@/features/spa/lib/time"
@@ -90,12 +91,15 @@ describe("translations", () => {
     expect(studioMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
     expect(leafPaths(restaurantMessages.th).sort()).toEqual(leafPaths(restaurantMessages.en).sort())
     expect(restaurantMessages.th.landing.title).toMatch(/[\u0E00-\u0E7F]/)
+    expect(leafPaths(marketplaceMessages.th).sort()).toEqual(leafPaths(marketplaceMessages.en).sort())
+    expect(marketplaceMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
   })
 
   it("has no empty strings", () => {
     expect(emptyStrings(spaMessages)).toEqual([])
     expect(emptyStrings(portalMessages)).toEqual([])
     expect(emptyStrings(shopMessages).filter((path) => !path.endsWith("roastLevels.0"))).toEqual([])
+    expect(emptyStrings(marketplaceMessages)).toEqual([])
   })
 
   it("Thai copy is actually Thai, not left in English", () => {

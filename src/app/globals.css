@@ -19,6 +19,10 @@
   --color-turmeric: var(--turmeric);
   --color-leaf: var(--leaf);
   --color-chili: var(--chili);
+  --color-plinth: var(--plinth);
+  --color-gilt: var(--gilt);
+  --color-cinnabar: var(--cinnabar);
+  --color-cinnabar-foreground: var(--cinnabar-foreground);
   --color-fog: var(--fog);
   --color-roast-1: var(--roast-1);
   --color-roast-2: var(--roast-2);
@@ -446,6 +450,65 @@
   --ring: #5cc27a;
   --chili: #ff7a5c;
   --leaf: #5cc27a;
+}
+
+/*
+ * Talad. Gilt-lacquer (lai rod nam) used lightly: paper white, lacquer-black
+ * ink, a dark gilt that reads as gold leaf, and cinnabar for pieces already
+ * sold. Listing photos sit on --plinth, the grey of the studio backdrops.
+ */
+:root:has([data-app="marketplace"]:not([style*="display: none"], [style*="display: none"] *)),
+.theme-marketplace {
+  --font-display: var(--font-chonburi), ui-serif, Georgia, serif;
+  --font-body: var(--font-noto-sans-thai), ui-sans-serif, system-ui, sans-serif;
+  --background: #fcfcfb;
+  --foreground: #1f1b16;
+  --card: #ffffff;
+  --card-foreground: #1f1b16;
+  --popover: #ffffff;
+  --popover-foreground: #1f1b16;
+  --primary: #7a5a14;
+  --primary-foreground: #ffffff;
+  --secondary: #f2efe8;
+  --secondary-foreground: #1f1b16;
+  --muted: #f3f2ef;
+  --muted-foreground: #5f5a51;
+  --accent: #f6eed9;
+  --accent-foreground: #1f1b16;
+  --destructive: #a8321e;
+  --border: #e4e1da;
+  --input: #d3cfc6;
+  --ring: #7a5a14;
+  --plinth: #ecebe8;
+  --gilt: #b8902f;
+  --cinnabar: #a8321e;
+  --cinnabar-foreground: #ffffff;
+  --radius: 0.375rem;
+}
+
+:root.dark:has([data-app="marketplace"]:not([style*="display: none"], [style*="display: none"] *)),
+.dark .theme-marketplace {
+  --background: #14120e;
+  --foreground: #efe9dc;
+  --card: #1c1914;
+  --card-foreground: #efe9dc;
+  --popover: #1c1914;
+  --popover-foreground: #efe9dc;
+  --primary: #d8b45a;
+  --primary-foreground: #1a1408;
+  --secondary: #24201a;
+  --secondary-foreground: #efe9dc;
+  --muted: #221e17;
+  --muted-foreground: #b3aa98;
+  --accent: #2e2614;
+  --accent-foreground: #efe9dc;
+  --border: #332d22;
+  --input: #3f382b;
+  --ring: #d8b45a;
+  --plinth: #2a2620;
+  --gilt: #d8b45a;
+  --cinnabar: #f0806a;
+  --cinnabar-foreground: #1f0c07;
 }
 
 /*

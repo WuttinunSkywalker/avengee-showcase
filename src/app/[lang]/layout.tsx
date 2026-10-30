@@ -5,6 +5,7 @@ import {
   Archivo,
   Bai_Jamjuree,
   Bricolage_Grotesque,
+  Chonburi,
   Figtree,
   Geist,
   IBM_Plex_Sans_Thai,
@@ -13,6 +14,7 @@ import {
   Kanit,
   Manrope,
   Mitr,
+  Noto_Sans_Thai,
   Noto_Serif_Thai,
   Sarabun,
   Young_Serif,
@@ -70,6 +72,10 @@ const baiJamjuree = Bai_Jamjuree({
 const mitr = Mitr({ variable: "--font-mitr", weight: ["400", "500", "600"], subsets: ["latin", "thai"], display: "swap", preload: false })
 const sarabun = Sarabun({ variable: "--font-sarabun", weight: ["400", "500", "600"], subsets: ["latin", "thai"], display: "swap", preload: false })
 
+// Talad
+const chonburi = Chonburi({ variable: "--font-chonburi", weight: "400", subsets: ["latin", "thai"], display: "swap", preload: false })
+const notoSansThai = Noto_Sans_Thai({ variable: "--font-noto-sans-thai", subsets: ["latin", "thai"], display: "swap", preload: false })
+
 const fontVariables = [
   bricolage,
   geist,
@@ -86,6 +92,8 @@ const fontVariables = [
   baiJamjuree,
   mitr,
   sarabun,
+  chonburi,
+  notoSansThai,
 ]
   .map((font) => font.variable)
   .join(" ")

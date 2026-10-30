@@ -1,12 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { items } from "@/features/marketplace/data/items"
+import { sellers } from "@/features/marketplace/data/sellers"
 import { products } from "@/features/shop/data/products"
 import { isLocale, negotiateLocale } from "@/i18n/config"
 
-const productIds = new Set(products.map((product) => product.id))
+/** Pages with an id in the URL, by app and section, and the ids that exist. */
+const knownIds: Record<string, Record<string, Set<string>>> = {
+  shop: { coffee: new Set(products.map((product) => product.id)) },
+  marketplace: { items: new Set(items.map((item) => item.id)), dealers: new Set(sellers.map((seller) => seller.id)) },
+}
 
 /**
  * - Sends locale-less URLs to /en/… or /th/… based on the browser's language.
- * - Answers unknown product ids with a real 404. (With Cache Components the
+ * - Answers unknown product, piece and dealer ids with a real 404. (With Cache Components the
  *   page would stream a prerendered shell first, so its notFound() can't set
  *   the status, and dynamicParams = false isn't available.)
  */
@@ -17,7 +23,8 @@ export function proxy(request: NextRequest) {
 
   if (isLocale(first)) {
     const [, , app, section, id, extra] = segments
-    if (app === "shop" && section === "coffee" && id && (extra !== undefined || !productIds.has(id))) {
+    const ids = knownIds[app]?.[section]
+    if (ids && id && (extra !== undefined || !ids.has(id))) {
       return NextResponse.rewrite(new URL(`/${first}/unknown-product`, request.url), { status: 404 })
     }
     return NextResponse.next()

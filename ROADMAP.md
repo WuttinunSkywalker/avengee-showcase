@@ -43,7 +43,9 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 ## Showcase 4: Talad (multi-vendor marketplace, `/[lang]/marketplace`)
 
-- [ ] Seller storefronts, product search across sellers, multi-seller cart split at checkout
+- [x] Talad at `/[lang]/marketplace` as an antiques and vintage market (not on the portal yet): four dealers (Sangkhalok stoneware in Phitsanulok, jars/Bencharong/lacquer in Talat Noi, old Tai Lue textiles in Nan, Karen and Lahu baskets in Mae Sariang), 30 one-of-a-kind pieces photographed by the Rijksmuseum and the Ethnological Museum Berlin (CC0). Gilt-lacquer theme (Chonburi + Noto Sans Thai), price tags as punched dealer tags. Search across dealers from the header in Thai or English with synonyms (pottery, จักสาน), type filter, sold pieces on request, price sort, all in the URL; dealer shops; piece pages with era, size, condition, delivery and the Fine Arts export rule. Ban Chiang pottery, Buddha images and ivory were left out on purpose
+- [ ] Multi-dealer cart: add pieces (one of each, so a piece in someone's cart shows as reserved), cart grouped by dealer with each dealer's delivery fee, one checkout that splits into an order per dealer
+- [ ] Portal card for Talad: screenshots, share card, icons, sitemap, status live
 - [ ] Seller dashboard: listings, orders, payouts
 
 ## Sorn Studio follow-ups

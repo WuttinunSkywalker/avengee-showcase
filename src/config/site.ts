@@ -97,12 +97,12 @@ export const showcases: Showcase[] = [
     kind: "marketplace",
     status: "soon",
     name: "Talad",
-    category: { en: "Local makers marketplace", th: "ตลาดออนไลน์ของคนทำงานคราฟต์" },
+    category: { en: "Antiques marketplace", th: "ตลาดของเก่าออนไลน์" },
     summary: {
-      en: "Many sellers, one checkout. Seller storefronts, search and filters, reviews, and payouts per shop.",
-      th: "ร้านค้าหลายเจ้าในที่เดียว จ่ายเงินครั้งเดียว มีหน้าร้านของแต่ละคน ค้นหาและกรองสินค้า รีวิว และแยกยอดโอนให้แต่ละร้าน",
+      en: "Four antiques dealers, one checkout. Search every dealer at once, browse each dealer's shop, and buy one-of-a-kind pieces from several in one go.",
+      th: "ร้านของเก่าสี่ร้านในที่เดียว ค้นหาข้ามทุกร้านได้ เข้าไปดูหน้าร้านของแต่ละเจ้า แล้วซื้อของชิ้นเดียวในโลกจากหลายร้านได้ในตะกร้าเดียว",
     },
-    features: { en: ["Multi-vendor cart", "Seller dashboard", "Reviews"], th: ["ตะกร้ารวมหลายร้าน", "ระบบหลังบ้านสำหรับผู้ขาย", "รีวิวสินค้า"] },
+    features: { en: ["Search across dealers", "Dealer shops", "Multi-dealer cart"], th: ["ค้นหาข้ามทุกร้าน", "หน้าร้านของแต่ละเจ้า", "ตะกร้ารวมหลายร้าน"] },
   },
   {
     id: "shop",

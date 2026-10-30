@@ -27,7 +27,7 @@ Adding a showcase: create `src/app/[lang]/<slug>/layout.tsx` wrapping children i
 
 ## Conventions
 
-- Next.js 16 with Cache Components: read `node_modules/next/dist/docs/` before using unfamiliar APIs. Client components that read search params go inside `<Suspense>`.
+- Next.js 16 with Cache Components: read `node_modules/next/dist/docs/` before using unfamiliar APIs. Client components that read search params go inside `<Suspense>`. A page that calls `notFound()` for an unknown id streams its shell with a 200 first, so list the route's ids in `knownIds` in `src/proxy.ts`, which answers unknown ones with a real 404.
 - Anything time- or storage-dependent renders after mount (`useSyncExternalStore` with a `null` server snapshot) to avoid hydration mismatches. Date and currency strings are formatted by hand, not with `Intl`, so server and browser output match.
 - Mock data must be realistic and deterministic (seeded PRNG in `src/lib/random.ts`). Use the reserved `.example` domain for any email that isn't the team's own.
 - shadcn/ui components live in `src/components/ui`; follow `.claude/skills/shadcn` rules (FieldGroup/Field forms, ToggleGroup for option sets, semantic tokens, no manual `dark:` colours).

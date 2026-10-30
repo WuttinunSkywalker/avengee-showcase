@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
 import { describe, expect, it } from "vitest"
+import { items } from "@/features/marketplace/data/items"
+import { sellers } from "@/features/marketplace/data/sellers"
 import { products } from "@/features/shop/data/products"
 import { proxy } from "@/proxy"
 
@@ -25,8 +27,16 @@ describe("proxy", () => {
     }
   })
 
+  it("does the same for Talad's pieces and dealers", () => {
+    for (const item of items) expect(proxy(request(`/th/marketplace/items/${item.id}`)).status, item.id).toBe(200)
+    for (const seller of sellers) expect(proxy(request(`/en/marketplace/dealers/${seller.id}`)).status, seller.id).toBe(200)
+    for (const path of ["/en/marketplace/items/ming-vase", "/th/marketplace/dealers/nobody", "/en/marketplace/items/bencharong-bowl/extra"]) {
+      expect(proxy(request(path)).status, path).toBe(404)
+    }
+  })
+
   it("leaves the catalogue and other apps alone", () => {
-    for (const path of ["/en/shop/coffee", "/th/spa/book", "/en/shop/admin/orders"]) {
+    for (const path of ["/en/shop/coffee", "/th/spa/book", "/en/shop/admin/orders", "/en/marketplace", "/th/marketplace?q=jar"]) {
       expect(proxy(request(path)).status, path).toBe(200)
     }
   })
