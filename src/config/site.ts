@@ -183,6 +183,7 @@ export const showcases: Showcase[] = [
       th: ["ค้นหาข้ามทุกร้าน", "หน้าร้านของแต่ละเจ้า", "จองของไว้ 30 นาที", "ตะกร้ารวมหลายร้าน", "ติดตามพัสดุ", "ไทยและอังกฤษ"],
     },
     href: "/marketplace",
+    adminHref: "/marketplace/seller",
     pages: ["/marketplace", ...sellers.map((seller) => `/marketplace/dealers/${seller.id}`), ...marketItems.map((item) => `/marketplace/items/${item.id}`)],
     images: {
       desktop: { en: "/images/showcase/talad-en.jpg", th: "/images/showcase/talad-th.jpg" },

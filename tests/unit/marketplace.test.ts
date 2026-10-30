@@ -166,3 +166,55 @@ describe("Talad parcels", async () => {
     expect(trackingNumber(nan.reference)).not.toBe(trackingNumber(doi.reference))
   })
 })
+
+describe("Talad seller centre", async () => {
+  const { COMMISSION, dealerSales, netOf, overview, payoutDayFor, payoutSummary, weeklyPayouts } = await import("@/features/marketplace/lib/seller")
+  const now = new Date("2026-11-04T02:00:00Z")
+
+  it("seeds 90 days of sales that never shift, newest first, with Thai and English buyers", () => {
+    const sales = dealerSales("pha-kao-nan", now)
+    expect(sales.length).toBeGreaterThan(30)
+    expect(dealerSales("pha-kao-nan", now)).toEqual(sales)
+    for (let i = 1; i < sales.length; i++) expect(sales[i - 1].placedAt).toBeGreaterThanOrEqual(sales[i].placedAt)
+    expect(sales.every((sale) => sale.placedAt <= now.getTime() && sale.placedAt > now.getTime() - 92 * 86_400_000)).toBe(true)
+    expect(sales.some((sale) => /[฀-๿]/.test(sale.buyer.th))).toBe(true)
+    // A day both windows cover has the same sales whenever you look
+    const later = dealerSales("pha-kao-nan", new Date("2026-11-10T02:00:00Z"))
+    const older = (list: typeof sales) => list.filter((sale) => sale.placedAt >= Date.parse("2026-08-20") && sale.placedAt < Date.parse("2026-10-01")).map((sale) => sale.reference)
+    expect(older(later)).toEqual(older(sales))
+  })
+
+  it("adds the buyer's own orders from this browser", async () => {
+    const { addPiece, groupByDealer, placePurchase } = await import("@/features/marketplace/lib/basket")
+    const buyer = { name: "Ploy Srisuk", email: "ploy@example.com", phone: "0812345678", line1: "88 Soi Ari 4", line2: "Samsen Nai", district: "Phaya Thai", provinceId: "bangkok", postcode: "10400" }
+    const purchase = placePurchase(groupByDealer(addPiece([], "pha-biang-red", now)), buyer, now)
+    const sales = dealerSales("pha-kao-nan", now, [purchase])
+    const mine = sales.find((sale) => sale.yours)!
+    expect(mine).toMatchObject({ reference: `${purchase.reference}-1`, price: 2400, shipping: 60, stage: "packing", buyer: { en: "Ploy Srisuk", th: "Ploy Srisuk" } })
+    expect(dealerSales("doi-saeng", now, [purchase]).some((sale) => sale.yours)).toBe(false)
+  })
+
+  it("keeps the commission on the piece, never on delivery", () => {
+    expect(COMMISSION).toBe(0.08)
+    expect(netOf({ price: 10000, shipping: 250 })).toBe(9450)
+  })
+
+  it("pays out on the Monday after money is released, at 10:00 Bangkok", () => {
+    // Released Wed 4 Nov → Mon 9 Nov; released Mon 9 Nov 11:00 → the Monday after
+    expect(new Date(payoutDayFor(Date.parse("2026-11-04T02:00:00Z"))).toISOString()).toBe("2026-11-09T03:00:00.000Z")
+    expect(new Date(payoutDayFor(Date.parse("2026-11-09T04:00:00Z"))).toISOString()).toBe("2026-11-16T03:00:00.000Z")
+    expect(new Date(payoutDayFor(Date.parse("2026-11-09T02:00:00Z"))).toISOString()).toBe("2026-11-09T03:00:00.000Z")
+  })
+
+  it("splits money into paid, next Monday and still held, and charts twelve Mondays", () => {
+    const sales = dealerSales("talat-noi-trading", now)
+    const money = payoutSummary(sales, now)
+    const total = sales.reduce((sum, sale) => sum + netOf(sale), 0)
+    expect(money.paid.reduce((sum, payout) => sum + payout.amount, 0) + (money.next?.amount ?? 0) + money.held).toBe(total)
+    expect(money.paid.every((payout) => payout.paidAt <= now.getTime() && new Date(payout.paidAt).getUTCDay() === 1)).toBe(true)
+    const weeks = weeklyPayouts(money.paid, now)
+    expect(weeks).toHaveLength(12)
+    expect(new Date(weeks.at(-1)!.paidAt).toISOString()).toBe("2026-11-02T03:00:00.000Z")
+    expect(overview(sales, now).orders30).toBe(sales.filter((sale) => sale.placedAt > now.getTime() - 30 * 86_400_000).length)
+  })
+})

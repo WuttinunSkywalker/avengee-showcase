@@ -193,14 +193,14 @@ test.describe("showcase portal", () => {
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Talad" }) })
     await expect(card.getByText("Live")).toBeVisible()
     await expect(card.getByRole("group", { name: "Talad screens" }).getByRole("button")).toHaveCount(3)
-    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveCount(0)
+    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveAttribute("href", "/en/marketplace/seller")
     await card.getByRole("link", { name: /^Open App/ }).click()
     await expect(page).toHaveURL(/\/en\/marketplace$/)
     await expect(page.getByRole("heading", { level: 1, name: /One of each/ })).toBeVisible()
   })
 
   test("staff dashboard links open each app's admin", async ({ page }) => {
-    for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/], ["Krua Yai", /\/en\/restaurant\/kitchen$/]] as const) {
+    for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/], ["Krua Yai", /\/en\/restaurant\/kitchen$/], ["Talad", /\/en\/marketplace\/seller$/]] as const) {
       await page.goto("/en")
       const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name }) })
       await card.getByRole("link", { name: "Staff Dashboard" }).click()
