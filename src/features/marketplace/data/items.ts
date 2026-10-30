@@ -23,6 +23,8 @@ export interface Item {
   image: string
   /** Long textiles and wide dishes are shown whole; everything else fills its tile. */
   fit?: "contain"
+  /** Listed from this browser's Seller Centre: the photo is a data URL and the page is client-side. */
+  local?: boolean
 }
 
 const img = (id: string) => `/images/marketplace/${id}.webp`
@@ -527,6 +529,14 @@ export const items: Item[] = [
   },
 ]
 
+/** Pieces listed from this browser's Seller Centre, registered by the listings store once read. */
+const localItems = new Map<string, Item>()
+
+export function registerLocalItems(list: readonly Item[]) {
+  localItems.clear()
+  for (const item of list) localItems.set(item.id, item)
+}
+
 export function getItem(id: string): Item | undefined {
-  return items.find((item) => item.id === id)
+  return items.find((item) => item.id === id) ?? localItems.get(id)
 }

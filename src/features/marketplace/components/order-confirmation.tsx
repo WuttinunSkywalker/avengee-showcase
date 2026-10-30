@@ -17,6 +17,7 @@ import { getProvince } from "@/lib/thailand"
 import { getItem } from "../data/items"
 import { getSeller } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
+import { useListingEdits } from "../hooks/use-basket"
 import { usePurchasesStore } from "../store/basket-store"
 import { ParcelStatus } from "./parcel-status"
 
@@ -28,8 +29,10 @@ export function OrderConfirmation() {
   const ready = usePersistHydrated(usePurchasesStore.persist)
   const purchase = usePurchasesStore((state) => state.purchases.find((entry) => entry.reference === reference))
   const now = useNow()
+  // Pieces listed from this browser are only found once the listings are read
+  const { ready: listingsReady } = useListingEdits()
 
-  if (!ready || !now) {
+  if (!ready || !now || !listingsReady) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12 sm:px-6" aria-busy="true">
         <Skeleton className="h-24" />
@@ -103,7 +106,7 @@ export function OrderConfirmation() {
                   return (
                     <li key={id} className="flex w-full items-center gap-3 sm:w-[calc(50%-0.375rem)]">
                       <div className="relative size-14 shrink-0 overflow-clip rounded-[calc(var(--radius)-2px)] bg-plinth">
-                        <Image src={item.image} alt="" fill sizes="56px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
+                        <Image src={item.image} unoptimized={item.local} alt="" fill sizes="56px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
                       </div>
                       <div className="min-w-0 text-sm">
                         <p className="truncate font-medium">{item.name[locale]}</p>

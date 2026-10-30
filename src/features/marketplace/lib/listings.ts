@@ -1,4 +1,5 @@
-import type { Item } from "../data/items"
+import { createRandom, randomCode } from "@/lib/random"
+import type { Category, Item } from "../data/items"
 
 /** What dealers have changed from the Seller Centre, kept in this browser. */
 export interface ListingEdits {
@@ -37,4 +38,50 @@ export function applyEdits(items: readonly Item[], edits: ListingEdits): Item[] 
 /** A dealer can ship earlier than usual, never later: a mark only moves the date forward. */
 export function shippedAt(expected: number, marked: string | undefined): number {
   return marked ? Math.min(expected, Date.parse(marked)) : expected
+}
+
+/* ---------- Listing a new piece ---------- */
+
+export interface NewListing {
+  name: string
+  category: Category
+  description: string
+  era: string
+  size: string
+  condition: string
+  price: number
+  /** The photo, already resized in the browser, as a data URL. */
+  image: string
+}
+
+/** Phone photos run large; anything over this is probably not a photo. */
+export const PHOTO_MAX_BYTES = 15 * 1024 * 1024
+
+export function photoProblem(file: { type: string; size: number }): "type" | "size" | null {
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)) return "type"
+  if (file.size > PHOTO_MAX_BYTES) return "size"
+  return null
+}
+
+/**
+ * A piece a dealer has just listed. Dealers write it once, in their own
+ * language, and it reads the same in Thai and English.
+ */
+export function createListing(input: NewListing, sellerId: string, now: Date): Item {
+  const code = randomCode(createRandom(`talad:listing:${sellerId}:${now.toISOString()}:${input.name}`), 6).toLowerCase()
+  const same = (text: string) => ({ en: text.trim(), th: text.trim() })
+  return {
+    id: `new-${code}`,
+    seller: sellerId,
+    category: input.category,
+    name: same(input.name),
+    description: same(input.description),
+    era: same(input.era),
+    size: same(input.size),
+    condition: same(input.condition),
+    price: input.price,
+    listedAt: new Date(now.getTime() + 7 * 3_600_000).toISOString().slice(0, 10),
+    image: input.image,
+    local: true,
+  }
 }

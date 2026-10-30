@@ -3,6 +3,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import { addPiece, removePiece, type BasketLine, type Purchase } from "../lib/basket"
+import { registerLocalItems, type Item } from "../data/items"
 import { emptyEdits, type ListingEdits } from "../lib/listings"
 import { confirmReceived } from "../lib/orders"
 
@@ -59,6 +60,9 @@ export const usePurchasesStore = create<PurchasesState>()(
 )
 
 interface ListingsState extends ListingEdits {
+  /** Pieces listed from this browser. */
+  added: Item[]
+  addItem: (item: Item) => void
   setPrice: (itemId: string, price: number) => void
   /** Takes a piece down, or puts it back up. */
   toggleHidden: (itemId: string) => void
@@ -70,6 +74,8 @@ export const useListingsStore = create<ListingsState>()(
   persist(
     (set) => ({
       ...emptyEdits,
+      added: [],
+      addItem: (item) => set((state) => ({ added: [item, ...state.added] })),
       setPrice: (itemId, price) => set((state) => ({ prices: { ...state.prices, [itemId]: price } })),
       toggleHidden: (itemId) =>
         set((state) => {
@@ -85,7 +91,10 @@ export const useListingsStore = create<ListingsState>()(
       storage: createJSONStorage(() => localStorage),
       version: 1,
       skipHydration: true,
-      partialize: ({ prices, hidden, shipped }) => ({ prices, hidden, shipped }),
+      partialize: ({ prices, hidden, shipped, added }) => ({ prices, hidden, shipped, added }),
     },
   ),
 )
+
+// New pieces become findable by id everywhere (basket, orders, Seller Centre) as soon as they're read or added.
+useListingsStore.subscribe((state) => registerLocalItems(state.added))

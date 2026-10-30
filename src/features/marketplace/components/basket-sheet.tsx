@@ -12,6 +12,7 @@ import { useLocale } from "@/i18n/locale-provider"
 import { formatBaht } from "@/lib/format"
 import { useBasket } from "../hooks/use-basket"
 import { marketplaceMessages } from "../i18n/messages"
+import { itemPath } from "./item-card"
 import { bangkokClock, basketTotals, HOLD_MINUTES, holdEndsAt, type BasketLine, type DealerGroup } from "../lib/basket"
 import { useBasketStore } from "../store/basket-store"
 
@@ -33,10 +34,10 @@ export function DealerGroups({ groups, lines, locale, removable = false }: { gro
               return (
                 <li key={item.id} className="flex gap-3" data-testid="basket-line">
                   <div className="relative size-16 shrink-0 overflow-clip rounded-[calc(var(--radius)-2px)] bg-plinth">
-                    <Image src={item.image} alt="" fill sizes="64px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
+                    <Image src={item.image} unoptimized={item.local} alt="" fill sizes="64px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <Link href={localePath(locale, `/marketplace/items/${item.id}`)} className="truncate rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                    <Link href={localePath(locale, itemPath(item))} className="truncate rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
                       {item.name[locale]}
                     </Link>
                     <span className="font-heading text-sm tabular-nums">{formatBaht(item.price)}</span>

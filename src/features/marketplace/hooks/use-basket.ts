@@ -10,15 +10,18 @@ import { applyEdits, emptyEdits, type ListingEdits } from "../lib/listings"
 import { useBasketStore, useListingsStore, usePurchasesStore } from "../store/basket-store"
 
 /** The dealers' edits once read from storage; none on the server. */
-export function useListingEdits(): { ready: boolean; edits: ListingEdits } {
+export function useListingEdits(): { ready: boolean; edits: ListingEdits; added: Item[] } {
   const ready = usePersistHydrated(useListingsStore.persist)
   useStorageSync(useListingsStore.persist)
   const prices = useListingsStore((state) => state.prices)
   const hidden = useListingsStore((state) => state.hidden)
   const shipped = useListingsStore((state) => state.shipped)
+  const added = useListingsStore((state) => state.added)
   const edits = useMemo(() => (ready ? { prices, hidden, shipped } : emptyEdits), [ready, prices, hidden, shipped])
-  return { ready, edits }
+  return { ready, edits, added: ready ? added : noItems }
 }
+
+const noItems: Item[] = []
 
 /**
  * Listings as they stand: dealers' new prices and take-downs applied, and the
@@ -27,13 +30,14 @@ export function useListingEdits(): { ready: boolean; edits: ListingEdits } {
 export function useLiveItems(): Item[] {
   const ready = usePersistHydrated(usePurchasesStore.persist)
   const purchases = usePurchasesStore((state) => state.purchases)
-  const { edits } = useListingEdits()
+  const { edits, added } = useListingEdits()
   return useMemo(() => {
-    const edited = applyEdits(items, edits)
+    // Newly listed pieces lead, as they're the newest
+    const edited = applyEdits([...added, ...items], edits)
     if (!ready || !purchases.length) return edited
     const bought = boughtIds(purchases)
     return edited.map((item) => (bought.has(item.id) ? { ...item, sold: true } : item))
-  }, [ready, purchases, edits])
+  }, [ready, purchases, edits, added])
 }
 
 /**
@@ -45,14 +49,14 @@ export function useLiveItems(): Item[] {
 export function useBasket() {
   const basketReady = usePersistHydrated(useBasketStore.persist)
   const purchasesReady = usePersistHydrated(usePurchasesStore.persist)
-  const { ready: editsReady, edits } = useListingEdits()
+  const { ready: editsReady, edits, added } = useListingEdits()
   useStorageSync(useBasketStore.persist)
   useStorageSync(usePurchasesStore.persist)
   const now = useNow()
   const lines = useBasketStore((state) => state.lines)
   const purchases = usePurchasesStore((state) => state.purchases)
   const bought = useMemo(() => boughtIds(purchases), [purchases])
-  const byId = useMemo(() => new Map(applyEdits(items, edits).map((item) => [item.id, item])), [edits])
+  const byId = useMemo(() => new Map(applyEdits([...added, ...items], edits).map((item) => [item.id, item])), [edits, added])
   const lookup = (id: string) => byId.get(id)
   const ready = basketReady && purchasesReady && editsReady && now !== null
   const live = ready ? liveLines(lines, now, bought, lookup) : []

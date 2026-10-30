@@ -13,13 +13,18 @@ import { PriceTag } from "./price-tag"
  * read as a box.
  */
 export function ListingPhoto({ item, alt, sizes, priority, padding = "p-4", className }: { item: Item; alt: string; sizes: string; priority?: boolean; padding?: string; className?: string }) {
-  if (item.fit !== "contain") return <Image src={item.image} alt={alt} fill priority={priority} sizes={sizes} className={cn("object-cover", className)} />
+  if (item.fit !== "contain") return <Image src={item.image} unoptimized={item.local} alt={alt} fill priority={priority} sizes={sizes} className={cn("object-cover", className)} />
   return (
     <>
-      <Image src={item.image} alt="" aria-hidden="true" fill sizes={sizes} className="scale-125 object-cover opacity-60 blur-2xl" />
-      <Image src={item.image} alt={alt} fill priority={priority} sizes={sizes} className={cn("object-contain drop-shadow-md", padding, className)} />
+      <Image src={item.image} unoptimized={item.local} alt="" aria-hidden="true" fill sizes={sizes} className="scale-125 object-cover opacity-60 blur-2xl" />
+      <Image src={item.image} unoptimized={item.local} alt={alt} fill priority={priority} sizes={sizes} className={cn("object-contain drop-shadow-md", padding, className)} />
     </>
   )
+}
+
+/** Pieces from the catalogue have their own page; ones listed in this browser open on a client-side page. */
+export function itemPath(item: Pick<Item, "id" | "local">): string {
+  return item.local ? `/marketplace/piece?id=${item.id}` : `/marketplace/items/${item.id}`
 }
 
 /** A listing in the grid: the piece on its plinth, what it is, who sells it, and its tag. */
@@ -40,7 +45,7 @@ export function ItemCard({ item, locale, showSeller = true, priority = false }: 
       <div className="flex flex-col gap-1">
         <h3 className="text-[0.95rem] leading-snug font-medium text-pretty">
           <Link
-            href={localePath(locale, `/marketplace/items/${item.id}`)}
+            href={localePath(locale, itemPath(item))}
             className="rounded-sm after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             {item.name[locale]}

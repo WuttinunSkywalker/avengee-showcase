@@ -17,6 +17,8 @@ import { formatBaht } from "@/lib/format"
 import type { Item } from "../data/items"
 import { useLiveItems } from "../hooks/use-basket"
 import { marketplaceMessages } from "../i18n/messages"
+import { itemPath } from "./item-card"
+import { NewListing } from "./new-listing"
 import { parsePrice, validPrice } from "../lib/listings"
 import { useListingsStore } from "../store/basket-store"
 
@@ -53,11 +55,11 @@ export function SellerListings({ sellerId, locale }: { sellerId: string; locale:
 
   const thumb = (item: Item) => (
     <div className="relative size-12 shrink-0 overflow-clip rounded-[calc(var(--radius)-2px)] bg-plinth">
-      <Image src={item.image} alt="" fill sizes="48px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
+      <Image src={item.image} unoptimized={item.local} alt="" fill sizes="48px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
     </div>
   )
   const name = (item: Item) => (
-    <Link href={localePath(locale, `/marketplace/items/${item.id}`)} className="rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+    <Link href={localePath(locale, itemPath(item))} className="rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
       {item.name[locale]}
     </Link>
   )
@@ -65,9 +67,12 @@ export function SellerListings({ sellerId, locale }: { sellerId: string; locale:
 
   return (
     <div className="flex flex-col gap-4" data-testid="listings">
-      <p className="text-sm text-muted-foreground" data-testid="listings-count">
-        {t.count(forSale, own.length)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground" data-testid="listings-count">
+          {t.count(forSale, own.length)}
+        </p>
+        <NewListing sellerId={sellerId} locale={locale} />
+      </div>
       <ul className="flex flex-col divide-y divide-border rounded-[var(--radius)] border border-border bg-card md:hidden">
         {own.map((item) => (
           <li key={item.id} className="flex flex-col gap-3 p-4 text-sm" data-testid="listing">

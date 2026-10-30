@@ -267,3 +267,44 @@ describe("Talad listing edits", async () => {
     expect(after.deliveredAt).toBeLessThan(packing.deliveredAt)
   })
 })
+
+describe("Talad new listings", async () => {
+  const { createListing, photoProblem } = await import("@/features/marketplace/lib/listings")
+  const { getItem, registerLocalItems } = await import("@/features/marketplace/data/items")
+  const now = new Date("2026-11-04T02:00:00Z")
+  const input = {
+    name: "  Celadon bowl with a fish in the well ",
+    category: "ceramics" as const,
+    description: "A deep bowl with a carved fish under a sea-green glaze.",
+    era: "Si Satchanalai kilns, 15th century",
+    size: "Ø 24 cm",
+    condition: "Small chip on the rim",
+    price: 14500,
+    image: "data:image/webp;base64,AAAA",
+  }
+
+  it("makes a local piece that reads the same in both languages", () => {
+    const item = createListing(input, "baan-sangkhalok", now)
+    expect(item.id).toMatch(/^new-[a-z2-9]{6}$/)
+    expect(item).toMatchObject({ seller: "baan-sangkhalok", local: true, price: 14500, listedAt: "2026-11-04", name: { en: "Celadon bowl with a fish in the well", th: "Celadon bowl with a fish in the well" } })
+    expect(createListing(input, "baan-sangkhalok", now).id).toBe(item.id)
+    expect(createListing(input, "baan-sangkhalok", new Date(now.getTime() + 1000)).id).not.toBe(item.id)
+  })
+
+  it("finds registered pieces by id like any other", () => {
+    const item = createListing(input, "baan-sangkhalok", now)
+    expect(getItem(item.id)).toBeUndefined()
+    registerLocalItems([item])
+    expect(getItem(item.id)).toBe(item)
+    expect(getItem("bencharong-bowl")?.local).toBeUndefined()
+    registerLocalItems([])
+    expect(getItem(item.id)).toBeUndefined()
+  })
+
+  it("accepts phone photos and turns away other files", () => {
+    expect(photoProblem({ type: "image/jpeg", size: 4_000_000 })).toBeNull()
+    expect(photoProblem({ type: "image/heic", size: 2_000_000 })).toBeNull()
+    expect(photoProblem({ type: "application/pdf", size: 1000 })).toBe("type")
+    expect(photoProblem({ type: "image/png", size: 16 * 1024 * 1024 })).toBe("size")
+  })
+})

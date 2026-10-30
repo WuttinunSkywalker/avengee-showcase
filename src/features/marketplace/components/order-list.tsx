@@ -56,7 +56,7 @@ export function OrderList() {
                     const item = getItem(id)
                     return item ? (
                       <div key={id} className="relative size-14 overflow-clip rounded-[calc(var(--radius)-2px)] border-2 border-card bg-plinth">
-                        <Image src={item.image} alt="" fill sizes="56px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
+                        <Image src={item.image} unoptimized={item.local} alt="" fill sizes="56px" className={item.fit === "contain" ? "object-contain p-1" : "object-cover"} />
                       </div>
                     ) : null
                   })}

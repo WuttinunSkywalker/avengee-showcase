@@ -116,6 +116,49 @@ test.describe("Talad Seller Centre", () => {
     await expect(page.getByRole("button", { name: "I've Received It" })).toBeVisible()
   })
 
+  test("lists a new piece with a photo, and it's on the market straight away", async ({ page, consoleErrors }) => {
+    await page.goto("/en/marketplace/seller?dealer=baan-sangkhalok&view=listings")
+    await expect(page.getByTestId("listings-count")).toHaveText("7 of 8 pieces for sale")
+    await page.getByRole("button", { name: "List a Piece" }).click()
+    const sheet = page.getByTestId("new-listing")
+    // Nothing filled in: every field says what it needs
+    await sheet.getByRole("button", { name: "Put on the Market" }).click()
+    await expect(sheet.getByText("Give the piece a name.")).toBeVisible()
+    await expect(sheet.getByText("Add a photo of the piece.")).toBeVisible()
+
+    await sheet.locator("input[type=file]").setInputFiles({ name: "notes.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") })
+    await expect(sheet.getByText("Choose a JPEG, PNG, WebP or HEIC photo.")).toBeVisible()
+    await sheet.locator("input[type=file]").setInputFiles("public/images/marketplace/olive-glaze-jar.webp")
+    await expect(sheet.getByRole("img", { name: "The photo you chose" })).toBeVisible()
+    await expect(sheet.getByRole("radio", { name: "Ceramics" })).toBeChecked()
+    await sheet.getByLabel("Name").fill("Celadon bowl with a fish in the well")
+    await sheet.getByLabel("Description").fill("A deep bowl with a carved fish under a sea-green glaze.")
+    await sheet.getByLabel("Age and origin").fill("Si Satchanalai kilns, 15th century")
+    await sheet.getByLabel("Size").fill("Ø 24 cm")
+    await sheet.getByLabel("Price in baht").fill("14,500")
+    await sheet.getByLabel("Condition").fill("Small chip on the rim")
+    await sheet.getByRole("button", { name: "Put on the Market" }).click()
+    await expect(page.getByText("Celadon bowl with a fish in the well is on the market")).toBeVisible()
+    await expect(page.getByTestId("listings-count")).toHaveText("8 of 9 pieces for sale")
+
+    // Shoppers find it, open it and can hold it
+    await page.goto("/en/marketplace?q=fish+in+the+well")
+    const card = page.getByTestId("item-card").filter({ hasText: "Celadon bowl with a fish in the well" })
+    await expect(card).toContainText("฿14,500")
+    await card.getByRole("link").click()
+    await expect(page).toHaveURL(/\/en\/marketplace\/piece\?id=new-[a-z2-9]{6}$/)
+    await expect(page.getByRole("heading", { level: 1, name: "Celadon bowl with a fish in the well" })).toBeVisible()
+    await page.getByTestId("buy-box").getByRole("button", { name: "Add to Basket" }).click()
+    await page.getByRole("button", { name: "Basket, 1 piece" }).click()
+    await expect(page.getByTestId("basket-sheet")).toContainText("Celadon bowl with a fish in the well")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("a new piece that isn't here shows a clear message", async ({ page }) => {
+    await page.goto("/en/marketplace/piece?id=new-abcdef")
+    await expect(page.getByText("We can't find that piece")).toBeVisible()
+  })
+
   test("speaks Thai, with buyers' names as they typed them", async ({ page }) => {
     await page.goto("/th/marketplace/seller?dealer=pha-kao-nan&view=orders")
     await expect(page.getByRole("tab", { name: "ออเดอร์" })).toHaveAttribute("aria-selected", "true")
