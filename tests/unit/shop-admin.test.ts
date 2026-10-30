@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { getProvince, postcodeMatchesProvince } from "@/features/shop/data/thailand"
+import { getProvince, postcodeMatchesProvince } from "@/lib/thailand"
 import {
   fulfilmentStatus,
   generateShopOrders,

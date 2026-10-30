@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CheckIcon, ChevronsUpDownIcon, ShoppingBagIcon, TriangleAlertIcon } from "lucide-react"
+import { ShoppingBagIcon, TriangleAlertIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
@@ -21,8 +19,8 @@ import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { isValidPhone } from "@/lib/phone"
-import { cn } from "@/lib/utils"
-import { getProvince, postcodeMatchesProvince, provinces } from "../../data/thailand"
+import { ProvincePicker } from "@/components/province-picker"
+import { getProvince, postcodeMatchesProvince } from "@/lib/thailand"
 import { shopMessages, type ShopMessages } from "../../i18n/messages"
 import { cartLines, stockShortages } from "../../lib/cart"
 import {
@@ -247,6 +245,7 @@ export function Checkout() {
                     <FieldLabel htmlFor="checkout-province">{t.checkout.province}</FieldLabel>
                     <ProvincePicker
                       id="checkout-province"
+                      labels={{ placeholder: t.checkout.provincePlaceholder, search: t.checkout.provinceSearch, empty: t.checkout.provinceEmpty }}
                       value={field.value}
                       onChange={(value) => {
                         field.onChange(value)
@@ -455,69 +454,5 @@ export function Checkout() {
         </Button>
       </aside>
     </form>
-  )
-}
-
-function ProvincePicker({ id, value, onChange, invalid }: { id: string; value: string; onChange: (value: string) => void; invalid: boolean }) {
-  const locale = useLocale()
-  const t = shopMessages[locale].checkout
-  const [open, setOpen] = useState(false)
-  const selected = getProvince(value)
-  const sorted = useMemo(
-    () => [...provinces].sort((a, b) => a.name[locale].localeCompare(b.name[locale], locale === "th" ? "th" : "en")),
-    [locale],
-  )
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-invalid={invalid}
-          className={cn("h-10 w-full justify-between font-normal", !selected && "text-muted-foreground")}
-        >
-          {selected ? selected.name[locale] : t.provincePlaceholder}
-          <ChevronsUpDownIcon className="opacity-50" aria-hidden="true" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        // No exit animation: while a closing popover lingers, Radix treats the next radio click's
-        // synthetic event as an outside click and calls flushSync inside an effect.
-        className="w-[--radix-popover-trigger-width] p-0 data-[state=closed]:animate-none"
-        align="start"
-      >
-        <Command
-          filter={(itemValue, search) => {
-            const province = getProvince(itemValue)
-            const haystack = province ? `${province.name.en} ${province.name.th}`.toLowerCase() : itemValue
-            return haystack.includes(search.toLowerCase()) ? 1 : 0
-          }}
-        >
-          <CommandInput placeholder={t.provinceSearch} />
-          <CommandList>
-            <CommandEmpty>{t.provinceEmpty}</CommandEmpty>
-            <CommandGroup>
-              {sorted.map((province) => (
-                <CommandItem
-                  key={province.id}
-                  value={province.id}
-                  onSelect={(next) => {
-                    onChange(next)
-                    setOpen(false)
-                  }}
-                >
-                  {province.name[locale]}
-                  <CheckIcon className={cn("ml-auto", value === province.id ? "opacity-100" : "opacity-0")} aria-hidden="true" />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
   )
 }

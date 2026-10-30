@@ -11,6 +11,7 @@ import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { marketplaceMessages } from "../i18n/messages"
 import { emptyQuery, queryString } from "../lib/search"
+import { BasketSheet } from "./basket-sheet"
 
 /** The wordmark: the name in the display face with a small gilt tag, the site's one ornament. */
 export function TaladWordmark({ className }: { className?: string }) {
@@ -86,17 +87,18 @@ export function MarketplaceHeader() {
   const locale = useLocale()
   const t = marketplaceMessages[locale]
   const search = <SearchForm locale={locale} />
+  const themeLabel = locale === "th" ? "สลับโหมดมืด" : "Toggle dark mode"
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:h-16 md:flex-row md:items-center md:gap-6 md:py-0">
-        <div className="flex items-center justify-between gap-4">
-          <TaladWordmark />
-          <div className="flex items-center gap-1 md:hidden">
-            <LocaleSwitcher />
-            <ThemeToggle label={locale === "th" ? "สลับโหมดมืด" : "Toggle dark mode"} />
-          </div>
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 md:h-16 md:flex-nowrap md:gap-6 md:py-0">
+        <TaladWordmark />
+        {/* One basket for every screen size: it moves to the end of the row on desktop. */}
+        <div className="ml-auto flex items-center gap-1 md:order-last md:ml-0">
+          <LocaleSwitcher className="md:hidden" />
+          <ThemeToggle className="md:hidden" label={themeLabel} />
+          <BasketSheet />
         </div>
-        <div className="md:mx-auto md:w-full md:max-w-xl">{search}</div>
+        <div className="w-full md:mx-auto md:max-w-xl md:flex-1">{search}</div>
         <nav aria-label={t.nav.main} className="hidden items-center gap-1 md:flex">
           <Link
             href={`${localePath(locale, "/marketplace")}#dealers`}
@@ -105,7 +107,7 @@ export function MarketplaceHeader() {
             {t.nav.dealers}
           </Link>
           <LocaleSwitcher className="ml-1" />
-          <ThemeToggle label={locale === "th" ? "สลับโหมดมืด" : "Toggle dark mode"} />
+          <ThemeToggle label={themeLabel} />
         </nav>
       </div>
     </header>

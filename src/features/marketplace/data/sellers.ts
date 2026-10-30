@@ -89,3 +89,9 @@ export const sellers: Seller[] = [
 export function getSeller(id: string): Seller | undefined {
   return sellers.find((seller) => seller.id === id)
 }
+
+/** Talad itself takes the payment and holds it until each parcel arrives. */
+export const talad = {
+  /** All zeros: banking apps reject it, so no money moves. */
+  promptPayId: "0000000000",
+}

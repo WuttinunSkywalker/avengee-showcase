@@ -1,5 +1,5 @@
 import { createRandom, pick, weightedPick } from "@/lib/random"
-import { provinces } from "./thailand"
+import { provinces } from "@/lib/thailand"
 
 /** Someone who has ordered from the shop, with the address they ship to. */
 export interface Customer {

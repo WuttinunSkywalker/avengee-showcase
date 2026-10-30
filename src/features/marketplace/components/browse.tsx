@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useLocale } from "@/i18n/locale-provider"
-import { CATEGORIES, items, type Category } from "../data/items"
+import { CATEGORIES, type Category } from "../data/items"
+import { useLiveItems } from "../hooks/use-basket"
 import { marketplaceMessages } from "../i18n/messages"
 import { emptyQuery, parseQuery, queryString, search, SORTS, type Query, type SortKey } from "../lib/search"
 import { ItemCard } from "./item-card"
@@ -25,9 +26,10 @@ export function Browse({ seller }: { seller?: string }) {
   const pathname = usePathname()
   const params = useSearchParams()
   const query: Query = { ...parseQuery(params), ...(seller ? { seller } : {}) }
-  const results = search(query)
+  const pool = useLiveItems()
+  const results = search(query, pool)
   // A dealer's page only offers the kinds of piece that dealer sells.
-  const categories = seller ? CATEGORIES.filter((category) => items.some((item) => item.seller === seller && item.category === category)) : CATEGORIES
+  const categories = seller ? CATEGORIES.filter((category) => pool.some((item) => item.seller === seller && item.category === category)) : CATEGORIES
   const filtered = Boolean(query.q || query.category || query.includeSold || query.sort !== "newest")
 
   const update = (next: Partial<Query>) => {

@@ -10,7 +10,7 @@ import { getSeller, sellers, type Seller } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
 import { sellerStock } from "../lib/search"
 import { ItemCard, ListingPhoto } from "./item-card"
-import { PriceTag } from "./price-tag"
+import { BuyBox } from "./buy-box"
 
 const heroPieces = ["sangkhalok-lidded-jar", "pha-sin-gold-hem", "bencharong-bowl", "karen-carry-basket"]
 
@@ -159,8 +159,7 @@ export function ItemDetail({ item, locale }: { item: Item; locale: Locale }) {
             <h1 className={locale === "th" ? "font-heading text-3xl leading-[1.4] text-balance sm:text-4xl" : "font-heading text-3xl leading-tight text-balance sm:text-4xl"}>
               <Phrased text={item.name[locale]} />
             </h1>
-            <PriceTag price={item.price} sold={item.sold} soldLabel={t.card.sold} size="lg" className="self-start" />
-            <p className="text-sm text-muted-foreground">{item.sold ? t.item.soldNote : t.item.oneOfOne}</p>
+            <BuyBox item={item} />
           </div>
           <p className="max-w-[60ch] text-pretty">{item.description[locale]}</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 border-y border-border py-4 text-sm">

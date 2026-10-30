@@ -80,3 +80,49 @@ describe("Talad search", () => {
     expect(parseQuery(new URLSearchParams("category=shoes&seller=nobody&sort=random&sold=yes"))).toEqual(emptyQuery)
   })
 })
+
+describe("Talad basket", async () => {
+  const { addPiece, bangkokClock, basketTotals, boughtIds, groupByDealer, holdEndsAt, liveLines, placePurchase, removePiece, HOLD_MINUTES } = await import("@/features/marketplace/lib/basket")
+  const now = new Date("2026-11-04T02:00:00Z")
+  const later = (minutes: number) => new Date(now.getTime() + minutes * 60_000)
+  const buyer = { name: "Ploy Srisuk", email: "ploy@example.com", phone: "0812345678", line1: "88 Soi Ari 4", line2: "Samsen Nai", district: "Phaya Thai", provinceId: "bangkok", postcode: "10400" }
+
+  it("holds each piece once, for half an hour", () => {
+    let lines = addPiece([], "bencharong-bowl", now)
+    lines = addPiece(lines, "bencharong-bowl", later(10))
+    expect(lines).toEqual([{ itemId: "bencharong-bowl", heldAt: now.toISOString() }])
+    expect(holdEndsAt(lines[0]) - now.getTime()).toBe(HOLD_MINUTES * 60_000)
+    expect(bangkokClock(holdEndsAt(lines[0]))).toBe("09:30")
+    expect(liveLines(lines, later(29))).toHaveLength(1)
+    expect(liveLines(lines, later(30))).toHaveLength(0)
+    expect(removePiece(lines, "bencharong-bowl")).toEqual([])
+  })
+
+  it("drops pieces that are sold, unknown or already yours", () => {
+    const lines = ["pha-maan-panel", "made-up", "pha-biang-red", "olive-glaze-jar"].reduce((acc, id) => addPiece(acc, id, now), [] as ReturnType<typeof addPiece>)
+    expect(liveLines(lines, now, new Set(["olive-glaze-jar"])).map((line) => line.itemId)).toEqual(["pha-biang-red"])
+  })
+
+  it("groups by dealer in the order they were added, each with its own delivery", () => {
+    const lines = ["pha-biang-red", "bencharong-bowl", "pha-sin-black-red"].reduce((acc, id) => addPiece(acc, id, now), [] as ReturnType<typeof addPiece>)
+    const groups = groupByDealer(lines)
+    expect(groups.map((group) => [group.seller.id, group.items.length, group.subtotal, group.shipping])).toEqual([
+      ["pha-kao-nan", 2, 2400 + 4200, 60],
+      ["talat-noi-trading", 1, 24000, 180],
+    ])
+    expect(basketTotals(groups)).toEqual({ pieces: 3, dealers: 2, subtotal: 30600, shipping: 240, total: 30840 })
+  })
+
+  it("turns one payment into an order per dealer with its own dates", () => {
+    const lines = ["sangkhalok-lotus-jar", "karen-tall-basket"].reduce((acc, id) => addPiece(acc, id, now), [] as ReturnType<typeof addPiece>)
+    const purchase = placePurchase(groupByDealer(lines), buyer, now)
+    expect(purchase.reference).toMatch(/^TL-261104-[A-Z2-9]{6}$/)
+    expect(purchase.total).toBe(9800 + 250 + 2600 + 220)
+    expect(purchase.orders.map((order) => [order.reference, order.sellerId, order.shipsBy, order.arrivesBy])).toEqual([
+      [`${purchase.reference}-1`, "baan-sangkhalok", "2026-11-07", "2026-11-09"],
+      [`${purchase.reference}-2`, "doi-saeng", "2026-11-08", "2026-11-10"],
+    ])
+    expect(placePurchase(groupByDealer(lines), buyer, now)).toEqual(purchase)
+    expect([...boughtIds([purchase])].sort()).toEqual(["karen-tall-basket", "sangkhalok-lotus-jar"])
+  })
+})

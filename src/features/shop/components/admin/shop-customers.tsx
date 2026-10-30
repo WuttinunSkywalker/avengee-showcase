@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatNumber, formatPercent } from "@/lib/format"
-import { getProvince } from "../../data/thailand"
+import { getProvince } from "@/lib/thailand"
 import { useShopAdminData } from "../../hooks/use-shop-admin-data"
 import { shopMessages } from "../../i18n/messages"
 import type { FulfilmentStatus } from "../../lib/admin"

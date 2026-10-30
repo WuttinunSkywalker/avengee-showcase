@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { customers } from "@/features/shop/data/customers"
-import { postcodeMatchesProvince } from "@/features/shop/data/thailand"
+import { postcodeMatchesProvince } from "@/lib/thailand"
 import { fulfilmentStatus, generateShopOrders, type FulfilmentStatus } from "@/features/shop/lib/admin"
 import { customerKpis, customerSummaries, matchesCustomer, REGULAR_ORDERS, sortCustomers } from "@/features/shop/lib/customers"
 
