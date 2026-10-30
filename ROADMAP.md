@@ -90,7 +90,7 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [x] Guest "manage booking" page at `/[lang]/spa/book/manage` (linked from the confirmation page with reference and email filled in): find a booking by reference and the email it was made with; more than 24 hours ahead, move it to another free time with the same therapist (their working days, from tomorrow, never inside 24 hours) or cancel with the deposit refunded; inside 24 hours, cancelling keeps the deposit and changes are by phone. Seeded bookings can be moved too (a `moved` map in the bookings store); staff see guest cancellations in the admin
 - [x] Found while testing: two bookings made in the same instant got the same reference (the code was seeded only by the time). References are now seeded by the booking's date, time, therapist and guest too, and redrawn on a clash
-- [ ] Admin week schedule view per therapist with drag-free reassign via dialog
+- [x] Week schedule in the spa admin (`/[lang]/spa/admin/schedule`): pick a therapist and a week (both in the URL), see bookings to scale across a Monday-to-Sunday grid with days off and off-shift hours hatched, and the week's load against shift time; on phones it's a day-by-day list. Any upcoming booking opens a dialog to hand it to another therapist; everyone is listed, with those who can't take it disabled and the reason given (doesn't do the treatment, day off, outside their shift, busy with the clashing time). Past or settled bookings stay put
 - [ ] Admin customers page: visit history, total spend, notes
 - [ ] Mobile date strip: scroll the selected date into view; show "next free day" shortcut
 - [ ] Gift vouchers purchase flow
