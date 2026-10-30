@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import { useLocale } from "@/i18n/locale-provider"
 import { formatLongDate } from "@/lib/dates"
 import { SERVICES } from "../data/projects"
 import { studioMessages } from "../i18n/messages"
+import { useInboxStore } from "../store/inbox-store"
 import {
   BRIEF_MAX,
   BUDGETS,
@@ -63,12 +65,17 @@ export function StudioContact() {
   const [method, brief] = useWatch({ control: form.control, name: ["method", "brief"] })
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<Sent | null>(null)
+  // Read what's already in the inbox first, so a new enquiry is added to it rather than replacing it
+  usePersistHydrated(useInboxStore.persist)
+  const addToInbox = useInboxStore((state) => state.add)
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSending(true)
     await new Promise((resolve) => setTimeout(resolve, SENDING_MS))
     const now = new Date()
-    setSent({ reference: enquiryReference(now), replyBy: replyBy(now), values })
+    const enquiry = { reference: enquiryReference(now), replyBy: replyBy(now), values }
+    setSent(enquiry)
+    addToInbox({ ...enquiry, sentAt: now.toISOString(), status: "new" })
     setSending(false)
     requestAnimationFrame(() => document.getElementById("enquiry-sent")?.focus())
   })

@@ -170,7 +170,7 @@ test.describe("showcase portal", () => {
     await page.goto("/en")
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Sorn Studio" }) })
     await expect(card.getByText("Live")).toBeVisible()
-    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveCount(0)
+    await expect(card.getByRole("link", { name: "Staff Dashboard" })).toHaveAttribute("href", "/en/studio/inbox")
     await expect(card.getByRole("group", { name: "Sorn Studio screens" }).getByRole("button")).toHaveCount(3)
     await card.getByRole("link", { name: /^Open App/ }).click()
     await expect(page).toHaveURL(/\/en\/studio$/)
@@ -200,7 +200,7 @@ test.describe("showcase portal", () => {
   })
 
   test("staff dashboard links open each app's admin", async ({ page }) => {
-    for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/], ["Krua Yai", /\/en\/restaurant\/kitchen$/], ["Talad", /\/en\/marketplace\/seller$/]] as const) {
+    for (const [name, path] of [["Baan Lamai", /\/en\/spa\/admin$/], ["Kaffa Roasters", /\/en\/shop\/admin$/], ["Krua Yai", /\/en\/restaurant\/kitchen$/], ["Talad", /\/en\/marketplace\/seller$/], ["Sorn Studio", /\/en\/studio\/inbox$/]] as const) {
       await page.goto("/en")
       const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name }) })
       await card.getByRole("link", { name: "Staff Dashboard" }).click()

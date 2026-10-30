@@ -219,6 +219,7 @@ export const showcases: Showcase[] = [
       th: ["แกลเลอรีแบบสถาปนิก", "รูปด้าน แปลน รูปตัด", "ตารางเวลาออกแบบ", "ฟอร์มเล่าโปรเจกต์", "ไทยและอังกฤษ"],
     },
     href: "/studio",
+    adminHref: "/studio/inbox",
     pages: ["/studio"],
     images: {
       desktop: { en: "/images/showcase/sorn-studio-en.jpg", th: "/images/showcase/sorn-studio-th.jpg" },
