@@ -126,3 +126,43 @@ describe("Talad basket", async () => {
     expect([...boughtIds([purchase])].sort()).toEqual(["karen-tall-basket", "sangkhalok-lotus-jar"])
   })
 })
+
+describe("Talad parcels", async () => {
+  const { addPiece, groupByDealer, placePurchase } = await import("@/features/marketplace/lib/basket")
+  const { canConfirm, confirmReceived, parcelProgress, purchaseProgress, trackingNumber } = await import("@/features/marketplace/lib/orders")
+  const placed = new Date("2026-11-04T02:00:00Z")
+  const day = (n: number) => new Date(placed.getTime() + n * 86_400_000)
+  const buyer = { name: "Ploy Srisuk", email: "ploy@example.com", phone: "0812345678", line1: "88 Soi Ari 4", line2: "Samsen Nai", district: "Phaya Thai", provinceId: "bangkok", postcode: "10400" }
+  // Pha Kao Nan ships in 1–2 days, Doi Saeng in 2–4
+  const lines = ["pha-biang-red", "karen-tall-basket"].reduce((acc, id) => addPiece(acc, id, placed), [] as ReturnType<typeof addPiece>)
+  const purchase = placePurchase(groupByDealer(lines), buyer, placed)
+  const [nan, doi] = purchase.orders
+
+  it("moves from packing to on its way to delivered on the dealer's own timing", () => {
+    expect(parcelProgress(nan, purchase.placedAt, day(0.5)).stage).toBe("packing")
+    expect(parcelProgress(nan, purchase.placedAt, day(1)).stage).toBe("shipped")
+    expect(parcelProgress(doi, purchase.placedAt, day(1)).stage).toBe("packing")
+    expect(parcelProgress(nan, purchase.placedAt, day(3)).stage).toBe("delivered")
+    expect(canConfirm(parcelProgress(nan, purchase.placedAt, day(0.5)))).toBe(false)
+    expect(canConfirm(parcelProgress(nan, purchase.placedAt, day(1)))).toBe(true)
+  })
+
+  it("pays the dealer when you confirm, once, or by itself a week after delivery", () => {
+    const confirmed = confirmReceived(purchase, nan.reference, day(2))
+    const again = confirmReceived(confirmed, nan.reference, day(5))
+    expect(again.orders[0].receivedAt).toBe(day(2).toISOString())
+    const progress = parcelProgress(again.orders[0], purchase.placedAt, day(2))
+    expect(progress).toMatchObject({ stage: "received", autoReleased: false, releasedAt: day(2).getTime() })
+    expect(canConfirm(progress)).toBe(false)
+    expect(purchaseProgress(again, day(2))).toEqual({ received: 1, total: 2 })
+
+    expect(parcelProgress(doi, purchase.placedAt, day(10.9)).stage).toBe("delivered")
+    expect(parcelProgress(doi, purchase.placedAt, day(11))).toMatchObject({ stage: "received", autoReleased: true })
+  })
+
+  it("gives each parcel a steady tracking number", () => {
+    expect(trackingNumber(nan.reference)).toMatch(/^TH\d{12}$/)
+    expect(trackingNumber(nan.reference)).toBe(trackingNumber(nan.reference))
+    expect(trackingNumber(nan.reference)).not.toBe(trackingNumber(doi.reference))
+  })
+})

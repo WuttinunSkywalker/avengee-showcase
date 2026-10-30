@@ -3,10 +3,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { PackageIcon, TruckIcon } from "lucide-react"
+import { TruckIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useNow } from "@/hooks/use-now"
 import { usePersistHydrated } from "@/hooks/use-persist-hydrated"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
@@ -17,6 +18,7 @@ import { getItem } from "../data/items"
 import { getSeller } from "../data/sellers"
 import { marketplaceMessages } from "../i18n/messages"
 import { usePurchasesStore } from "../store/basket-store"
+import { ParcelStatus } from "./parcel-status"
 
 /** After paying: one payment reference, then a card for each dealer's parcel. */
 export function OrderConfirmation() {
@@ -25,8 +27,9 @@ export function OrderConfirmation() {
   const reference = useSearchParams().get("ref")
   const ready = usePersistHydrated(usePurchasesStore.persist)
   const purchase = usePurchasesStore((state) => state.purchases.find((entry) => entry.reference === reference))
+  const now = useNow()
 
-  if (!ready) {
+  if (!ready || !now) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12 sm:px-6" aria-busy="true">
         <Skeleton className="h-24" />
@@ -110,16 +113,11 @@ export function OrderConfirmation() {
                   )
                 })}
               </ul>
+              {seller && <ParcelStatus purchase={purchase} order={order} seller={seller} now={now} locale={locale} />}
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-border pt-3 text-sm">
-                <p className="flex flex-wrap gap-x-5 gap-y-1 text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <PackageIcon className="size-4" aria-hidden="true" />
-                    {t.order.shipsBy(formatLongDate(order.shipsBy, locale))}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <TruckIcon className="size-4" aria-hidden="true" />
-                    {t.order.arrives(formatLongDate(order.arrivesBy, locale))}
-                  </span>
+                <p className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <TruckIcon className="size-4" aria-hidden="true" />
+                  {t.order.arrives(formatLongDate(order.arrivesBy, locale))}
                 </p>
                 <p className="flex gap-4 tabular-nums">
                   <span className="text-muted-foreground">
@@ -133,9 +131,14 @@ export function OrderConfirmation() {
         })}
       </ol>
 
-      <Button asChild variant="outline" className="self-start">
-        <Link href={localePath(locale, "/marketplace")}>{t.order.keepBrowsing}</Link>
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild variant="outline">
+          <Link href={localePath(locale, "/marketplace/orders")}>{t.order.yourOrders}</Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href={localePath(locale, "/marketplace")}>{t.order.keepBrowsing}</Link>
+        </Button>
+      </div>
     </div>
   )
 }

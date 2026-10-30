@@ -3,6 +3,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import { addPiece, removePiece, type BasketLine, type Purchase } from "../lib/basket"
+import { confirmReceived } from "../lib/orders"
 
 interface BasketState {
   lines: BasketLine[]
@@ -37,6 +38,8 @@ export const useBasketStore = create<BasketState>()(
 interface PurchasesState {
   purchases: Purchase[]
   add: (purchase: Purchase) => void
+  /** The buyer confirms one dealer's parcel arrived. */
+  confirm: (purchaseReference: string, orderReference: string, now: Date) => void
 }
 
 /** What this browser has bought: shown on the order page and as sold across the market. */
@@ -45,6 +48,10 @@ export const usePurchasesStore = create<PurchasesState>()(
     (set) => ({
       purchases: [],
       add: (purchase) => set((state) => ({ purchases: [purchase, ...state.purchases] })),
+      confirm: (purchaseReference, orderReference, now) =>
+        set((state) => ({
+          purchases: state.purchases.map((purchase) => (purchase.reference === purchaseReference ? confirmReceived(purchase, orderReference, now) : purchase)),
+        })),
     }),
     { name: "talad:purchases:v1", storage: createJSONStorage(() => localStorage), version: 1, skipHydration: true },
   ),

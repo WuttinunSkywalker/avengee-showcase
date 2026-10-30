@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config"
 import type { Category } from "../data/items"
+import type { Stage } from "../lib/orders"
 import type { SortKey } from "../lib/search"
 
 const en = {
@@ -12,6 +13,7 @@ const en = {
     searchPlaceholder: "Celadon, pha sin, Karen basket…",
     submit: "Search",
     dealers: "Dealers",
+    orders: "Your orders",
     browse: "Browse",
   },
   hero: {
@@ -137,6 +139,26 @@ const en = {
     notFoundTitle: "We can't find that order",
     notFoundBody: "Orders are kept in the browser they were placed from. Check the link, or keep browsing.",
     keepBrowsing: "Keep Browsing",
+    stages: { packing: "Being packed", shipped: "On its way", delivered: "Delivered", received: "Received" } satisfies Record<Stage, string>,
+    progressLabel: (dealer: string) => `Progress of the parcel from ${dealer}`,
+    confirm: "I've Received It",
+    confirmTitle: (dealer: string) => `Received everything from ${dealer}?`,
+    confirmBody: (amount: string, dealer: string) => `Only confirm once you've unpacked the parcel and checked each piece. We'll then pay ${amount} to ${dealer}, and this can't be undone.`,
+    confirmAction: "Yes, Pay the Dealer",
+    notYet: "Not Yet",
+    confirmed: (dealer: string) => `Thanks. ${dealer} has been paid.`,
+    released: (dealer: string, date: string) => `Payment released to ${dealer} on ${date}`,
+    autoReleased: (dealer: string, date: string) => `We heard nothing, so ${dealer} was paid on ${date}`,
+    onItsWay: (code: string, date: string) => `Tracking ${code}. Not arrived, or something wrong? Tell us before ${date}; after that the dealer is paid.`,
+    yourOrders: "All your orders",
+  },
+  orders: {
+    title: "Your orders",
+    placed: (date: string) => `Placed ${date}`,
+    parcels: (received: number, total: number) => (received === total ? (total === 1 ? "Received" : `All ${total} parcels received`) : `${received} of ${total} ${total === 1 ? "parcel" : "parcels"} received`),
+    view: (reference: string) => `View order ${reference}`,
+    emptyTitle: "No orders yet",
+    emptyBody: "Orders you place in this browser show up here, with each dealer's parcel.",
   },
   footer: {
     note: "Talad lists pieces from independent dealers in Thailand. Each one is responsible for describing what they sell.",
@@ -156,6 +178,7 @@ const th: MarketplaceMessages = {
     searchPlaceholder: "สังคโลก ผ้าซิ่น ก๋วยกะเหรี่ยง…",
     submit: "ค้นหา",
     dealers: "ร้านค้า",
+    orders: "ออเดอร์ของฉัน",
     browse: "ดูของทั้งหมด",
   },
   hero: {
@@ -279,6 +302,26 @@ const th: MarketplaceMessages = {
     notFoundTitle: "ไม่เจอออเดอร์นี้",
     notFoundBody: "ออเดอร์จะเก็บไว้ในเบราว์เซอร์ที่ใช้สั่งซื้อ ลองเช็กลิงก์อีกครั้ง หรือกลับไปดูของต่อก็ได้",
     keepBrowsing: "ดูของต่อ",
+    stages: { packing: "กำลังแพ็ก", shipped: "กำลังจัดส่ง", delivered: "ส่งถึงแล้ว", received: "ได้รับแล้ว" },
+    progressLabel: (dealer) => `สถานะพัสดุจาก${dealer}`,
+    confirm: "ได้รับของแล้ว",
+    confirmTitle: (dealer) => `ได้รับของจาก ${dealer} ครบแล้วใช่ไหม`,
+    confirmBody: (amount, dealer) => `กดยืนยันหลังแกะกล่องและเช็กของครบทุกชิ้นแล้วเท่านั้นนะ จากนั้นเราจะโอน ${amount} ให้${dealer} และยกเลิกไม่ได้แล้ว`,
+    confirmAction: "ใช่ โอนให้ร้านได้เลย",
+    notYet: "ยังก่อน",
+    confirmed: (dealer) => `ขอบคุณ เราโอนเงินให้${dealer}แล้ว`,
+    released: (dealer, date) => `โอนเงินให้${dealer}แล้วเมื่อ${date}`,
+    autoReleased: (dealer, date) => `ไม่ได้รับการแจ้งปัญหา เราจึงโอนเงินให้${dealer}เมื่อ${date}`,
+    onItsWay: (code, date) => `เลขพัสดุ ${code} ถ้าของยังไม่มาหรือมีปัญหา แจ้งเราก่อน${date} หลังจากนั้นเงินจะโอนให้ร้าน`,
+    yourOrders: "ดูออเดอร์ทั้งหมด",
+  },
+  orders: {
+    title: "ออเดอร์ของฉัน",
+    placed: (date) => `สั่งเมื่อ${date}`,
+    parcels: (received, total) => (received === total ? (total === 1 ? "ได้รับแล้ว" : `ได้รับครบทั้ง ${total} กล่องแล้ว`) : `ได้รับแล้ว ${received} จาก ${total} กล่อง`),
+    view: (reference) => `ดูออเดอร์ ${reference}`,
+    emptyTitle: "ยังไม่มีออเดอร์",
+    emptyBody: "ออเดอร์ที่สั่งจากเบราว์เซอร์นี้จะมาอยู่ตรงนี้ แยกเป็นกล่องตามร้าน",
   },
   footer: {
     note: "Talad รวมของจากร้านขายของเก่าอิสระในประเทศไทย แต่ละร้านรับผิดชอบรายละเอียดของที่ตัวเองขาย",

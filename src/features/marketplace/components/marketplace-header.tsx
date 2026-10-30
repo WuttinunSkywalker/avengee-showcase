@@ -3,9 +3,10 @@
 import Link from "next/link"
 import { useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { SearchIcon } from "lucide-react"
+import { PackageIcon, SearchIcon } from "lucide-react"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import { localePath, type Locale } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
@@ -96,6 +97,11 @@ export function MarketplaceHeader() {
         <div className="ml-auto flex items-center gap-1 md:order-last md:ml-0">
           <LocaleSwitcher className="md:hidden" />
           <ThemeToggle className="md:hidden" label={themeLabel} />
+          <Button asChild variant="ghost" size="icon-lg">
+            <Link href={localePath(locale, "/marketplace/orders")} aria-label={t.nav.orders}>
+              <PackageIcon aria-hidden="true" />
+            </Link>
+          </Button>
           <BasketSheet />
         </div>
         <div className="w-full md:mx-auto md:max-w-xl md:flex-1">{search}</div>

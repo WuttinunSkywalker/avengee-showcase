@@ -67,6 +67,52 @@ test.describe("Talad basket and checkout", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("confirms each parcel as it arrives, and the rest pay out by themselves", async ({ page, consoleErrors }) => {
+    await hold(page, "/en/marketplace/items/pha-biang-red")
+    await hold(page, "/en/marketplace/items/karen-tall-basket")
+    await page.goto("/en/marketplace/checkout")
+    await fillAddress(page)
+    await page.getByRole("button", { name: /^Pay / }).click()
+    await page.getByRole("button", { name: "I've Paid" }).click()
+    const parcels = page.getByTestId("dealer-order")
+    await expect(parcels).toHaveCount(2)
+    // Just paid: both dealers are packing, nothing to confirm yet
+    await expect(parcels.first().getByRole("list", { name: "Progress of the parcel from Pha Kao Nan" }).locator("[aria-current=step]")).toHaveText("Being packed")
+    await expect(page.getByRole("button", { name: "I've Received It" })).toHaveCount(0)
+
+    // A day and a half later Nan's parcel is on its way; Doi Saeng is still packing
+    await page.clock.setFixedTime(new Date("2026-11-05T12:00:00Z"))
+    await page.reload()
+    await expect(parcels.first().locator("[aria-current=step]")).toHaveText("On its way")
+    await expect(parcels.first().getByTestId("parcel-note")).toContainText(/Tracking TH\d{12}/)
+    await expect(parcels.nth(1).locator("[aria-current=step]")).toHaveText("Being packed")
+    await parcels.first().getByRole("button", { name: "I've Received It" }).click()
+    const dialog = page.getByRole("alertdialog")
+    await expect(dialog).toContainText("We'll then pay ฿2,460 to Pha Kao Nan")
+    await dialog.getByRole("button", { name: "Yes, Pay the Dealer" }).click()
+    await expect(parcels.first().getByTestId("parcel-note")).toHaveText("Payment released to Pha Kao Nan on Thursday 5 November 2026")
+    await expect(parcels.first().locator("[aria-current=step]")).toHaveText("Received")
+
+    // The order list counts parcels received
+    await page.getByRole("link", { name: "Your orders", exact: true }).click()
+    await expect(page.getByTestId("order-row")).toHaveCount(1)
+    await expect(page.getByTestId("order-row")).toContainText("1 of 2 parcels received")
+
+    // A fortnight on, nobody complained about the basket, so its dealer was paid too
+    await page.clock.setFixedTime(new Date("2026-11-20T03:00:00Z"))
+    await page.reload()
+    await expect(page.getByTestId("order-row")).toContainText("All 2 parcels received")
+    await page.getByTestId("order-row").getByRole("link").click()
+    await expect(parcels.nth(1).getByTestId("parcel-note")).toContainText("We heard nothing, so Doi Saeng was paid on")
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("shows an empty order list in Thai", async ({ page }) => {
+    await page.goto("/th/marketplace/orders")
+    await expect(page.getByRole("heading", { level: 1, name: "ออเดอร์ของฉัน" })).toBeVisible()
+    await expect(page.getByText("ยังไม่มีออเดอร์")).toBeVisible()
+  })
+
   test("lets a hold run out after half an hour", async ({ page }) => {
     await hold(page, "/en/marketplace/items/lahu-oval-box")
     await expect(page.getByRole("button", { name: "Basket, 1 piece" })).toBeVisible()

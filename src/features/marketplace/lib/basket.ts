@@ -102,6 +102,8 @@ export interface DealerOrder {
   /** Bangkok dates: the latest the dealer hands it to the courier, and when it should arrive. */
   shipsBy: string
   arrivesBy: string
+  /** When the buyer confirmed the parcel arrived, which pays the dealer. */
+  receivedAt?: string
 }
 
 export interface Purchase {
