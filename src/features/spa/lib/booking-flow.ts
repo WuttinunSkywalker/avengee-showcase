@@ -99,7 +99,7 @@ export interface CreateBookingInput {
   bookings: readonly Booking[]
   now: ZonedNow
   instant: Date
-  /** Seed for the booking reference; defaults to the current instant. */
+  /** Seed for the booking reference; defaults to the instant plus the booking's own details. */
   seed?: number
 }
 
@@ -118,8 +118,11 @@ export function createBookingFromDraft({ draft, bookings, now, instant, seed }: 
     draft.therapist === "any" ? assignTherapist({ start: draft.start, therapistIds: free }, draft.date, bookings) : free[0]
   if (!therapistId) return { ok: false, reason: "slot-taken" }
 
-  const random = createRandom(seed ?? instant.getTime())
-  const code = randomCode(random)
+  // Seeded by the booking itself as well as the moment, so two bookings made in the same
+  // instant still differ, and redrawn on the rare clash so a reference only ever finds one booking
+  const random = createRandom(seed ?? `${instant.getTime()}:${draft.date}:${draft.start}:${therapistId}:${guest.data.email}`)
+  let code = randomCode(random)
+  while (bookings.some((booking) => booking.reference === `BL-${code}`)) code = randomCode(random)
   const paidNow = draft.payment === "promptpay"
 
   return {

@@ -46,14 +46,14 @@ const NOT_READY: SpaData = { ready: false, now: null, bookings: [] }
 export function useSpaData(): SpaData {
   const now = useSpaNow()
   const hydrated = useHydrateBookings()
-  const { created, overrides } = useBookingsStore(
-    useShallow((state) => ({ created: state.created, overrides: state.overrides })),
+  const { created, overrides, moved } = useBookingsStore(
+    useShallow((state) => ({ created: state.created, overrides: state.overrides, moved: state.moved })),
   )
 
   // Statuses for "today" depend on the time, so the seed refreshes in 5-minute buckets.
   const bucket = now ? `${now.date}:${Math.floor(now.minutes / 5)}` : null
   const seed = useMemo(() => (bucket ? generateSeedBookings({ now: toSpaTime(new Date()) }) : []), [bucket])
-  const bookings = useMemo(() => mergeBookings(seed, created, overrides), [seed, created, overrides])
+  const bookings = useMemo(() => mergeBookings(seed, created, overrides, moved), [seed, created, overrides, moved])
 
   return useMemo(() => (now && hydrated ? { ready: true, now, bookings } : NOT_READY), [now, hydrated, bookings])
 }

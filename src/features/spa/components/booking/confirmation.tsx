@@ -196,6 +196,15 @@ export function Confirmation() {
             {t.confirmation.anotherLink}
           </Link>
         </p>
+        <p className="text-sm">
+          <Link
+            href={`${href("/spa/book/manage")}?${new URLSearchParams({ ref: booking.reference, email: booking.guest.email })}`}
+            className="font-medium underline underline-offset-4"
+            data-testid="manage-link"
+          >
+            {t.manage.manageLink}
+          </Link>
+        </p>
       </div>
     </MotionConfig>
   )
