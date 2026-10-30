@@ -7,6 +7,7 @@ import { calculateQuote, type Quote } from "./pricing"
 import { guestDetailsSchema } from "./schema"
 import { isISODate, type ZonedNow } from "./time"
 import type { Booking } from "./types"
+import { splitWithVoucher } from "./vouchers"
 
 export const BOOKING_STEPS = [
   { id: "treatment", label: "Treatment" },
@@ -101,12 +102,14 @@ export interface CreateBookingInput {
   instant: Date
   /** Seed for the booking reference; defaults to the instant plus the booking's own details. */
   seed?: number
+  /** A checked gift voucher and what's left on it. */
+  voucher?: { code: string; balance: number }
 }
 
 export type CreateBookingResult = { ok: true; booking: Booking } | { ok: false; reason: "incomplete" | "slot-taken" }
 
 /** Turns a finished draft into a booking, re-checking the slot at the last moment. */
-export function createBookingFromDraft({ draft, bookings, now, instant, seed }: CreateBookingInput): CreateBookingResult {
+export function createBookingFromDraft({ draft, bookings, now, instant, seed, voucher }: CreateBookingInput): CreateBookingResult {
   const quote = draftQuote(draft)
   const guest = guestDetailsSchema.safeParse(draft.guest)
   if (!quote || !draft.serviceId || !draft.minutes || !draft.date || draft.start === null || !guest.success) {
@@ -124,6 +127,7 @@ export function createBookingFromDraft({ draft, bookings, now, instant, seed }: 
   let code = randomCode(random)
   while (bookings.some((booking) => booking.reference === `BL-${code}`)) code = randomCode(random)
   const paidNow = draft.payment === "promptpay"
+  const split = voucher ? splitWithVoucher(quote, voucher.balance, paidNow) : undefined
 
   return {
     ok: true,
@@ -141,13 +145,22 @@ export function createBookingFromDraft({ draft, bookings, now, instant, seed }: 
       status: "confirmed",
       channel: "website",
       total: quote.total,
-      payment: paidNow
-        ? { method: "promptpay", status: "deposit", amountPaid: quote.deposit }
-        : { method: "pay-at-spa", status: "unpaid", amountPaid: 0 },
+      payment: split?.applied
+        ? voucherPayment(split, quote.total)
+        : paidNow
+          ? { method: "promptpay", status: "deposit", amountPaid: quote.deposit }
+          : { method: "pay-at-spa", status: "unpaid", amountPaid: 0 },
       promoCode: quote.promo?.ok ? quote.promo.code : undefined,
+      voucher: split?.applied && voucher ? { code: voucher.code, amount: split.applied } : undefined,
       notes: guest.data.notes || undefined,
       createdAt: instant.toISOString(),
       bookedOnDevice: true,
     },
   }
+}
+
+/** A voucher booking is paid in full, or secured by the voucher plus any PromptPay top-up to the deposit. */
+function voucherPayment(split: ReturnType<typeof splitWithVoucher>, total: number): Booking["payment"] {
+  const amountPaid = split.applied + split.depositNow
+  return { method: split.depositNow > 0 ? "promptpay" : "voucher", status: amountPaid >= total ? "paid" : "deposit", amountPaid }
 }

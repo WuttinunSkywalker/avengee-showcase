@@ -163,9 +163,14 @@ export function Confirmation() {
             <div>
               <dt className="text-muted-foreground">{t.confirmation.paid}</dt>
               <dd className="font-medium tabular-nums">
-                {booking.payment.amountPaid > 0
-                  ? t.confirmation.paidBy(formatBaht(booking.payment.amountPaid), t.method[booking.payment.method])
-                  : t.confirmation.nothing}
+                {booking.voucher
+                  ? t.confirmation.paidVoucher(formatBaht(booking.voucher.amount), booking.voucher.code) +
+                    (booking.payment.amountPaid > booking.voucher.amount
+                      ? t.confirmation.paidAlso(formatBaht(booking.payment.amountPaid - booking.voucher.amount), t.method[booking.payment.method])
+                      : "")
+                  : booking.payment.amountPaid > 0
+                    ? t.confirmation.paidBy(formatBaht(booking.payment.amountPaid), t.method[booking.payment.method])
+                    : t.confirmation.nothing}
               </dd>
             </div>
             <div>

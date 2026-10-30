@@ -157,7 +157,7 @@ describe("PaymentStep and summary", () => {
   it("shows the deposit QR and switches to pay at the spa", async () => {
     const user = userEvent.setup()
     const quote = calculateQuote({ serviceId: "thai-massage", minutes: 90 })
-    renderWithLocale(<PaymentStep quote={quote} />)
+    renderWithLocale(<PaymentStep today="2026-11-04" voucher={null} split={null} quote={quote} />)
     expect(screen.getByTestId("deposit-amount")).toHaveTextContent("฿270")
     expect(screen.getByTitle("PromptPay QR code for ฿270")).toBeInTheDocument()
     await user.click(screen.getByRole("radio", { name: /Pay ฿900 at the spa/ }))

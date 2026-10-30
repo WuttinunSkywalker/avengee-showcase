@@ -25,6 +25,8 @@ export interface BookingDraft {
   start: number | null
   guest: GuestDraft
   promoCode: string | null
+  /** Gift voucher code the guest entered at payment, already normalised. */
+  voucherCode: string | null
   payment: PaymentChoice
 }
 
@@ -37,6 +39,7 @@ interface DraftActions {
   setStart: (start: number | null) => void
   setGuest: (guest: GuestDraft) => void
   setPromoCode: (code: string | null) => void
+  setVoucherCode: (code: string | null) => void
   setPayment: (payment: PaymentChoice) => void
   reset: () => void
 }
@@ -52,6 +55,7 @@ export const initialDraft: BookingDraft = {
   start: null,
   guest: emptyGuest,
   promoCode: null,
+  voucherCode: null,
   payment: "promptpay",
 }
 
@@ -80,6 +84,7 @@ export const useBookingDraft = create<BookingDraft & DraftActions>()(
       setStart: (start) => set({ start }),
       setGuest: (guest) => set({ guest }),
       setPromoCode: (promoCode) => set({ promoCode }),
+      setVoucherCode: (voucherCode) => set({ voucherCode }),
       setPayment: (payment) => set({ payment }),
       reset: () => set(initialDraft),
     }),

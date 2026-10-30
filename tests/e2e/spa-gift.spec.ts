@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright"
 import type { Page } from "@playwright/test"
-import { expect, expectNoConsoleErrors, test } from "./fixtures"
+import { expect, expectNoConsoleErrors, fillGuestDetails, test } from "./fixtures"
 
 async function axe(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()
@@ -83,6 +83,85 @@ test.describe("gift vouchers", () => {
     await page.getByLabel("อีเมลของคุณ").fill("maid@mail.example")
     await page.getByRole("button", { name: "โอนแล้ว ส่งบัตรเลย" }).click()
     await expect(page.getByRole("button", { name: "พิมพ์บัตร" })).toBeVisible({ timeout: 10_000 })
+    await axe(page)
+  })
+})
+
+test.describe("paying with a gift voucher", () => {
+  async function buyVoucher(page: Page) {
+    await page.goto("/en/spa/gift")
+    await page.getByRole("radio", { name: "฿1,000" }).click()
+    await page.getByLabel("Their name").fill("Mia")
+    await page.getByLabel("From").fill("Tom")
+    await page.getByLabel("Your email").fill("mia.thompson@mail.example")
+    await page.getByRole("button", { name: "I've Paid, Send the Voucher" }).click()
+    await expect(page).toHaveURL(/gift\/sent/, { timeout: 10_000 })
+    return (await page.getByTestId("voucher-code").filter({ visible: true }).textContent())!
+  }
+
+  async function reachPayment(page: Page, minutes: number) {
+    await page.goto(`/en/spa/book?service=thai-massage&minutes=${minutes}`)
+    await expect(page).toHaveURL(/step=time/)
+    await page.getByRole("radiogroup", { name: /times$/ }).first().getByRole("radio").first().click()
+    await page.getByRole("button", { name: "Continue" }).click()
+    await fillGuestDetails(page)
+    await page.getByRole("button", { name: "Continue" }).click()
+    await expect(page.getByRole("heading", { level: 1, name: "Review and pay" })).toBeVisible()
+  }
+
+  test("a voucher pays for a whole treatment, and the rest lowers the next deposit", async ({ page, consoleErrors }) => {
+    const code = await buyVoucher(page)
+
+    // ฿900 Thai massage, all on the voucher
+    await reachPayment(page, 90)
+    const field = page.getByRole("textbox", { name: "Gift voucher" })
+    await field.fill("BLG-AAAA-BBBB")
+    await page.getByRole("button", { name: "Use", exact: true }).click()
+    await expect(page.getByText("We can't find voucher BLG-AAAA-BBBB. Check the code on the card or in the email.")).toBeVisible()
+    await field.fill(code.toLowerCase())
+    await field.press("Enter")
+    await expect(page.getByTestId("voucher-applied")).toContainText(`${code} applied. ฿900 off this booking.`)
+    await expect(page.getByTestId("voucher-applied")).toContainText("฿100 stays on the voucher for next time.")
+    await expect(page.getByTestId("voucher-covers")).toHaveText("Your gift voucher covers the whole booking. Nothing to pay at the spa.")
+    await expect(page.getByRole("img", { name: /PromptPay QR code/ })).toBeHidden()
+    await page.getByRole("button", { name: "Confirm Booking" }).click()
+
+    await expect(page.getByRole("heading", { level: 1, name: "You're booked, Mia." })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText(`฿900 from gift voucher ${code}`)).toBeVisible()
+    const reference = (await page.getByTestId("booking-reference").textContent())!.trim()
+
+    // ฿650 Thai massage: ฿100 left on the voucher, so ฿100 of the ฿200 deposit by PromptPay
+    await reachPayment(page, 60)
+    await page.getByRole("textbox", { name: "Gift voucher" }).fill(code)
+    await page.getByRole("button", { name: "Use", exact: true }).click()
+    await expect(page.getByTestId("voucher-applied")).toContainText(`${code} applied. ฿100 off this booking.`)
+    await expect(page.getByRole("radio", { name: /Pay ฿100 deposit now with PromptPay/ })).toBeChecked()
+    await expect(page.getByTestId("deposit-amount")).toHaveText("฿100")
+    await page.getByRole("button", { name: "I've Paid, Confirm Booking" }).click()
+    await expect(page.getByText(`฿100 from gift voucher ${code}, plus ฿100 by PromptPay`)).toBeVisible({ timeout: 10_000 })
+
+    // The voucher is now used up
+    await reachPayment(page, 60)
+    await page.getByRole("textbox", { name: "Gift voucher" }).fill(code)
+    await page.getByRole("button", { name: "Use", exact: true }).click()
+    await expect(page.getByText(`Voucher ${code} has been fully used.`)).toBeVisible()
+
+    // Staff see where the money came from
+    await page.goto(`/en/spa/admin/bookings?q=${reference}`)
+    await page.getByRole("button", { name: new RegExp(`Open booking ${reference}`) }).click()
+    await expect(page.getByRole("dialog").getByText(`฿900 from gift voucher ${code}`)).toBeVisible()
+    await expect(page.getByRole("dialog").getByText("Paid in full by Gift voucher")).toBeVisible()
+    expectNoConsoleErrors(consoleErrors)
+  })
+
+  test("Thai guests can pay with a voucher too", async ({ page }) => {
+    const code = await buyVoucher(page)
+    await reachPayment(page, 90)
+    await page.goto("/th/spa/book?step=payment")
+    await page.getByRole("textbox", { name: "บัตรของขวัญ" }).fill(code)
+    await page.getByRole("button", { name: "ใช้บัตร" }).click()
+    await expect(page.getByTestId("voucher-applied")).toContainText(`ใช้บัตร ${code} แล้ว ลดไป ฿900`)
+    await expect(page.getByTestId("voucher-covers")).toBeVisible()
     await axe(page)
   })
 })

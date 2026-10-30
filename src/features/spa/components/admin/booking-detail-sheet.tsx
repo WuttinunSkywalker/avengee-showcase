@@ -132,6 +132,9 @@ export function BookingDetailSheet({
                       t.sheet.deposit(formatBaht(booking.payment.amountPaid), t.method[booking.payment.method])}
                     {booking.payment.status === "unpaid" && t.sheet.unpaid}
                     {booking.payment.status === "refunded" && t.sheet.refunded}
+                    {booking.voucher && (
+                      <span className="block text-muted-foreground">{t.sheet.withVoucher(booking.voucher.code, formatBaht(booking.voucher.amount))}</span>
+                    )}
                   </dd>
                 </dl>
               </div>

@@ -107,3 +107,50 @@ export function issueVoucher(details: GiftDetails, instant: Date, today: ISODate
     balance: details.amount,
   }
 }
+
+/** Part of a voucher spent on a booking. */
+export interface VoucherRedemption {
+  code: string
+  amount: number
+  bookingReference: string
+  /** ISO instant. */
+  at: string
+}
+
+export function voucherBalance(voucher: Pick<Voucher, "code" | "balance">, redemptions: readonly VoucherRedemption[]): number {
+  const spent = redemptions.filter((redemption) => redemption.code === voucher.code).reduce((sum, redemption) => sum + redemption.amount, 0)
+  return Math.max(0, voucher.balance - spent)
+}
+
+export type VoucherCheck =
+  | { ok: true; voucher: Voucher; balance: number }
+  | { ok: false; code: string; reason: "unknown" | "expired" | "used-up"; validUntil?: ISODate }
+
+/** Whether a typed code can pay towards a booking today, and how much is left on it. */
+export function checkVoucher(input: string, vouchers: readonly Voucher[], redemptions: readonly VoucherRedemption[], today: ISODate): VoucherCheck {
+  const code = normaliseVoucherCode(input)
+  const voucher = vouchers.find((candidate) => candidate.code === code)
+  if (!voucher) return { ok: false, code, reason: "unknown" }
+  if (voucher.validUntil < today) return { ok: false, code, reason: "expired", validUntil: voucher.validUntil }
+  const balance = voucherBalance(voucher, redemptions)
+  if (balance <= 0) return { ok: false, code, reason: "used-up" }
+  return { ok: true, voucher, balance }
+}
+
+export interface VoucherSplit {
+  /** Taken off the voucher. */
+  applied: number
+  /** Still owed as the PromptPay deposit; zero once the voucher covers the deposit. */
+  depositNow: number
+  dueAtSpa: number
+}
+
+/**
+ * A voucher pays first. Whatever it leaves of the deposit is paid now by
+ * PromptPay (when the guest chose to), and the rest at the spa.
+ */
+export function splitWithVoucher(quote: { total: number; deposit: number }, balance: number, payByPromptPay: boolean): VoucherSplit {
+  const applied = Math.min(Math.max(0, balance), quote.total)
+  const depositNow = payByPromptPay ? Math.max(0, quote.deposit - applied) : 0
+  return { applied, depositNow, dueAtSpa: quote.total - applied - depositNow }
+}

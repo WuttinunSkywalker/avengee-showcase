@@ -26,6 +26,9 @@ import { usePersistHydrated, useSpaData } from "../../hooks/use-spa-data"
 import { useSpaI18n } from "../../i18n/use-spa-i18n"
 import { useBookingDraft } from "../../store/booking-draft-store"
 import { useBookingsStore } from "../../store/bookings-store"
+import { useVouchersStore } from "../../store/vouchers-store"
+import { useVoucherCheck } from "../../hooks/use-voucher"
+import { splitWithVoucher } from "../../lib/vouchers"
 import { BookingSummary } from "./booking-summary"
 import { DETAILS_FORM_ID, DetailsStep } from "./details-step"
 import { PaymentStep } from "./payment-step"
@@ -78,6 +81,10 @@ export function BookingWizard() {
 
   const requested = searchParams.get("step")
   const quote = draftQuote(draft)
+  const voucher = useVoucherCheck(draft.voucherCode, data.ready ? data.now.date : null)
+  const split = quote && voucher?.ok ? splitWithVoucher(quote, voucher.balance, draft.payment === "promptpay") : null
+  // A voucher that covers the deposit means there's no transfer to check
+  const transfer = split ? split.depositNow > 0 : draft.payment === "promptpay"
   const ready = data.ready && draftHydrated
   const completed = ready ? completedSteps(draft, data.bookings, data.now) : null
   const step: StepId = completed ? resolveStep(isStepId(requested) ? requested : "treatment", completed) : "treatment"
@@ -115,13 +122,14 @@ export function BookingWizard() {
   async function confirm() {
     if (!data.ready) return
     setSubmitting(true)
-    if (draft.payment === "promptpay") await new Promise((resolve) => setTimeout(resolve, PAYMENT_CHECK_MS))
+    if (transfer) await new Promise((resolve) => setTimeout(resolve, PAYMENT_CHECK_MS))
     const instant = new Date()
     const result = createBookingFromDraft({
       draft: useBookingDraft.getState(),
       bookings: data.bookings,
       now: toSpaTime(instant),
       instant,
+      voucher: voucher?.ok ? { code: voucher.voucher.code, balance: voucher.balance } : undefined,
     })
     if (!result.ok) {
       setSubmitting(false)
@@ -134,13 +142,17 @@ export function BookingWizard() {
       return
     }
     addBooking(result.booking)
+    const used = result.booking.voucher
+    if (used) {
+      useVouchersStore.getState().redeem({ code: used.code, amount: used.amount, bookingReference: result.booking.reference, at: instant.toISOString() })
+    }
     // The confirmation page clears the draft; resetting here would flash step one.
     router.push(href(`/spa/book/confirmed?ref=${result.booking.reference}`))
   }
 
   const primaryLabel =
     step === "payment"
-      ? draft.payment === "promptpay"
+      ? transfer
         ? submitting
           ? t.steps.checking
           : t.steps.paid
@@ -185,7 +197,7 @@ export function BookingWizard() {
         {step === "treatment" && <TreatmentStep />}
         {step === "time" && quote && <TimeStep bookings={data.bookings} now={data.now} duration={quote.duration} />}
         {step === "details" && <DetailsStep subtotal={quote?.subtotal ?? 0} date={draft.date} onComplete={() => goTo("payment")} />}
-        {step === "payment" && quote && <PaymentStep quote={quote} />}
+        {step === "payment" && quote && <PaymentStep quote={quote} today={data.now.date} voucher={voucher} split={split} />}
 
         {stepError && (
           <p role="alert" className="text-sm font-medium text-destructive">
@@ -204,8 +216,8 @@ export function BookingWizard() {
             )}
             {quote && (
               <p className="ml-auto text-right text-sm lg:hidden">
-                <span className="block text-xs text-muted-foreground">{t.steps.total}</span>
-                <span className="font-medium tabular-nums">{formatBaht(quote.total)}</span>
+                <span className="block text-xs text-muted-foreground">{split?.applied ? t.summary.leftToPay : t.steps.total}</span>
+                <span className="font-medium tabular-nums">{formatBaht(quote.total - (split?.applied ?? 0))}</span>
               </p>
             )}
             <div className="flex flex-1 justify-end lg:flex-none">{primaryButton}</div>
@@ -215,7 +227,7 @@ export function BookingWizard() {
 
       <aside className="hidden lg:block">
         <div className="sticky top-24">
-          <BookingSummary draft={draft} quote={quote} />
+          <BookingSummary draft={draft} quote={quote} voucher={voucher?.ok ? voucher.voucher.code : null} split={split} />
         </div>
       </aside>
     </div>

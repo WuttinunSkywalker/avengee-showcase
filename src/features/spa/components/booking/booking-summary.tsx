@@ -6,9 +6,20 @@ import { useSpaI18n } from "../../i18n/use-spa-i18n"
 import type { BookingDraft } from "../../store/booking-draft-store"
 import { formatBaht, formatBahtPrecise } from "../../lib/format"
 import type { Quote } from "../../lib/pricing"
+import type { VoucherSplit } from "../../lib/vouchers"
 import { formatDuration, formatLongDate, formatTimeRange } from "../../lib/time"
 
-export function BookingSummary({ draft, quote }: { draft: BookingDraft; quote: Quote | null }) {
+export function BookingSummary({
+  draft,
+  quote,
+  voucher = null,
+  split = null,
+}: {
+  draft: BookingDraft
+  quote: Quote | null
+  voucher?: string | null
+  split?: VoucherSplit | null
+}) {
   const { locale, t } = useSpaI18n()
   const service = draft.serviceId ? getService(draft.serviceId) : undefined
   const therapist = draft.therapist !== "any" ? getTherapist(draft.therapist) : undefined
@@ -58,6 +69,21 @@ export function BookingSummary({ draft, quote }: { draft: BookingDraft; quote: Q
             </div>
             <p className="text-xs text-muted-foreground tabular-nums">{t.summary.vat(formatBahtPrecise(quote.vat))}</p>
           </div>
+
+          {voucher && split && split.applied > 0 && (
+            <dl className="flex flex-col gap-2 border-t border-border pt-4 text-sm">
+              <div className="flex justify-between gap-4 text-celadon-deep dark:text-celadon">
+                <dt className="min-w-0">{t.summary.voucher(voucher)}</dt>
+                <dd className="tabular-nums">−{formatBaht(split.applied)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 font-medium">
+                <dt>{t.summary.leftToPay}</dt>
+                <dd className="tabular-nums" data-testid="summary-left">
+                  {formatBaht(quote.total - split.applied)}
+                </dd>
+              </div>
+            </dl>
+          )}
 
           <dl className="flex flex-col gap-2 border-t border-border pt-4 text-sm">
             <div className="flex justify-between gap-4">
