@@ -70,8 +70,11 @@ export function KlinHeader() {
                       const scent = getScent(line.scentId)
                       const price = scent?.sizes.find((size) => size.ml === line.ml)?.price ?? 0
                       return (
-                        <li key={`${line.scentId}-${line.ml}`} className="flex justify-between gap-3">
-                          <span>{t.nav.line(scent?.name[locale] ?? "", line.ml, line.quantity)}</span>
+                        <li key={`${line.scentId}-${line.ml}-${line.engraving ?? ""}`} className="flex justify-between gap-3">
+                          <span>
+                            {t.nav.line(scent?.name[locale] ?? "", line.ml, line.quantity)}
+                            {line.engraving && <span className="block text-xs text-muted-foreground">{t.nav.engraved(line.engraving)}</span>}
+                          </span>
                           <span className="tabular-nums">{formatPrice(price * line.quantity)}</span>
                         </li>
                       )

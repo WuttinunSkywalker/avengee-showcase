@@ -230,3 +230,14 @@ describe("camera path", async () => {
     expect(cameraShot(9)).toEqual(cameraShot(4))
   })
 })
+
+describe("nearestTurn", async () => {
+  const { nearestTurn } = await import("@/features/klin/lib/story")
+
+  it("faces the target the short way round", () => {
+    expect(nearestTurn(0, 0.5)).toBeCloseTo(0.5)
+    expect(nearestTurn(Math.PI * 2.5, 0)).toBeCloseTo(Math.PI * 2)
+    expect(nearestTurn(Math.PI * 2.9, -0.2)).toBeCloseTo(Math.PI * 2 - 0.2)
+    expect(Math.abs(nearestTurn(-7, 1) - -7)).toBeLessThanOrEqual(Math.PI)
+  })
+})

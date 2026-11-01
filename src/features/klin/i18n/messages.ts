@@ -12,6 +12,7 @@ const en = {
     bagEmpty: "Nothing in your bag yet. Choose a scent to start.",
     subtotal: "Subtotal",
     line: (name: string, ml: number, quantity: number) => `${name}, ${ml} ml × ${quantity}`,
+    engraved: (text: string) => `Engraved “${text}”`,
   },
   hero: {
     title: "Bangkok, after the rain.",
@@ -38,6 +39,9 @@ const en = {
     added: (name: string, ml: number) => `${name}, ${ml} ml added to your bag`,
     notes: "Notes",
     close: "Close",
+    engraving: "Engraving",
+    engravingPlaceholder: "For Ploy…",
+    engravingHint: (left: number) => `Free, in gold on the glass. ${left} ${left === 1 ? "letter" : "letters"} left.`,
   },
   atelier: {
     title: "Smell them in person",
@@ -63,6 +67,7 @@ const th: KlinMessages = {
     bagEmpty: "ยังไม่มีอะไรในตะกร้า ลองเลือกกลิ่นที่ชอบดูก่อนนะ",
     subtotal: "ยอดรวม",
     line: (name, ml, quantity) => `${name} ${ml} มล. × ${quantity}`,
+    engraved: (text) => `สลัก “${text}”`,
   },
   hero: {
     title: "กรุงเทพฯ หลังฝนซา",
@@ -89,6 +94,9 @@ const th: KlinMessages = {
     added: (name, ml) => `ใส่${name} ${ml} มล. ลงตะกร้าแล้ว`,
     notes: "โน้ตกลิ่น",
     close: "ปิด",
+    engraving: "สลักชื่อบนขวด",
+    engravingPlaceholder: "ถึงพลอย…",
+    engravingHint: (left) => `ฟรี สลักสีทองบนแก้ว เหลืออีก ${left} ตัวอักษร`,
   },
   atelier: {
     title: "มาดมของจริงกัน",

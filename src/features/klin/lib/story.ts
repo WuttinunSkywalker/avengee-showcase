@@ -199,3 +199,9 @@ export function cameraShot(progress: number): CameraShot {
   const point = shotPath.getPoint(t)
   return { radius: point.x, azimuth: point.y, elevation: point.z }
 }
+
+/** The angle equal to `target` (mod a full turn) that is closest to `current`, so a turn to face it takes the short way round. */
+export function nearestTurn(current: number, target: number): number {
+  const full = Math.PI * 2
+  return target + full * Math.round((current - target) / full)
+}

@@ -63,7 +63,7 @@ export function KlinPage() {
   const state = useRef<SceneState>(sceneAt({ hero: 0, chapter: 0, lineup: 0 }))
   const [chosen, setChosen] = useState<ScentId | null>(null)
   // The size picked in the scent sheet, so the 3D bottle can take its proportions while the sheet is open
-  const size = useRef<ChosenSize>({ scent: null, ml: 50 })
+  const size = useRef<ChosenSize>({ scent: null, ml: 50, engraving: "" })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
 
@@ -268,9 +268,10 @@ export function KlinPage() {
 
       <ScentSheet
         scentId={chosen}
-        onSize={(ml) => (size.current = { scent: chosen, ml })}
+        onSize={(ml) => (size.current = { ...size.current, scent: chosen, ml })}
+        onEngrave={(engraving) => (size.current = { ...size.current, scent: chosen, engraving })}
         onClose={() => {
-          size.current = { scent: null, ml: 50 }
+          size.current = { scent: null, ml: 50, engraving: "" }
           setChosen(null)
         }}
       />

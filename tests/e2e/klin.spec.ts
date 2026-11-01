@@ -30,6 +30,9 @@ test.describe("Klin perfume house", () => {
     await sheet.getByRole("radio", { name: "100 ml, ฿4,900" }).click()
     // The bottle takes the size's shape
     await expect(sheet.getByTestId("sheet-bottle")).toHaveAttribute("data-ml", "100")
+    // A free engraving, shown on the drawn bottle as it's typed
+    await sheet.getByRole("textbox", { name: "Engraving" }).fill("For Ploy")
+    await expect(sheet.getByText("Free, in gold on the glass. 8 letters left.")).toBeVisible()
     await sheet.getByRole("button", { name: "Add to Bag, ฿4,900" }).click()
     await expect(sheet).toBeHidden()
     await expect(page.getByText("Jasmine Hour, 100 ml added to your bag")).toBeVisible()
@@ -40,6 +43,7 @@ test.describe("Klin perfume house", () => {
     await expect(bag).toHaveAccessibleName("Bag, 1 bottle")
     await bag.click()
     await expect(page.getByText("Jasmine Hour, 100 ml × 1")).toBeVisible()
+    await expect(page.getByText("Engraved “For Ploy”")).toBeVisible()
     await expect(page.getByTestId("klin-subtotal")).toHaveText("฿4,900")
     expectNoConsoleErrors(consoleErrors)
   })

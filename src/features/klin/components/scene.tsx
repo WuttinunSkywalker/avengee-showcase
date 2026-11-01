@@ -9,7 +9,7 @@ import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
-import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nearestTurn, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -25,6 +25,16 @@ import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nextTier, type CameraShot,
 export interface ChosenSize {
   scent: ScentId | null
   ml: number
+  /** Words typed for the engraving, shown in gold on that bottle as they're typed. */
+  engraving: string
+}
+
+type Slot = "hero" | "left" | "middle"
+
+/** What the bottles need to engrave the right one: who's chosen, and which bottle stands for them now. */
+interface EngravingSource {
+  chosen: RefObject<ChosenSize>
+  owner: RefObject<Slot>
 }
 
 export function KlinScene({ state, still: reduced, size }: { state: RefObject<SceneState>; still: boolean; size: RefObject<ChosenSize> }) {
@@ -178,6 +188,8 @@ function Story({
   const shape = useRef<THREE.Group>(null)
   const leftShape = useRef<THREE.Group>(null)
   const middleShape = useRef<THREE.Group>(null)
+  const owner = useRef<Slot>("hero")
+  const engraving = useMemo<EngravingSource>(() => ({ chosen: size, owner }), [size])
   const left = useRef<THREE.Group>(null)
   const middle = useRef<THREE.Group>(null)
   const stage = useRef<THREE.Group>(null)
@@ -224,16 +236,21 @@ function Story({
     hero.current.position.set(x, y, 0)
     hero.current.scale.setScalar(currentScale)
     const tilt = still ? 0 : 0.12
-    hero.current.rotation.y = THREE.MathUtils.damp(hero.current.rotation.y, s.turn + pointer.current.x * tilt * 2, 6, dt)
+    // The camera travels its path of shots with the scroll (one fixed view for reduced motion)
+    const path = calm ? lerpShot(CAMERA_SHOTS[0], CAMERA_SHOTS[CAMERA_SHOTS.length - 1], lineup) : cameraShot(s.shot)
+    // The bottle open in the scent sheet turns its engraving to the camera, so the words can be read as they're typed
+    const chosen = size.current
+    owner.current = lineup < 0.5 ? "hero" : chosen.scent === "monsoon" ? "left" : chosen.scent === "jasmine-hour" ? "middle" : "hero"
+    const showing = (slot: Slot) => chosen.scent !== null && owner.current === slot
+    const heroTurn = showing("hero") ? nearestTurn(hero.current.rotation.y, path.azimuth) : s.turn + pointer.current.x * tilt * 2
+    hero.current.rotation.y = THREE.MathUtils.damp(hero.current.rotation.y, heroTurn, still ? 60 : 6, dt)
     hero.current.rotation.x = THREE.MathUtils.damp(hero.current.rotation.x, pointer.current.y * tilt * s.storm, 6, dt)
     hero.current.rotation.z = THREE.MathUtils.damp(hero.current.rotation.z, -pointer.current.x * tilt * 0.4 * s.storm, 6, dt)
     heroLiquid.current?.color.set(s.liquid)
-    // The bottle of the scent open in the sheet takes the proportions of the size picked there (slim
-    // 30 ml, broad 100 ml): the main bottle in a chapter, its own place in the line-up
-    const chosen = size.current
-    const owner = lineup < 0.5 ? "hero" : chosen.scent === "monsoon" ? "left" : chosen.scent === "jasmine-hour" ? "middle" : "hero"
+    // ...and takes the proportions of the size picked there (slim 30 ml, broad 100 ml): the main bottle
+    // in a chapter, its own place in the line-up
     for (const [name, group] of [["hero", shape], ["left", leftShape], ["middle", middleShape]] as const) {
-      if (group.current) shapeToSize(group.current, sizeFactors(chosen.scent && name === owner ? chosen.ml : 50), still ? 1 : dt)
+      if (group.current) shapeToSize(group.current, sizeFactors(chosen.scent && name === owner.current ? chosen.ml : 50), still ? 1 : dt)
     }
 
     // The floor sits under the bottle's base and widens for the line-up
@@ -243,18 +260,17 @@ function Story({
     }
 
     // The other two bottles join for the line-up, monsoon on the left and jasmine in the middle
-    for (const [group, slot] of [[left, -1], [middle, 0]] as const) {
+    for (const [group, slot, name] of [[left, -1, "left"], [middle, 0, "middle"]] as const) {
       if (!group.current) continue
       const k = THREE.MathUtils.smoothstep(lineup, 0.15 + (slot + 1) * 0.2, 0.75 + (slot + 1) * 0.1)
       group.current.visible = k > 0.001
       group.current.position.set(slot * SLOT * spread, LINEUP_Y - (1 - k) * 1.5, 0)
       group.current.scale.setScalar(lineupScale * k)
-      group.current.rotation.y += still ? 0 : dt * 0.25
+      if (showing(name)) group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, nearestTurn(group.current.rotation.y, path.azimuth), 6, dt)
+      else group.current.rotation.y += still ? 0 : dt * 0.25
     }
 
-    // The camera travels its path of shots with the scroll (one fixed view for reduced motion), aimed at
-    // the middle of the resting bottle (not its rise or bob) or of the line-up
-    const path = calm ? lerpShot(CAMERA_SHOTS[0], CAMERA_SHOTS[CAMERA_SHOTS.length - 1], lineup) : cameraShot(s.shot)
+    // The camera aims at the middle of the resting bottle (not its rise or bob) or of the line-up
     const sway = still ? 0 : Math.sin(clock.elapsedTime * 0.12) * 0.03 + pointer.current.x * 0.05
     const shot = { ...path, azimuth: path.azimuth + sway, radius: path.radius * (narrow ? THREE.MathUtils.lerp(1, 1.12, lineup) : 1) }
     aim.set(THREE.MathUtils.lerp(narrow ? 0 : 1.35, 0, lineup), THREE.MathUtils.lerp(baseY + 0.585 * scale, LINEUP_Y + 0.585 * lineupScale, lineup), 0)
@@ -272,18 +288,18 @@ function Story({
     <>
       <group ref={hero}>
         <group ref={shape}>
-          <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} label />
+          <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} slot="hero" engraving={engraving} />
         </group>
         <Beam state={state} still={still} />
       </group>
       <group ref={left} visible={false}>
         <group ref={leftShape}>
-          <Bottle liquid={scents[0].liquid} rich={false} />
+          <Bottle liquid={scents[0].liquid} rich={false} slot="left" engraving={engraving} />
         </group>
       </group>
       <group ref={middle} visible={false}>
         <group ref={middleShape}>
-          <Bottle liquid={scents[1].liquid} rich={false} />
+          <Bottle liquid={scents[1].liquid} rich={false} slot="middle" engraving={engraving} />
         </group>
       </group>
       <group ref={stage}>
@@ -301,7 +317,19 @@ function Story({
 }
 
 /** A heavy glass flacon turned on a lathe, its juice inside, a brass collar and cap, and the house name engraved in gold. */
-function Bottle({ liquid, liquidRef, rich, label = false }: { liquid: string; liquidRef?: RefObject<THREE.MeshPhysicalMaterial | null>; rich: boolean; label?: boolean }) {
+function Bottle({
+  liquid,
+  liquidRef,
+  rich,
+  slot,
+  engraving,
+}: {
+  liquid: string
+  liquidRef?: RefObject<THREE.MeshPhysicalMaterial | null>
+  rich: boolean
+  slot: Slot
+  engraving: EngravingSource
+}) {
   const glass = useMemo(() => new THREE.LatheGeometry(bottleProfile().map(([x, y]) => new THREE.Vector2(x, y)), 72), [])
   const juice = useMemo(() => new THREE.LatheGeometry(liquidProfile().map(([x, y]) => new THREE.Vector2(x, y)), 72), [])
   return (
@@ -333,7 +361,7 @@ function Bottle({ liquid, liquidRef, rich, label = false }: { liquid: string; li
           <meshPhysicalMaterial color="#ffffff" roughness={0.04} transmission={1} thickness={0.45} ior={1.5} clearcoat={1} transparent opacity={0.5} envMapIntensity={1.4} />
         )}
       </mesh>
-      {label && <Engraving />}
+      <Engraving slot={slot} source={engraving} />
       {/* Collar and cap */}
       <mesh position={[0, 1.83, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.08, 48]} />
@@ -347,49 +375,99 @@ function Bottle({ liquid, liquidRef, rich, label = false }: { liquid: string; li
   )
 }
 
-/** "KLIN / BANGKOK" in the page's display face, drawn once the font is ready, on a gold band that follows the glass. */
-function Engraving() {
-  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null)
+/**
+ * The engraving in gold on the glass: "KLIN" over "BANGKOK", or over the
+ * guest's own words while this bottle is the one open in the scent sheet,
+ * redrawn as they type. Drawn in the page's display faces (Bodoni, Trirong for
+ * Thai) once they've loaded.
+ */
+function Engraving({ slot, source }: { slot: Slot; source: EngravingSource }) {
+  const [art, setArt] = useState<EngravingArt | null>(null)
+  const shown = useRef<string | null>(null)
   useEffect(() => {
     let cancelled = false
-    const family = getComputedStyle(document.documentElement).getPropertyValue("--font-bodoni").trim() || "serif"
-    // A load cut short (the page reloading) falls back to drawing with whatever face is ready
+    const style = getComputedStyle(document.documentElement)
+    const family = [style.getPropertyValue("--font-bodoni"), style.getPropertyValue("--font-trirong")].map((value) => value.trim()).filter(Boolean).join(", ") || "serif"
+    // A load cut short (the page reloading, or a missing local fallback face) draws with whatever face is ready
     document.fonts
       .load(`400 150px ${family}`)
       .catch(() => undefined)
       .then(() => {
-        if (!cancelled) setTexture(engravingTexture(family))
+        if (!cancelled) setArt(engravingArt(family))
       })
     return () => {
       cancelled = true
     }
   }, [])
-  if (!texture) return null
+  useFrame(() => {
+    if (!art) return
+    const chosen = source.chosen.current
+    const words = source.owner.current === slot && chosen.engraving ? chosen.engraving : ""
+    if (words === shown.current) return
+    shown.current = words
+    drawEngraving(art, words)
+  })
+  if (!art) return null
   return (
-    <mesh position={[0, 0.78, 0]}>
+    // Drawn after the glass, and lit from within so the letters read against any juice colour
+    <mesh position={[0, 0.78, 0]} renderOrder={3}>
       <cylinderGeometry args={[0.775, 0.775, 0.5, 64, 1, true, -0.62, 1.24]} />
-      <meshStandardMaterial map={texture} transparent metalness={1} roughness={0.25} color="#e2bf7f" emissive="#3a2a10" depthWrite={false} />
+      <meshStandardMaterial
+        map={art.texture}
+        emissiveMap={art.texture}
+        emissive="#f2cf8a"
+        emissiveIntensity={0.55}
+        transparent
+        metalness={1}
+        roughness={0.25}
+        color="#e2bf7f"
+        depthWrite={false}
+      />
     </mesh>
   )
 }
 
-function engravingTexture(family: string): THREE.CanvasTexture {
+interface EngravingArt {
+  canvas: HTMLCanvasElement
+  texture: THREE.CanvasTexture
+  family: string
+}
+
+function engravingArt(family: string): EngravingArt {
   const canvas = document.createElement("canvas")
   canvas.width = 1024
   canvas.height = 410
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 8
+  const art = { canvas, texture, family }
+  drawEngraving(art, "")
+  return art
+}
+
+/** "KLIN" large, and beneath it "BANGKOK" or the guest's words, shrunk to fit the band. */
+function drawEngraving({ canvas, texture, family }: EngravingArt, words: string) {
   const context = canvas.getContext("2d")!
+  context.clearRect(0, 0, canvas.width, canvas.height)
   context.fillStyle = "#ffffff"
   context.textAlign = "center"
   context.font = `400 190px ${family}`
   context.letterSpacing = "38px"
-  context.fillText("KLIN", 530, 230)
-  context.font = `400 54px ${family}`
-  context.letterSpacing = "22px"
-  context.fillText("BANGKOK", 522, 330)
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.anisotropy = 8
-  return texture
+  context.fillText("KLIN", 530, 220)
+  if (words) {
+    let size = 96
+    context.letterSpacing = "6px"
+    do {
+      context.font = `400 ${size}px ${family}`
+      size -= 4
+    } while (context.measureText(words).width > canvas.width * 0.86 && size > 36)
+    context.fillText(words, 515, 340)
+  } else {
+    context.font = `400 54px ${family}`
+    context.letterSpacing = "22px"
+    context.fillText("BANGKOK", 522, 330)
+  }
+  texture.needsUpdate = true
 }
 
 /**

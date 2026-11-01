@@ -5,11 +5,14 @@ import { motion, MotionConfig } from "motion/react"
 import { XIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useLocale } from "@/i18n/locale-provider"
 import { getScent, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { bottleProfileFor, bottleSilhouette, neckTop } from "../lib/bottle"
+import { cleanEngraving, engravingLeft } from "../lib/engraving"
 import { formatPrice } from "../lib/story"
 import { useBagStore } from "../store/bag-store"
 
@@ -23,22 +26,45 @@ function bottleShape(ml: number) {
 const morph = { type: "spring", stiffness: 160, damping: 20 } as const
 
 /** The pop-up for one scent: a drawn bottle in its colours, the notes, a size and the bag button. */
-export function ScentSheet({ scentId, onSize, onClose }: { scentId: ScentId | null; onSize?: (ml: number) => void; onClose: () => void }) {
+export function ScentSheet({
+  scentId,
+  onSize,
+  onEngrave,
+  onClose,
+}: {
+  scentId: ScentId | null
+  onSize?: (ml: number) => void
+  /** The engraving as typed so far, so the 3D bottle can show it live. */
+  onEngrave?: (text: string) => void
+  onClose: () => void
+}) {
   const scent = scentId ? getScent(scentId) : undefined
   return (
     <Dialog open={Boolean(scent)} onOpenChange={(open) => !open && onClose()}>
-      {scent && <SheetBody key={scent.id} scent={scent} onSize={onSize} onAdded={onClose} />}
+      {scent && <SheetBody key={scent.id} scent={scent} onSize={onSize} onEngrave={onEngrave} onAdded={onClose} />}
     </Dialog>
   )
 }
 
-function SheetBody({ scent, onSize, onAdded }: { scent: Scent; onSize?: (ml: number) => void; onAdded: () => void }) {
+function SheetBody({
+  scent,
+  onSize,
+  onEngrave,
+  onAdded,
+}: {
+  scent: Scent
+  onSize?: (ml: number) => void
+  onEngrave?: (text: string) => void
+  onAdded: () => void
+}) {
   const locale = useLocale()
   const t = klinMessages[locale]
   const [ml, setMl] = useState(String(scent.sizes[1].ml))
   const size = scent.sizes.find((option) => String(option.ml) === ml) ?? scent.sizes[1]
   const add = useBagStore((state) => state.add)
   const shape = bottleShape(size.ml)
+  const [engraving, setEngraving] = useState("")
+  const words = cleanEngraving(engraving)
 
   return (
     <DialogContent
@@ -86,6 +112,15 @@ function SheetBody({ scent, onSize, onAdded }: { scent: Scent; onSize?: (ml: num
               <rect x="-0.2" y="0" width="0.4" height="0.08" fill="#c9a46a" />
               <rect x="-0.28" y="-0.48" width="0.56" height="0.48" rx="0.03" fill="#1c1714" />
             </motion.g>
+            {/* The house name, and the guest's words beneath it once typed, in gold on the glass */}
+            <g fill="#e2bf7f" textAnchor="middle" fontFamily="var(--font-display)" data-testid="sheet-engraving">
+              <text y="-0.68" fontSize="0.17" letterSpacing="0.04">
+                KLIN
+              </text>
+              <text y="-0.48" fontSize={words ? 0.12 : 0.065} letterSpacing={words ? 0.01 : 0.03}>
+                {words || "BANGKOK"}
+              </text>
+            </g>
           </motion.svg>
         </div>
 
@@ -142,10 +177,32 @@ function SheetBody({ scent, onSize, onAdded }: { scent: Scent; onSize?: (ml: num
               ))}
             </ToggleGroup>
           </div>
+          <Field>
+            <FieldLabel htmlFor={`engrave-${scent.id}`} className="font-normal text-muted-foreground">
+              {t.sheet.engraving}
+            </FieldLabel>
+            <Input
+              id={`engrave-${scent.id}`}
+              value={engraving}
+              onChange={(event) => {
+                const next = cleanEngraving(event.target.value, true)
+                setEngraving(next)
+                onEngrave?.(cleanEngraving(next))
+              }}
+              placeholder={t.sheet.engravingPlaceholder}
+              autoComplete="off"
+              spellCheck={false}
+              aria-describedby={`engrave-${scent.id}-hint`}
+              className="h-11 bg-transparent"
+            />
+            <FieldDescription id={`engrave-${scent.id}-hint`} className="tabular-nums">
+              {t.sheet.engravingHint(engravingLeft(engraving))}
+            </FieldDescription>
+          </Field>
           <button
             type="button"
             onClick={() => {
-              add(scent.id, size.ml)
+              add(scent.id, size.ml, words)
               toast.success(t.sheet.added(scent.name[locale], size.ml))
               onAdded()
             }}
