@@ -51,3 +51,27 @@ export function bottleSilhouette(profile: readonly [number, number][] = bottlePr
     .map(([x, y]) => `${(-x).toFixed(3)} ${(-y).toFixed(3)}`)
   return `M0 0 L${right.join(" L")} L${left.join(" L")} Z`
 }
+
+/**
+ * The flacon for each size: 30 ml slimmer and shorter, 100 ml taller and
+ * broader, the 50 ml the house shape. Every size has the same points, so one
+ * outline can morph into another.
+ */
+export function bottleProfileFor(ml: number): [number, number][] {
+  const [width, height] = ml <= 30 ? [0.8, 0.84] : ml >= 100 ? [1.12, 1.14] : [1, 1]
+  const base = bottleProfile()
+  if (width === 1 && height === 1) return base
+  // The neck starts where the outline narrows to the collar, above the shoulders
+  const neck = base.findIndex(([radius, y], i) => i > 0 && y > 1 && radius < 0.25)
+  return base.map(([radius, y], i) => {
+    // The neck and cap seat keep their size; only the body grows, and the neck rides on top of it
+    const bodyTop = base[neck][1]
+    const scaledY = y <= bodyTop ? y * height : bodyTop * height + (y - bodyTop)
+    return [i >= neck ? radius : radius * width, scaledY]
+  })
+}
+
+/** Height of the top of an outline, where the collar sits. */
+export function neckTop(profile: readonly [number, number][]): number {
+  return profile.at(-1)![1]
+}

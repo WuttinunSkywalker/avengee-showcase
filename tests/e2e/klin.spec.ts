@@ -3,6 +3,8 @@ import { expect, expectNoConsoleErrors, test } from "./fixtures"
 
 test.describe("Klin perfume house", () => {
   test("the scroll story changes scent chapter by chapter, and a bottle goes in the bag", async ({ page, consoleErrors }) => {
+    // A WebGL page drawn on the CPU (headless Chromium has no GPU) runs slowly while other tests share the machine
+    test.slow()
     await page.goto("/en/klin")
     await expect(page.getByRole("heading", { level: 1, name: "Bangkok, after the rain." })).toBeVisible()
     const story = page.getByTestId("klin-page")

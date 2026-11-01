@@ -31,6 +31,17 @@ describe("sceneAt", () => {
     expect(at(0).rain).toBe(1)
   })
 
+  it("keeps the hero for the storm, and puts each chapter on its own floor", () => {
+    const hero = sceneAt({ hero: 0, chapter: 0, lineup: 0 })
+    expect(hero.storm).toBe(1)
+    expect(hero.stone + hero.lacquer + hero.wood).toBe(0)
+    expect(at(0)).toMatchObject({ storm: 0, stone: 1, lacquer: 0, wood: 0 })
+    expect(at(1)).toMatchObject({ stone: 0, lacquer: 1, wood: 0 })
+    expect(at(2)).toMatchObject({ stone: 0, lacquer: 0, wood: 1 })
+    const between = at(1.5)
+    expect(between.lacquer + between.wood).toBeCloseTo(1)
+  })
+
   it("blends between chapters, and holds on whole numbers", () => {
     const jasmine = at(1)
     expect(jasmine.scent.id).toBe("jasmine-hour")
@@ -124,5 +135,59 @@ describe("bottle silhouette", async () => {
       [0, 1],
     ])
     expect(path).toBe("M0 0 L0.500 0.000 L0.500 -1.000 L-0.500 -1.000 L-0.500 0.000 Z")
+  })
+})
+
+describe("bottle sizes", async () => {
+  const { bottleProfile, bottleProfileFor, bottleSilhouette, maxRadius, neckTop } = await import("@/features/klin/lib/bottle")
+
+  it("keeps the house flacon for 50 ml, and grows the body from 30 to 100 ml", () => {
+    expect(bottleProfileFor(50)).toEqual(bottleProfile())
+    expect(maxRadius(bottleProfileFor(30))).toBeLessThan(maxRadius(bottleProfileFor(50)))
+    expect(maxRadius(bottleProfileFor(100))).toBeGreaterThan(maxRadius(bottleProfileFor(50)))
+    expect(neckTop(bottleProfileFor(30))).toBeLessThan(neckTop(bottleProfileFor(100)))
+  })
+
+  it("keeps the same points in every size, so outlines can morph", () => {
+    const counts = [30, 50, 100].map((ml) => bottleSilhouette(bottleProfileFor(ml)).split("L").length)
+    expect(new Set(counts).size).toBe(1)
+  })
+
+  it("leaves the neck the same width", () => {
+    const neckWidth = (ml: number) => bottleProfileFor(ml).find(([radius]) => radius > 0 && radius < 0.25)![0]
+    expect(neckWidth(30)).toBe(neckWidth(100))
+  })
+})
+
+describe("lightning", async () => {
+  const { lightning } = await import("@/features/klin/lib/story")
+
+  it("flashes twice at the start of each 7.3-second cycle, faintly once in the middle, and is dark otherwise", () => {
+    expect(lightning(0.06)).toBeCloseTo(1)
+    expect(lightning(7.3 + 0.06)).toBeCloseTo(1)
+    expect(lightning(0.24)).toBeCloseTo(0.7)
+    expect(lightning(4.1)).toBeCloseTo(0.45)
+    expect(lightning(2)).toBe(0)
+    expect(lightning(6)).toBe(0)
+  })
+})
+
+describe("nextTier", async () => {
+  const { nextTier } = await import("@/features/klin/lib/story")
+
+  it("ignores the first reading and needs two in a row", () => {
+    expect(nextTier("light", [5, 60], true)).toBe("light")
+    expect(nextTier("light", [5, 60, 58], true)).toBe("full")
+    expect(nextTier("light", [5, 60, 40], true)).toBe("light")
+  })
+
+  it("keeps small screens and slow machines off the full look", () => {
+    expect(nextTier("light", [60, 60, 60], false)).toBe("light")
+    expect(nextTier("full", [60, 22, 25], true)).toBe("light")
+  })
+
+  it("settles a device that can barely draw on still frames, for good", () => {
+    expect(nextTier("light", [2, 2.5, 2.4], true)).toBe("still")
+    expect(nextTier("still", [60, 60, 60], true)).toBe("still")
   })
 })

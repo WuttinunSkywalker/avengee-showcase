@@ -74,3 +74,12 @@ Public domain (CC0) photos from [Wikimedia Commons](https://commons.wikimedia.or
 | `marketplace/sangkhalok-small-dish.webp` | Talad listing | [Schaal Geribde schaal met ingegrifte decoratie, AK-MAK-219.jpg](https://commons.wikimedia.org/wiki/File:Schaal_Geribde_schaal_met_ingegrifte_decoratie,_AK-MAK-219.jpg) |
 
 Icons are from [Lucide](https://lucide.dev) (ISC licence). The Avengee and Baan Lamai marks are original SVGs in this repo.
+
+## Klin floor textures
+
+CC0 textures from [Poly Haven](https://polyhaven.com) (public domain, no attribution required). Downloaded at 1K and recompressed: colour and normal maps at 1024px, roughness at 512px greyscale. Used as the wet stone and wooden floors under the 3D bottle.
+
+| File | Used for | Source |
+| --- | --- | --- |
+| `klin/stone-color.jpg`, `klin/stone-normal.jpg`, `klin/stone-rough.jpg` | Klin, Monsoon's wet stone floor | [Monastery Stone Floor](https://polyhaven.com/a/monastery_stone_floor) |
+| `klin/wood-color.jpg`, `klin/wood-normal.jpg`, `klin/wood-rough.jpg` | Klin, Agarwood Dusk's wooden floor | [Dark Wood](https://polyhaven.com/a/dark_wood) |

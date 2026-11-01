@@ -138,7 +138,8 @@ export function KlinPage() {
       <main id="main" className="relative z-10">
         <section ref={hero} id="top" aria-labelledby="klin-title" className="relative flex min-h-[100svh] items-end pt-24 pb-36 md:items-center md:pb-0">
           <div className="mx-auto w-full max-w-7xl px-5 sm:px-8">
-            <div className="max-w-xl md:max-w-[52%]">
+            {/* On phones the hero text sits over the storm's light; a fade of the page colour keeps it legible */}
+            <div className="relative max-w-xl before:absolute before:-inset-x-5 before:-top-20 before:-bottom-24 before:-z-10 before:bg-gradient-to-t before:from-[var(--klin-backdrop)] before:via-[var(--klin-backdrop)]/85 before:to-transparent md:max-w-[52%] md:before:hidden">
               <p className="klin-rise text-sm text-muted-foreground">{t.tagline}</p>
               <h1
                 id="klin-title"

@@ -46,6 +46,12 @@ export interface SceneState {
   lineup: number
   /** Screens scrolled past the collection, so the line-up can leave with it. */
   exit: number
+  /** The hero's storm (lightning, mist), fading as the hero scrolls away, 0–1. */
+  storm: number
+  /** How much of each floor shows under the bottle: none in the storm, then each chapter's own. */
+  stone: number
+  lacquer: number
+  wood: number
 }
 
 export interface StoryPosition {
@@ -88,6 +94,10 @@ export function sceneAt({ hero, chapter, lineup, exit = 0 }: StoryPosition): Sce
     embers: weight("embers"),
     lineup: smoothstep(lineup),
     exit: Math.max(0, exit),
+    storm: 1 - smoothstep(hero),
+    stone: weight("rain") * smoothstep(hero),
+    lacquer: weight("petals") * smoothstep(hero),
+    wood: weight("embers") * smoothstep(hero),
   }
 }
 
@@ -121,4 +131,29 @@ export function storyPosition(scrollY: number, viewport: number, layout: { hero:
 /** Formats prices the same on server and client: "฿2,900". */
 export function formatPrice(baht: number): string {
   return `฿${String(Math.round(baht)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`
+}
+
+/** Lightning behind cloud: a bright double flash and a faint one every 7.3 seconds, 0–1, dark in between. */
+export function lightning(t: number): number {
+  const k = ((t % 7.3) + 7.3) % 7.3
+  const pulse = (at: number, width: number) => Math.max(0, 1 - Math.abs(k - at) / width)
+  return Math.max(pulse(0.06, 0.06), pulse(0.24, 0.05) * 0.7, pulse(4.1, 0.05) * 0.45)
+}
+
+/** How much of the 3D scene a device gets: everything, the light scene, or still frames drawn on scroll. */
+export type Tier = "full" | "light" | "still"
+
+/**
+ * Picks the next look from frame-rate readings (one per 1.5-second window).
+ * The first reading is ignored (shaders compile then); two in a row decide.
+ * Light → full needs a big screen and two readings over 45 fps; full → light
+ * two under 30; light → still two under 15. Still is final.
+ */
+export function nextTier(tier: Tier, readings: readonly number[], canBeFull: boolean): Tier {
+  const recent = readings.slice(1).slice(-2)
+  if (recent.length < 2 || tier === "still") return tier
+  if (tier === "light" && canBeFull && recent.every((fps) => fps > 45)) return "full"
+  if (tier === "full" && recent.every((fps) => fps < 30)) return "light"
+  if (tier === "light" && recent.every((fps) => fps < 15)) return "still"
+  return tier
 }

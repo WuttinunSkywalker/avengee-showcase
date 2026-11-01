@@ -166,8 +166,11 @@ async function holdPieces(page) {
   await page.addStyleTag({ content: hidePortalLink })
 }
 
-// SwiftShader gives headless Chromium a WebGL context for the 3D showcase
-const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] })
+// The 3D showcase needs WebGL: on a Mac, headless Chromium can draw on the GPU through Metal
+// (about 55 fps, so the full look with bloom and reflections is captured); elsewhere SwiftShader
+// draws on the CPU, slowly enough that Klin drops to its lighter look.
+const gpu = process.platform === "darwin" ? ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+const browser = await chromium.launch({ args: gpu })
 for (const shot of shots.filter((s) => !only || s.id === only)) {
   for (const locale of ["en", "th"]) {
     const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale })

@@ -9,11 +9,18 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useLocale } from "@/i18n/locale-provider"
 import { getScent, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
-import { bottleSilhouette } from "../lib/bottle"
+import { bottleProfileFor, bottleSilhouette, neckTop } from "../lib/bottle"
 import { formatPrice } from "../lib/story"
 import { useBagStore } from "../store/bag-store"
 
-const SILHOUETTE = bottleSilhouette()
+/** Outline, juice level and collar height for each size, so the drawn bottle can morph between them. */
+function bottleShape(ml: number) {
+  const profile = bottleProfileFor(ml)
+  const shoulders = profile.find(([radius, y]) => y > 1 && radius < 0.76)![1]
+  return { outline: bottleSilhouette(profile), fill: shoulders * 0.9, neck: neckTop(profile) + 0.08 }
+}
+
+const morph = { type: "spring", stiffness: 160, damping: 20 } as const
 
 /** The pop-up for one scent: a drawn bottle in its colours, the notes, a size and the bag button. */
 export function ScentSheet({ scentId, onClose }: { scentId: ScentId | null; onClose: () => void }) {
@@ -31,6 +38,7 @@ function SheetBody({ scent, onAdded }: { scent: Scent; onAdded: () => void }) {
   const [ml, setMl] = useState(String(scent.sizes[1].ml))
   const size = scent.sizes.find((option) => String(option.ml) === ml) ?? scent.sizes[1]
   const add = useBagStore((state) => state.add)
+  const shape = bottleShape(size.ml)
 
   return (
     <DialogContent
@@ -44,21 +52,39 @@ function SheetBody({ scent, onAdded }: { scent: Scent; onAdded: () => void }) {
         {/* The bottle pops up and settles, its juice filling from the base */}
         <div className="relative flex min-h-56 items-end justify-center overflow-hidden pt-10 md:min-h-full" style={{ background: `radial-gradient(70% 60% at 50% 62%, ${scent.liquid}55, transparent 70%)` }} aria-hidden="true">
           <motion.svg
-            viewBox="-1 -2.45 2 2.5"
-            className="h-48 w-auto md:h-72"
+            viewBox="-1 -2.8 2 2.85"
+            className="h-52 w-auto md:h-80"
             initial={{ y: 60, scale: 0.85, rotate: -6 }}
             animate={{ y: 0, scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 180, damping: 16, delay: 0.05 }}
+            data-testid="sheet-bottle"
+            data-ml={size.ml}
           >
             <defs>
               <clipPath id={`juice-${scent.id}`}>
-                <motion.rect x="-1" width="2" initial={{ y: 0, height: 0 }} animate={{ y: -1.18, height: 1.02 }} transition={{ duration: 1.1, ease: [0.2, 0.7, 0.2, 1], delay: 0.25 }} />
+                <motion.rect x="-1" width="2" initial={{ y: 0, height: 0 }} animate={{ y: -shape.fill, height: shape.fill - 0.14 }} transition={morph} />
               </clipPath>
+              <linearGradient id={`glass-${scent.id}`} x1="0" x2="1">
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.18" />
+                <stop offset="0.35" stopColor="#ffffff" stopOpacity="0.04" />
+                <stop offset="0.8" stopColor="#ffffff" stopOpacity="0.12" />
+              </linearGradient>
             </defs>
-            <path d={SILHOUETTE} fill="#ffffff10" stroke="#f1ebdf" strokeOpacity="0.55" strokeWidth="0.018" />
-            <path d={SILHOUETTE} transform="translate(0 -0.05) scale(0.88 0.97)" fill={scent.liquid} clipPath={`url(#juice-${scent.id})`} opacity="0.92" />
-            <rect x="-0.2" y="-1.92" width="0.4" height="0.08" fill="#c9a46a" />
-            <rect x="-0.28" y="-2.4" width="0.56" height="0.48" rx="0.03" fill="#1c1714" />
+            {/* Outline and juice morph between sizes; every size shares the same points */}
+            <motion.path initial={false} animate={{ d: shape.outline }} transition={morph} fill={`url(#glass-${scent.id})`} stroke="#f1ebdf" strokeOpacity="0.6" strokeWidth="0.018" />
+            <motion.path
+              initial={false}
+              animate={{ d: shape.outline }}
+              transition={morph}
+              transform="translate(0 -0.05) scale(0.88 0.97)"
+              fill={scent.liquid}
+              clipPath={`url(#juice-${scent.id})`}
+              opacity="0.92"
+            />
+            <motion.g initial={false} animate={{ y: -shape.neck }} transition={morph}>
+              <rect x="-0.2" y="0" width="0.4" height="0.08" fill="#c9a46a" />
+              <rect x="-0.28" y="-0.48" width="0.56" height="0.48" rx="0.03" fill="#1c1714" />
+            </motion.g>
           </motion.svg>
         </div>
 
