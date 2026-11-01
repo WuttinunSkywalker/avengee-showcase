@@ -205,3 +205,17 @@ export function nearestTurn(current: number, target: number): number {
   const full = Math.PI * 2
   return target + full * Math.round((current - target) / full)
 }
+
+/** Longest a frame may take before it counts as a stall, in seconds. */
+export const STALL = 0.35
+
+/**
+ * Whether the latest frames say the device can't animate the scene at all:
+ * two in a row each taking longer than `STALL`. Waiting for frame-rate windows
+ * would take ages at that pace (and block the page meanwhile), so the scene
+ * drops to still frames at once.
+ */
+export function stalling(frameSeconds: readonly number[]): boolean {
+  const last = frameSeconds.slice(-2)
+  return last.length === 2 && last.every((seconds) => seconds > STALL)
+}

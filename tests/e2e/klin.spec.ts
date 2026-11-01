@@ -51,15 +51,40 @@ test.describe("Klin perfume house", () => {
   test("opens with a curtain that parts, and parts straight away on a return visit", async ({ page }) => {
     await page.goto("/en/klin")
     const intro = page.getByTestId("klin-intro")
-    await expect(intro).toHaveAttribute("data-state", "hold")
+    // Holding (or already parting, if the page was slow to load)
+    await expect(intro).toHaveAttribute("data-state", /^(hold|reveal)$/)
     // It's only a picture: the page beneath can be used while it's up
     await expect(intro).toHaveAttribute("aria-hidden", "true")
     await expect(intro).toHaveCSS("pointer-events", "none")
-    await expect(intro).toHaveCount(0, { timeout: 10_000 })
+    await expect(intro).toHaveCount(0, { timeout: 15_000 })
     expect(await page.evaluate(() => localStorage.getItem("klin:intro-seen"))).toBe("1")
     // A return visit parts at once (exact timings are covered by the integration test; a CPU-drawn page here runs slow)
     await page.reload()
     await expect(intro).toHaveCount(0, { timeout: 10_000 })
+  })
+
+  test("the headline falls like rain as the hero scrolls away, and comes back", async ({ page }) => {
+    await page.goto("/en/klin")
+    await expect(page.getByRole("heading", { level: 1, name: "Bangkok, after the rain." })).toBeVisible()
+    const letters = page.locator(".klin-fall-letter")
+    await expect(letters).toHaveCount("Bangkok,afterthe rain.".replace(" ", "").length)
+    const moved = () => letters.evaluateAll((all) => all.filter((letter) => getComputedStyle(letter).transform !== "matrix(1, 0, 0, 1, 0, 0)" && getComputedStyle(letter).transform !== "none").length)
+    // Scroll changes reach the page with its next frame, which is slow when the 3D layer is drawn on the CPU
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect.poll(moved, { timeout: 15_000 }).toBe(0)
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.5))
+    await expect.poll(moved, { timeout: 15_000 }).toBeGreaterThan(10)
+    // Back at the top every letter is home (scrolling again inside the poll: under load the smooth
+    // scroller can still be easing toward the earlier position when the first jump lands)
+    await expect
+      .poll(
+        async () => {
+          await page.evaluate(() => window.scrollTo(0, 0))
+          return moved()
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(0)
   })
 
   test("bottles spin when dragged, and the handles never cover the page's own controls", async ({ page }) => {
@@ -100,6 +125,9 @@ test.describe("Klin perfume house", () => {
     await page.goto("/en/klin")
     await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-motion")
     await expect(page.getByTestId("klin-intro")).toBeHidden()
+    // The headline stays put
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.5))
+    expect(await page.locator(".klin-fall-letter").first().evaluate((letter) => getComputedStyle(letter).transform)).toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/)
     await expect(page.locator("html.lenis")).toHaveCount(0)
     await page.locator("#agarwood-dusk").scrollIntoViewIfNeeded()
     await expect(page.getByRole("heading", { level: 2, name: "Agarwood Dusk" })).toBeVisible()

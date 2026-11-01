@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { Component, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
+import { Component, Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import Lenis from "lenis"
 import "lenis/dist/lenis.css"
 import { SkipLink } from "@/components/skip-link"
@@ -9,6 +9,7 @@ import { useLocale } from "@/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
+import { headlinePieces } from "../lib/headline"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { KlinIntro } from "./intro"
@@ -91,11 +92,14 @@ export function KlinPage() {
       }
     }
     const update = () => {
-      const scene = sceneAt(storyPosition(window.scrollY, window.innerHeight, layout))
+      const position = storyPosition(window.scrollY, window.innerHeight, layout)
+      const scene = sceneAt(position)
       state.current = scene
       page.style.setProperty("--klin-backdrop", scene.backdrop)
       page.style.setProperty("--klin-accent", scene.accent)
       page.dataset.scent = scene.scent.id
+      // The headline's letters fall as the hero scrolls away (not for reduced motion, where data-motion is never set)
+      page.style.setProperty("--fall", page.dataset.motion === undefined ? "0" : String(position.hero))
       // Which grab handles to show: over the single bottle, over the line-up, or none (cards and atelier)
       page.dataset.stage = scene.exit > 0.45 ? "off" : scene.lineup > 0.6 ? "lineup" : scene.lineup > 0.12 ? "off" : "single"
     }
@@ -107,9 +111,20 @@ export function KlinPage() {
     })
     resize.observe(document.body)
     window.addEventListener("scroll", update, { passive: true })
+    // Also catch up on the next frame whenever the scroll moved without an event reaching us in time
+    // (the smooth scroller and a busy main thread can both delay one), so the page never sticks on a stale position
+    let lastY = window.scrollY
+    let frame = requestAnimationFrame(function follow() {
+      if (window.scrollY !== lastY) {
+        lastY = window.scrollY
+        update()
+      }
+      frame = requestAnimationFrame(follow)
+    })
     return () => {
       resize.disconnect()
       window.removeEventListener("scroll", update)
+      cancelAnimationFrame(frame)
     }
   }, [])
 
@@ -161,15 +176,13 @@ export function KlinPage() {
             {/* On phones the hero text sits over the storm's light; a fade of the page colour keeps it legible */}
             <div className="relative max-w-xl before:absolute before:-inset-x-5 before:-top-20 before:-bottom-24 before:-z-10 before:bg-gradient-to-t before:from-[var(--klin-backdrop)] before:via-[var(--klin-backdrop)]/85 before:to-transparent md:max-w-[52%] md:before:hidden">
               <p className="klin-rise text-sm text-muted-foreground">{t.tagline}</p>
+              {/* No mask reveal here: the opening curtain reveals it, and its letters fall like rain as the hero scrolls away */}
               <h1
                 id="klin-title"
-                className={cn(
-                  "klin-rise mt-4 font-heading text-[clamp(3.25rem,9vw,8.75rem)] tracking-[-0.02em] text-balance",
-                  locale === "th" ? "leading-[1.15]" : "leading-[0.92]",
-                )}
-                style={{ "--i": 1 } as React.CSSProperties}
+                aria-label={t.hero.title}
+                className={cn("mt-4 font-heading text-[clamp(3.25rem,9vw,8.75rem)] tracking-[-0.02em]", locale === "th" ? "leading-[1.15]" : "leading-[0.92]")}
               >
-                {t.hero.title}
+                <RainHeadline text={t.hero.title} locale={locale} />
               </h1>
               <p className="klin-rise mt-5 max-w-[46ch] leading-relaxed text-muted-foreground md:mt-6 md:text-lg" style={{ "--i": 2 } as React.CSSProperties}>
                 {t.hero.body}
@@ -287,6 +300,33 @@ export function KlinPage() {
         }}
       />
     </div>
+  )
+}
+
+/**
+ * The hero headline as letters kept in whole words (so lines still break
+ * between words), each falling, drifting and fading by `--fall` (the hero's
+ * scroll, 0–1) after its own delay; see .klin-fall in globals.css. Hidden from
+ * assistive tech: the heading carries the text as its label.
+ */
+function RainHeadline({ text, locale }: { text: string; locale: string }) {
+  const pieces = useMemo(() => headlinePieces(text, locale), [text, locale])
+  return (
+    <span aria-hidden="true" className="klin-fall">
+      {pieces.map((piece, i) =>
+        "space" in piece ? (
+          <Fragment key={i}>{piece.space}</Fragment>
+        ) : (
+          <span key={i} className="klin-fall-word">
+            {piece.word.map((letter, j) => (
+              <span key={j} className="klin-fall-letter" style={{ "--d": letter.delay, "--s": letter.sway } as React.CSSProperties}>
+                {letter.text}
+              </span>
+            ))}
+          </span>
+        ),
+      )}
+    </span>
   )
 }
 

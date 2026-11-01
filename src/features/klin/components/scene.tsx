@@ -10,7 +10,7 @@ import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
-import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nearestTurn, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nearestTurn, nextTier, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -98,13 +98,17 @@ export function KlinScene({
  * Watches the frame rate in 1.5-second windows (after the first, while shaders
  * compile) and moves between looks: a big screen that holds a good rate earns
  * the full look, one that sags drops back, and a device that can barely draw
- * (a weak laptop, a headless browser on the CPU) settles on still frames.
+ * (a weak laptop, a headless browser on the CPU) settles on still frames, at
+ * once if frames take whole seconds.
  */
 function Governor({ rich, tier, onChange }: { rich: boolean; tier: Tier; onChange: (tier: Tier) => void }) {
-  const meter = useRef({ start: -1, frames: 0, readings: [] as number[] })
-  useFrame(({ clock }) => {
+  const meter = useRef({ start: -1, frames: 0, readings: [] as number[], recent: [] as number[] })
+  useFrame(({ clock }, delta) => {
     const now = clock.elapsedTime
     const w = meter.current
+    // Frames taking whole seconds (a CPU drawing WebGL on a busy machine) go straight to still frames
+    w.recent = [...w.recent.slice(-1), delta]
+    if (w.frames > 0 && stalling(w.recent)) return onChange("still")
     if (w.start < 0) w.start = now
     w.frames++
     if (now - w.start < 1.5) return

@@ -1077,3 +1077,21 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
     left: 66%;
   }
 }
+
+/*
+ * Klin's hero headline falls like rain as the hero scrolls away: --fall (0–1)
+ * comes from the scroll, each letter waits its own --d, then drops with a
+ * gravity curve, drifting and turning by --s and fading. Scrolling back up
+ * puts every letter back.
+ */
+.klin-fall-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.klin-fall-letter {
+  --f: clamp(0, (var(--fall, 0) - var(--d, 0)) * 2.2, 1);
+  display: inline-block;
+  transform: translate3d(calc(var(--s, 0) * var(--f) * 2.5rem), calc(var(--f) * var(--f) * 70vh), 0) rotate(calc(var(--s, 0) * var(--f) * 50deg));
+  opacity: calc(1 - var(--f) * 1.3);
+  will-change: transform;
+}

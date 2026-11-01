@@ -241,3 +241,14 @@ describe("nearestTurn", async () => {
     expect(Math.abs(nearestTurn(-7, 1) - -7)).toBeLessThanOrEqual(Math.PI)
   })
 })
+
+describe("stalling", async () => {
+  const { stalling } = await import("@/features/klin/lib/story")
+
+  it("gives up on animation after two very slow frames in a row, not one hitch", () => {
+    expect(stalling([0.016, 0.9])).toBe(false)
+    expect(stalling([0.9, 0.016, 0.9])).toBe(false)
+    expect(stalling([0.016, 0.5, 2.4])).toBe(true)
+    expect(stalling([])).toBe(false)
+  })
+})
