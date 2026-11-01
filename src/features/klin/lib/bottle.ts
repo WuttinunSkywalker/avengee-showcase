@@ -21,8 +21,11 @@ export function bottleProfile(): [number, number][] {
   ]
 }
 
+/** How high the juice stands at rest, inside the 1.86-tall flacon: up to the shoulders. */
+export const FILL = 1.18
+
 /** The juice: a little inside the glass walls, above the thick base, filled to the shoulders. */
-export function liquidProfile(fill = 1.18): [number, number][] {
+export function liquidProfile(fill = FILL): [number, number][] {
   return [
     [0, 0.16],
     [0.6, 0.16],

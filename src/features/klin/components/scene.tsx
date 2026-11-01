@@ -8,7 +8,8 @@ import type { NoiseEffect } from "postprocessing"
 import * as THREE from "three"
 import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
-import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
+import { bottleProfile, FILL, liquidProfile, sizeFactors } from "../lib/bottle"
+import { SETTLED, sloshPush, stepSlosh, turnDelta, type Slosh } from "../lib/slosh"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
 import { grainFor, stir } from "../lib/speed"
@@ -411,18 +412,18 @@ function Story({
     <>
       <group ref={hero}>
         <group ref={shape}>
-          <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} slot="hero" engraving={engraving} />
+          <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} still={still} slot="hero" engraving={engraving} />
         </group>
         <Beam state={state} still={still} />
       </group>
       <group ref={left} visible={false}>
         <group ref={leftShape}>
-          <Bottle liquid={scents[0].liquid} rich={false} slot="left" engraving={engraving} />
+          <Bottle liquid={scents[0].liquid} rich={false} still={still} slot="left" engraving={engraving} />
         </group>
       </group>
       <group ref={middle} visible={false}>
         <group ref={middleShape}>
-          <Bottle liquid={scents[1].liquid} rich={false} slot="middle" engraving={engraving} />
+          <Bottle liquid={scents[1].liquid} rich={false} still={still} slot="middle" engraving={engraving} />
         </group>
       </group>
       <group ref={stage}>
@@ -632,21 +633,42 @@ function Bottle({
   liquid,
   liquidRef,
   rich,
+  still,
   slot,
   engraving,
 }: {
   liquid: string
   liquidRef?: RefObject<THREE.MeshPhysicalMaterial | null>
   rich: boolean
+  still: boolean
   slot: Slot
   engraving: EngravingSource
 }) {
   const glass = useMemo(() => new THREE.LatheGeometry(bottleProfile().map(([x, y]) => new THREE.Vector2(x, y)), 72), [])
-  const juice = useMemo(() => new THREE.LatheGeometry(liquidProfile().map(([x, y]) => new THREE.Vector2(x, y)), 72), [])
+  // The juice is turned taller than it stands and cut off at its surface in the shader, so the surface can tilt and slosh
+  const juice = useMemo(() => new THREE.LatheGeometry(liquidProfile(FILL + 0.2).map(([x, y]) => new THREE.Vector2(x, y)), 72), [])
+  const juiceMesh = useRef<THREE.Mesh>(null)
+  const surface = useMemo(() => ({ uLevel: { value: FILL }, uTilt: { value: new THREE.Vector2() } }), [])
+  const sloshing = useRef<JuiceMotion>({ slosh: SETTLED, heading: null, turn: 0, height: null })
+  useFrame((_, delta) => {
+    if (!still) stepJuice(juiceMesh.current, sloshing.current, surface, delta)
+  })
   return (
     <group position={[0, -0.6, 0]}>
-      <mesh geometry={juice} renderOrder={1}>
-        <meshPhysicalMaterial ref={liquidRef} color={liquid} roughness={0.12} transmission={0.5} thickness={1.2} ior={1.35} transparent opacity={0.94} />
+      <mesh ref={juiceMesh} geometry={juice} renderOrder={1}>
+        <meshPhysicalMaterial
+          ref={liquidRef}
+          color={liquid}
+          roughness={0.12}
+          transmission={0.5}
+          thickness={1.2}
+          ior={1.35}
+          transparent
+          opacity={0.94}
+          side={THREE.DoubleSide}
+          onBeforeCompile={(shader) => cutJuice(shader, surface)}
+          customProgramCacheKey={() => "klin-juice"}
+        />
       </mesh>
       <mesh geometry={glass} renderOrder={2}>
         {rich ? (
@@ -684,6 +706,52 @@ function Bottle({
       </mesh>
     </group>
   )
+}
+
+interface JuiceMotion {
+  slosh: Slosh
+  /** The bottle's heading and turning speed last frame, and its height, to tell how it's moving. */
+  heading: number | null
+  turn: number
+  height: number | null
+}
+
+/**
+ * Cuts the juice off at its surface, a plane through the fill level tilted by
+ * the slosh. Seen through the cut, the juice's inner walls stand in for the
+ * surface (the usual trick for liquid in a bottle), shaded a touch lighter.
+ */
+function cutJuice(shader: THREE.WebGLProgramParametersWithUniforms, surface: { uLevel: { value: number }; uTilt: { value: THREE.Vector2 } }) {
+  shader.uniforms.uLevel = surface.uLevel
+  shader.uniforms.uTilt = surface.uTilt
+  shader.vertexShader = shader.vertexShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vJuice;")
+    .replace("#include <begin_vertex>", "#include <begin_vertex>\nvJuice = position;")
+  shader.fragmentShader = shader.fragmentShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vJuice;\nuniform float uLevel;\nuniform vec2 uTilt;")
+    .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\nif (vJuice.y > uLevel + dot(vJuice.xz, uTilt)) discard;")
+    .replace("#include <dithering_fragment>", "#include <dithering_fragment>\nif (!gl_FrontFacing) gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuse * 1.08, 0.6);")
+}
+
+/** Feels how the bottle turned and grew since last frame, and lets the juice's surface swing on its spring. */
+function stepJuice(mesh: THREE.Mesh | null, motion: JuiceMotion, surface: { uTilt: { value: THREE.Vector2 } }, delta: number) {
+  if (!mesh) return
+  const m = mesh.matrixWorld.elements
+  const heading = Math.atan2(m[8], m[10])
+  const height = Math.hypot(m[4], m[5], m[6])
+  const dt = Math.min(delta, 1 / 30)
+  if (motion.heading === null || motion.height === null || dt <= 0) {
+    motion.heading = heading
+    motion.height = height
+    return
+  }
+  const turn = turnDelta(motion.heading, heading) / dt
+  const growth = (height - motion.height) / dt / Math.max(height, 0.001)
+  motion.slosh = stepSlosh(motion.slosh, sloshPush((turn - motion.turn) / dt, growth), dt)
+  motion.heading = heading
+  motion.turn = turn
+  motion.height = height
+  surface.uTilt.value.set(motion.slosh.x, motion.slosh.z)
 }
 
 /**
