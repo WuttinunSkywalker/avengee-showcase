@@ -1,14 +1,13 @@
 import Image from "next/image"
-import Link from "next/link"
 import type { CSSProperties } from "react"
 import { showcases } from "@/config/site"
-import { localePath, type Locale } from "@/i18n/config"
+import type { Locale } from "@/i18n/config"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
 
 /**
- * Real screens from the live apps, fanned out beside the hero text. Each one
- * opens its app. The cards spread out of a stack on load, fan a little wider on
+ * Real screens from the live apps, fanned out beside the hero text as a
+ * picture (the showcase list below holds the links). The cards spread out of a stack on load, fan a little wider on
  * hover, and the whole stack tilts in 3D toward the pointer with each screen at
  * its own depth (all off for reduced motion). New apps join automatically once
  * they're live with screenshots.
@@ -39,20 +38,11 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
   ]
 
   return (
-    <div className="group/fan relative mx-auto aspect-[5/4] w-[92%] max-w-md lg:w-full lg:max-w-none" data-testid="hero-showcase">
+    <div className="group/fan relative mx-auto aspect-[5/4] w-[92%] max-w-md lg:w-full lg:max-w-none" data-testid="hero-showcase" role="img" aria-label={t.showcaseLabel(live.map((showcase) => showcase.name))}>
       {/* Tilts toward the pointer (vars set on the hero by HeroSpotlight); cards sit at different depths, so they shift like layers. */}
       <div className="hero-tilt absolute inset-0" data-testid="hero-tilt">
       {cards.map(({ showcase, style, className }) => (
-        <Link
-          key={showcase.id}
-          href={localePath(locale, showcase.href!)}
-          aria-label={t.openApp(showcase.name)}
-          style={style}
-          className={cn(
-            "fan-card absolute overflow-clip rounded-xl border border-border bg-card shadow-xl focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none",
-            className,
-          )}
-        >
+        <div key={showcase.id} style={style} className={cn("fan-card absolute overflow-clip rounded-xl border border-border bg-card shadow-xl", className)}>
           <Image
             src={showcase.images!.desktop[locale]}
             alt=""
@@ -62,16 +52,14 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
             loading="eager"
             className="aspect-[16/10] w-full object-cover object-left-top"
           />
-        </Link>
+        </div>
       ))}
-      <Link
-        href={localePath(locale, phone.href!)}
-        aria-label={t.openApp(phone.name)}
+      <div
         style={{ "--fan": "translateZ(70px) rotate(4deg)", "--fan-hover": "translate3d(-6%, -6%, 70px) rotate(1deg)", "--i": 2 } as CSSProperties}
-        className="fan-card absolute right-[6%] bottom-0 w-[27%] overflow-clip rounded-[1.1rem] border-[3px] border-foreground/85 bg-card shadow-2xl focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
+        className="fan-card absolute right-[6%] bottom-0 w-[27%] overflow-clip rounded-[1.1rem] border-[3px] border-foreground/85 bg-card shadow-2xl"
       >
         <Image src={phone.images!.mobile[locale]} alt="" width={393} height={659} sizes="140px" loading="eager" className="w-full" />
-      </Link>
+      </div>
       </div>
     </div>
   )

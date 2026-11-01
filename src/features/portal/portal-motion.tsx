@@ -19,6 +19,7 @@ const TARGETS = "[data-split], .reveal, .reveal-rule, .reveal-wipe, .reveal-phon
  * An IntersectionObserver marks each one `data-shown`; CSS transitions do the
  * moving (see "Portal reveals" in globals.css). Nothing starts hidden until
  * this runs (`main[data-motion]`), and it doesn't run for reduced motion.
+ * Elements added later are picked up as they mount.
  */
 export function PortalMotion() {
   useEffect(() => {
@@ -42,9 +43,22 @@ export function PortalMotion() {
       { rootMargin: "0px 0px -10% 0px" },
     )
     for (const el of main.querySelectorAll(TARGETS)) observer.observe(el)
+    // Pieces that mount later (a filter swapping the showcase cards) need watching too,
+    // or they'd stay clipped out of sight
+    const added = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (!(node instanceof HTMLElement)) continue
+          if (node.matches(TARGETS)) observer.observe(node)
+          for (const el of node.querySelectorAll(TARGETS)) observer.observe(el)
+        }
+      }
+    })
+    added.observe(main, { childList: true, subtree: true })
     main.dataset.motion = ""
 
     return () => {
+      added.disconnect()
       observer.disconnect()
       delete main.dataset.motion
       for (const split of splits) split.revert()

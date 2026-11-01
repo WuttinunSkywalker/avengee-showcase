@@ -27,20 +27,26 @@ test.describe("showcase portal", () => {
     await expect(grid.getByRole("heading", { level: 3 })).toHaveCount(5)
   })
 
-  test("the hero shows the live apps, each opening its app", async ({ page }) => {
+  test("cards swapped in by a filter still reveal their details", async ({ page }) => {
+    await page.goto("/en")
+    const grid = page.locator("#showcases")
+    await grid.scrollIntoViewIfNeeded()
+    for (const [kind, name] of [["Booking app", "Baan Lamai"], ["Online shop", "Kaffa Roasters"], ["Booking app", "Baan Lamai"]]) {
+      await grid.getByRole("radio", { name: kind }).click()
+      const card = grid.getByRole("listitem").filter({ has: page.getByRole("heading", { name }) })
+      // Scrolling to the card's buttons plays every reveal in it, so nothing stays clipped out of sight
+      await card.getByRole("link", { name: "Open App" }).scrollIntoViewIfNeeded()
+      await expect(card.locator(".reveal:not([data-shown])")).toHaveCount(0)
+    }
+  })
+
+  test("the hero shows the live apps as a picture, not links", async ({ page }) => {
     await page.goto("/en")
     const hero = page.getByTestId("hero-showcase")
-    await expect(hero.getByRole("link")).toHaveCount(3)
-    // Kaffa sits at the back: pointing at its visible top edge brings it forward, then it opens
-    // Kaffa sits at the back of the tilting stack: reach it by keyboard, where focus brings it forward
-    const kaffa = hero.getByRole("link", { name: "Open Kaffa Roasters" })
-    await kaffa.focus()
-    await page.keyboard.press("Enter")
-    await expect(page).toHaveURL(/\/en\/shop$/)
-
-    await page.goto("/th")
-    await page.getByTestId("hero-showcase").getByRole("link", { name: "เปิดแอป Baan Lamai" }).first().click()
-    await expect(page).toHaveURL(/\/th\/spa$/)
+    await expect(hero).toHaveAttribute("role", "img")
+    await expect(hero).toHaveAccessibleName(/^Screens from Baan Lamai and Kaffa Roasters/)
+    await expect(hero.getByRole("link")).toHaveCount(0)
+    await expect(hero.locator("img")).toHaveCount(3)
   })
 
   test("the portal never scrolls sideways", async ({ page }) => {
