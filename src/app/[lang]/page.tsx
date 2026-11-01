@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { Phrased } from "@/components/phrased"
 import { SkipLink } from "@/components/skip-link"
 import { Button } from "@/components/ui/button"
 import { site } from "@/config/site"
@@ -14,6 +13,7 @@ import { HeroSpotlight } from "@/features/portal/hero-spotlight"
 import { KineticHeadline } from "@/features/portal/kinetic-headline"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { PortalMotion } from "@/features/portal/portal-motion"
+import { PressureHeading } from "@/features/portal/pressure-heading"
 import { ProcessSteps } from "@/features/portal/process-steps"
 import { SectionTones } from "@/features/portal/section-tones"
 import { ServiceList } from "@/features/portal/service-list"
@@ -134,8 +134,8 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
           </div>
           <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:py-28">
             <div className="flex max-w-3xl flex-col gap-4">
-              <h2 id="contact-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-6xl">
-                <Phrased text={t.contact.title} />
+              <h2 id="contact-title" aria-label={t.contact.title} className="reveal relative font-heading text-4xl font-semibold tracking-tight sm:text-6xl">
+                <PressureHeading text={t.contact.title} locale={lang} />
               </h2>
               <p className="reveal text-lg opacity-75" style={stagger(2)}>
                 {t.contact.body}

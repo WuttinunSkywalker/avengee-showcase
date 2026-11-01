@@ -1278,6 +1278,12 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
   }
 }
 
+/* The contact heading's letters, each boxed at its heaviest width and centred, so weight changes never rewrap a line */
+.pressure-letter {
+  display: inline-block;
+  text-align: center;
+}
+
 /*
  * "What we build": the app screen that floats beside the row pointed at
  * (features/portal/service-list.tsx). Script moves the outer box; the card

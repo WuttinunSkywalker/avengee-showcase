@@ -55,3 +55,17 @@ export function pushAway(dx: number, dy: number, reach: number, strength: number
   if (distance < 0.5) return { x: 0, y: -strength * heat, heat }
   return { x: (dx / distance) * strength * heat, y: (dy / distance) * strength * heat, heat }
 }
+
+/** The contact heading's resting weight and the heaviest a letter grows to under the pointer. */
+export const PRESSURE = { rest: 600, heaviest: 800 }
+
+/**
+ * How heavy a letter of the contact heading is with its centre `distance` px
+ * from the pointer: its resting weight beyond `reach`, rising on a bell curve
+ * to the heaviest right under it.
+ */
+export function pressureWeight(distance: number, reach: number): number {
+  if (distance >= reach) return PRESSURE.rest
+  const k = Math.exp(-((distance / (reach * 0.45)) ** 2))
+  return Math.round(PRESSURE.rest + (PRESSURE.heaviest - PRESSURE.rest) * k)
+}

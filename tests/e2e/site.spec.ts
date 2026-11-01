@@ -268,6 +268,23 @@ test.describe("showcase portal", () => {
     expect(back.some((names) => names.includes("app-spa"))).toBe(true)
   })
 
+  test("the contact heading thickens toward the mouse without its lines moving", async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 768, "the weight follows a mouse")
+    await page.goto("/en")
+    const heading = page.getByRole("heading", { level: 2, name: "Tell us what you want to build." })
+    await heading.scrollIntoViewIfNeeded()
+    const box = (await heading.boundingBox())!
+    const heavier = () => heading.locator(".pressure-letter").evaluateAll((letters) => letters.filter((letter) => Number(getComputedStyle(letter).fontWeight) > 600).length)
+    await expect(async () => {
+      await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3, { steps: 3 })
+      expect(await heavier()).toBeGreaterThan(2)
+    }).toPass({ timeout: 10_000 })
+    // Each letter is boxed at its heaviest, so the heading keeps its shape
+    expect((await heading.boundingBox())!.height).toBe(box.height)
+    await page.mouse.move(box.x, box.y - 400)
+    await expect.poll(heavier).toBe(0)
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
@@ -479,6 +496,12 @@ test.describe("showcase portal", () => {
     // Each section keeps its own tint; nothing eases between them
     await expect(page.locator("main")).not.toHaveAttribute("data-tones")
     expect(await page.locator("#services").evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)")
+    // The contact heading keeps its weight under the mouse
+    const contactHeading = page.locator("#contact-title")
+    const near = (await contactHeading.boundingBox())!
+    await page.mouse.move(near.x + 40, near.y + 20, { steps: 3 })
+    await page.waitForTimeout(200)
+    expect(await contactHeading.locator(".pressure-letter[style*='font-weight']").count()).toBe(0)
     // Nothing floats beside "What we build"
     await expect(page.getByTestId("service-preview")).toBeHidden()
     // The marquee becomes a still, wrapped list without its duplicate

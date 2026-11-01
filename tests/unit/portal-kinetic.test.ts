@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { kineticPhrases, pushAway } from "@/features/portal/kinetic"
+import { kineticPhrases, PRESSURE, pressureWeight, pushAway } from "@/features/portal/kinetic"
 
 const words = (phrases: ReturnType<typeof kineticPhrases>) => phrases.map((phrase) => phrase.map((word) => word.map((letter) => letter.text).join("")))
 
@@ -61,5 +61,21 @@ describe("pushAway", () => {
 
   it("lifts a letter dead under the pointer", () => {
     expect(pushAway(0, 0, 120, 10)).toEqual({ x: 0, y: -10, heat: 1 })
+  })
+})
+
+describe("pressureWeight", () => {
+  it("rests beyond its reach and is heaviest right under the pointer", () => {
+    expect(pressureWeight(200, 150)).toBe(PRESSURE.rest)
+    expect(pressureWeight(0, 150)).toBe(PRESSURE.heaviest)
+  })
+
+  it("eases off with distance, never lighter than rest or heavier than the heaviest", () => {
+    const weights = [0, 20, 50, 90, 140].map((distance) => pressureWeight(distance, 150))
+    for (let i = 1; i < weights.length; i++) expect(weights[i]).toBeLessThanOrEqual(weights[i - 1])
+    for (const weight of weights) {
+      expect(weight).toBeGreaterThanOrEqual(PRESSURE.rest)
+      expect(weight).toBeLessThanOrEqual(PRESSURE.heaviest)
+    }
   })
 })
