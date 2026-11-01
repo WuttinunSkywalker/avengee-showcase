@@ -14,6 +14,7 @@ import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
 import { grainFor, stir } from "../lib/speed"
 import { NOTE_MS, noteEnvelope, type NoteEffect } from "../lib/notes"
+import { causticStrength } from "../lib/caustics"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -430,6 +431,7 @@ function Story({
         <Suspense fallback={null}>
           <Floors state={state} still={still} rich={rich} motion={motion} onReady={onReady} />
         </Suspense>
+        <Caustics state={state} still={still} />
       </group>
       <Rain state={state} still={still} motion={motion} />
       <Mist state={state} still={still} />
@@ -441,6 +443,87 @@ function Story({
     </>
   )
 }
+
+const CAUSTIC_SHADER = {
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  // The well-known iterated water caustic (after joltz0r and Dave Hoskins): light bending through
+  // the glass and juice gathers into bright, slowly shifting threads
+  fragmentShader: /* glsl */ `
+    uniform float uTime;
+    uniform float uStrength;
+    uniform vec3 uColour;
+    varying vec2 vUv;
+    float caustic(vec2 p, float t) {
+      vec2 i = p;
+      float c = 1.0;
+      float inten = 0.005;
+      for (int n = 0; n < 4; n++) {
+        float tt = t * (1.0 - (3.5 / float(n + 1)));
+        i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
+        c += 1.0 / length(vec2(p.x / (sin(i.x + tt) / inten), p.y / (cos(i.y + tt) / inten)));
+      }
+      c /= 4.0;
+      c = 1.17 - pow(c, 1.4);
+      return pow(abs(c), 6.0);
+    }
+    void main() {
+      // Wider than deep: seen low across the floor, the cells foreshorten back to round
+      vec2 p = vUv * vec2(5.0, 2.6) - 250.0;
+      float light = caustic(p, uTime * 0.35);
+      // A soft patch, brightest near the bottle and fading away from it
+      vec2 c = (vUv - vec2(0.62, 0.5)) / vec2(0.55, 0.5);
+      float pool = smoothstep(1.0, 0.25, length(c));
+      gl_FragColor = vec4(uColour * min(light, 1.4) * pool * uStrength, 1.0);
+    }
+  `,
+}
+
+/**
+ * Light thrown through the glass and juice onto the floor beside the bottle,
+ * in the juice's colour: a moving caustic drawn in a shader (cheap, unlike a
+ * raymarched one), behind and to the left, away from the key light. Only on
+ * a floor (causticStrength); held still on still frames.
+ */
+function Caustics({ state, still }: { state: RefObject<SceneState>; still: boolean }) {
+  const mesh = useRef<THREE.Mesh>(null)
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        ...CAUSTIC_SHADER,
+        uniforms: { uTime: { value: 3 }, uStrength: { value: 0 }, uColour: { value: new THREE.Color() } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    [],
+  )
+  useFrame(({ clock }) => {
+    const s = state.current
+    if (s) castCaustics(mesh.current, material, causticStrength(s), s.liquid, still ? 3 : clock.elapsedTime + 3)
+  })
+  return (
+    <mesh ref={mesh} material={material} rotation-x={-Math.PI / 2} position={[-0.95, 0.006, -0.1]} renderOrder={2} visible={false}>
+      <planeGeometry args={[2.8, 2]} />
+    </mesh>
+  )
+}
+
+function castCaustics(mesh: THREE.Mesh | null, material: THREE.ShaderMaterial, strength: number, liquid: string, time: number) {
+  if (!mesh) return
+  mesh.visible = strength > 0.01
+  if (!mesh.visible) return
+  material.uniforms.uStrength.value = strength * 1.1
+  material.uniforms.uColour.value.set(liquid).lerp(WHITE, 0.15)
+  material.uniforms.uTime.value = time
+}
+
+const WHITE = new THREE.Color("#ffffff")
 
 const LEAVES = 7
 
