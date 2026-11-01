@@ -22,6 +22,15 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] GitHub Actions workflow (`.github/workflows/ci.yml`): lint, typecheck, unit + integration, then build + Playwright desktop/mobile with the report uploaded on failure. Runs once the project is pushed to GitHub
 - [x] README in Thai and English: what the project is, how to run, scripts, how to add a showcase, how to deploy to Vercel
 
+## Portal wow pass 3 (asked for 2026-11-01: keep enhancing the home page's animation and polish too)
+
+- [x] Klin, the flagship, leads the hero's fan of app screens (each showcase can claim the back card, the front card or the phone in `site.ts`): Klin's storm in front, Baan Lamai behind, Kaffa on the phone
+- [x] The live showcase cards are dealt onto the table as they scroll in: tipped back in perspective and a touch small, standing up flat once well in view (scroll-linked `--enter`, reverses scrolling up, plain for reduced motion). A sticky stacking deck was tried first and dropped: the next card covered the buttons of the one beneath
+- [ ] Hero headline as kinetic type: on load the words drop in like the letters of Klin's rain headline, and the pointer pushes nearby letters a little (mouse only)
+- [ ] "What we build" as an interactive list: hovering a kind of project shows a floating preview of the matching app, following the pointer (as on many studio sites)
+- [ ] The contact band: a slowly drifting gradient mesh behind the email button, and a magnetic button
+- [ ] Section-to-section transitions: the background colour eases between sections as they pass (light hero, tinted showcases, deep contact), driven by the scroll
+
 ## Showcase 6: Klin (3D perfume house, `/[lang]/klin`)
 
 Asked for on 2026-11-01: a showcase that goes big on visual effects, 3D and scroll-linked animation. Research: award-winning sites mostly use three.js (often through React Three Fiber) for WebGL, GSAP + ScrollTrigger for timelines (free since 2025) and Lenis for weighted scrolling; Unity WebGL exports are 10–50 MB and load slowly, which suits games, not websites.

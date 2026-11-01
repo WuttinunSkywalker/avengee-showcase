@@ -16,8 +16,11 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
   const t = portalMessages[locale].hero
   const live = showcases.filter((showcase) => showcase.status === "live" && showcase.images && showcase.href)
   if (live.length === 0) return null
-  const [front, back] = live
-  const phone = live[0]
+  // Apps can claim a place in the fan (the flagship in front); otherwise the first live apps fill it
+  const slot = (place: "back" | "front" | "phone", fallback: number) => live.find((showcase) => showcase.hero === place) ?? live[fallback]
+  const front = slot("front", 0)
+  const back = live.length > 1 ? slot("back", 1) : undefined
+  const phone = slot("phone", 0)
 
   // Rest and hover positions, read by .fan-card in globals.css.
   const cards: { showcase: (typeof live)[number]; style: CSSProperties; className: string }[] = [
@@ -38,7 +41,7 @@ export function HeroShowcase({ locale }: { locale: Locale }) {
   ]
 
   return (
-    <div className="group/fan relative mx-auto aspect-[5/4] w-[92%] max-w-md lg:w-full lg:max-w-none" data-testid="hero-showcase" role="img" aria-label={t.showcaseLabel(live.map((showcase) => showcase.name))}>
+    <div className="group/fan relative mx-auto aspect-[5/4] w-[92%] max-w-md lg:w-full lg:max-w-none" data-testid="hero-showcase" role="img" aria-label={t.showcaseLabel([...new Set([back, front, phone].filter(Boolean).map((showcase) => showcase!.name))])}>
       {/* Tilts toward the pointer (vars set on the hero by HeroSpotlight); cards sit at different depths, so they shift like layers. */}
       <div className="hero-tilt absolute inset-0" data-testid="hero-tilt">
       {cards.map(({ showcase, style, className }) => (

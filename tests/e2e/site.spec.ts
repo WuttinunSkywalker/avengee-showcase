@@ -44,7 +44,7 @@ test.describe("showcase portal", () => {
     await page.goto("/en")
     const hero = page.getByTestId("hero-showcase")
     await expect(hero).toHaveAttribute("role", "img")
-    await expect(hero).toHaveAccessibleName(/^Screens from Baan Lamai and Kaffa Roasters/)
+    await expect(hero).toHaveAccessibleName("Screens from Baan Lamai, Klin and Kaffa Roasters")
     await expect(hero.getByRole("link")).toHaveCount(0)
     await expect(hero.locator("img")).toHaveCount(3)
   })
@@ -248,8 +248,10 @@ test.describe("showcase portal", () => {
     for (const name of ["Baan Lamai", "Kaffa Roasters"]) {
       const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name }) })
       await card.scrollIntoViewIfNeeded()
-      const open = (await card.getByRole("link", { name: /^Open App/ }).boundingBox())!
-      const admin = (await card.getByRole("link", { name: "Staff Dashboard" }).boundingBox())!
+      // Layout sizes, not on-screen boxes: a card being dealt in is tipped in perspective
+      const size = (element: HTMLElement) => ({ width: element.offsetWidth, height: element.offsetHeight })
+      const open = await card.getByRole("link", { name: /^Open App/ }).evaluate(size)
+      const admin = await card.getByRole("link", { name: "Staff Dashboard" }).evaluate(size)
       expect(Math.abs(open.width - admin.width), name).toBeLessThan(1)
       expect(Math.abs(open.height - admin.height), name).toBeLessThan(1)
     }

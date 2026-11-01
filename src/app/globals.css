@@ -1121,3 +1121,13 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 .klin-root[data-droplet] .klin-spin:active {
   cursor: none;
 }
+
+/*
+ * Portal showcase deck: each live card is dealt onto the table as it scrolls
+ * in, tipped back and a touch small at first, flat and full size once well in
+ * view (--enter from features/portal/showcase-grid.tsx; unset for reduced motion).
+ */
+.showcase-deck {
+  transform-origin: 50% 100%;
+  transform: perspective(1600px) rotateX(calc((1 - var(--enter, 1)) * 16deg)) scale(calc(0.95 + var(--enter, 1) * 0.05));
+}

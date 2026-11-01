@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowUpRightIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { usePointerVars } from "@/hooks/use-pointer-vars"
 import { stagger } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
+import { dealt } from "./deck"
 import { ShowcasePreview } from "./showcase-preview"
 
 type Filter = "all" | ShowcaseKind
@@ -26,6 +27,8 @@ export function ShowcaseGrid() {
   const visible = showcases
     .filter((showcase) => filter === "all" || showcase.kind === filter)
     .toSorted((a, b) => Number(a.status !== "live") - Number(b.status !== "live"))
+  const deck = useRef<HTMLUListElement>(null)
+  useDeck(deck)
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,7 +53,7 @@ export function ShowcaseGrid() {
         </ToggleGroup>
       </div>
 
-      <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-live="polite">
+      <ul ref={deck} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-live="polite">
         {visible.map((showcase, index) =>
           showcase.status === "live" ? (
             <LiveCard key={showcase.id} showcase={showcase} locale={locale} />
@@ -61,6 +64,40 @@ export function ShowcaseGrid() {
       </ul>
     </div>
   )
+}
+
+/**
+ * The live cards are dealt onto the table as they scroll in: each starts
+ * tipped back and a touch small, and stands up flat by the time it's well in
+ * view (--enter, 0–1, from the scroll; see .showcase-deck in globals.css). It
+ * reverses scrolling up, never overlaps another card, and is left out for
+ * reduced motion.
+ */
+function useDeck(deck: React.RefObject<HTMLUListElement | null>) {
+  useEffect(() => {
+    const list = deck.current
+    if (!list || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const view = window.innerHeight
+      for (const card of list.querySelectorAll<HTMLElement>("[data-deck]")) {
+        const top = card.getBoundingClientRect().top
+        card.style.setProperty("--enter", dealt(top, view).toFixed(3))
+      }
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    window.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
+    return () => {
+      window.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+      cancelAnimationFrame(frame)
+    }
+  }, [deck])
 }
 
 function LiveCard({ showcase, locale }: { showcase: Showcase; locale: Locale }) {
@@ -75,7 +112,8 @@ function LiveCard({ showcase, locale }: { showcase: Showcase; locale: Locale }) 
       onPointerLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}
       onBlur={(event) => !event.currentTarget.contains(event.relatedTarget) && setFocused(false)}
-      className="group flex flex-col overflow-clip rounded-2xl border border-border bg-card shadow-sm md:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.5fr_1fr]">
+      data-deck=""
+      className="showcase-deck group flex flex-col overflow-clip rounded-2xl border border-border bg-card shadow-sm md:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.5fr_1fr]">
       {showcase.images && <ShowcasePreview showcase={showcase} locale={locale} active={active} />}
       {/* A container, so the feature list and buttons fit the column's real width, not the viewport's. */}
       <div className="@container flex flex-col gap-5 p-6 sm:p-8">

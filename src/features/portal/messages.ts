@@ -9,7 +9,7 @@ const en = {
     body: "Each project below is a complete product, not a mock-up. Book a massage, check out a cart, run the back office. Then tell us what your business needs.",
     primary: "Browse Showcases",
     secondary: "Talk to Us",
-    showcaseLabel: (names: string[]) => `Screens from ${names.join(" and ")}`,
+    showcaseLabel: (names: string[]) => `Screens from ${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0]}`,
   },
   showcases: {
     title: "Showcases",
@@ -78,7 +78,7 @@ const th: PortalMessages = {
     body: "ทุกโปรเจกต์ข้างล่างเป็นงานที่ใช้ได้จริง ไม่ใช่แค่ภาพม็อกอัป ลองจองคิวนวด ลองสั่งของ ลองเข้าระบบหลังบ้านดู แล้วค่อยมาเล่าให้เราฟังว่าธุรกิจของคุณอยากได้แบบไหน",
     primary: "ดูผลงาน",
     secondary: "คุยกับเรา",
-    showcaseLabel: (names: string[]) => `หน้าจอจาก ${names.join(" และ ")}`,
+    showcaseLabel: (names: string[]) => `หน้าจอจาก ${names.length > 1 ? `${names.slice(0, -1).join(" ")} และ ${names.at(-1)}` : names[0]}`,
   },
   showcases: {
     title: "ผลงาน",

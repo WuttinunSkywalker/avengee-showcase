@@ -35,6 +35,8 @@ export interface Showcase {
   adminHref?: string
   /** Public pages listed in the sitemap (staff and confirmation pages stay out). */
   pages?: string[]
+  /** Where this app's screen sits in the portal hero's fan: the card behind, the card in front, or the phone. */
+  hero?: "back" | "front" | "phone"
   /** Screenshots per locale, captured with `node scripts/capture-showcase.mjs`. */
   images?: {
     desktop: Localized
@@ -61,6 +63,7 @@ export const showcaseKinds: Record<ShowcaseKind, Localized> = {
 export const showcases: Showcase[] = [
   {
     id: "baan-lamai",
+    hero: "back",
     kind: "booking",
     status: "live",
     name: "Baan Lamai",
@@ -97,6 +100,7 @@ export const showcases: Showcase[] = [
   },
   {
     id: "shop",
+    hero: "phone",
     kind: "shop",
     status: "live",
     name: "Kaffa Roasters",
@@ -244,6 +248,7 @@ export const showcases: Showcase[] = [
   },
   {
     id: "klin",
+    hero: "front",
     kind: "immersive",
     status: "live",
     name: "Klin",
