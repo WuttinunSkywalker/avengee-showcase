@@ -9,6 +9,7 @@ import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
+import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nearestTurn, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
@@ -29,7 +30,7 @@ export interface ChosenSize {
   engraving: string
 }
 
-type Slot = "hero" | "left" | "middle"
+type Slot = BottleSlot
 
 /** What the bottles need to engrave the right one: who's chosen, and which bottle stands for them now. */
 interface EngravingSource {
@@ -41,11 +42,14 @@ export function KlinScene({
   state,
   still: reduced,
   size,
+  spin,
   onReady,
 }: {
   state: RefObject<SceneState>
   still: boolean
   size: RefObject<ChosenSize>
+  /** Bottles spun by dragging the grab handles over them. */
+  spin: RefObject<SpinBoard>
   /** Called once the floors' textures have loaded, so the opening curtain can lift. */
   onReady?: () => void
 }) {
@@ -78,7 +82,7 @@ export function KlinScene({
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
-      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} onReady={onReady} />
+      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} spin={spin} onReady={onReady} />
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
@@ -169,6 +173,10 @@ function shapeToSize(group: THREE.Group, [width, height]: [number, number], dt: 
   group.position.y = 0.6 * (group.scale.y - 1)
 }
 
+function isLifted(board: SpinBoard, slot: Slot): boolean {
+  return board.hover === slot || board.held === slot
+}
+
 function lerpShot(from: CameraShot, to: CameraShot, k: number): CameraShot {
   return {
     radius: THREE.MathUtils.lerp(from.radius, to.radius, k),
@@ -187,6 +195,7 @@ function Story({
   calm,
   rich,
   size,
+  spin,
   onReady,
 }: {
   state: RefObject<SceneState>
@@ -195,6 +204,7 @@ function Story({
   calm: boolean
   rich: boolean
   size: RefObject<ChosenSize>
+  spin: RefObject<SpinBoard>
   onReady?: () => void
 }) {
   const hero = useRef<THREE.Group>(null)
@@ -202,6 +212,9 @@ function Story({
   const leftShape = useRef<THREE.Group>(null)
   const middleShape = useRef<THREE.Group>(null)
   const owner = useRef<Slot>("hero")
+  // How much of each side bottle's spin has been applied, and how high the pointed-at bottle is lifted
+  const spun = useRef({ left: 0, middle: 0 })
+  const lift = useRef(0)
   const engraving = useMemo<EngravingSource>(() => ({ chosen: size, owner }), [size])
   const left = useRef<THREE.Group>(null)
   const middle = useRef<THREE.Group>(null)
@@ -220,9 +233,12 @@ function Story({
     const onScroll = () => invalidate()
     window.addEventListener("pointermove", onMove, { passive: true })
     window.addEventListener("scroll", onScroll, { passive: true })
+    // The grab handles ask for frames too, so a drag shows even on still frames
+    window.addEventListener("klin:poke", onScroll)
     return () => {
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("klin:poke", onScroll)
     }
   }, [invalidate])
 
@@ -246,7 +262,9 @@ function Story({
     const bob = still ? 0 : Math.sin(clock.elapsedTime * 1.1) * 0.06 * s.storm
     const y = THREE.MathUtils.lerp(baseY - (1 - rise) * 2.5 + bob, LINEUP_Y, lineup)
     const currentScale = THREE.MathUtils.lerp(scale, lineupScale, lineup) * (0.85 + 0.15 * rise)
-    hero.current.position.set(x, y, 0)
+    // The bottle under the mouse rises a little into the beam
+    lift.current = THREE.MathUtils.damp(lift.current, isLifted(spin.current, "hero") ? 0.09 : 0, 8, dt)
+    hero.current.position.set(x, y + lift.current * currentScale, 0)
     hero.current.scale.setScalar(currentScale)
     const tilt = still ? 0 : 0.12
     // The camera travels its path of shots with the scroll (one fixed view for reduced motion)
@@ -255,7 +273,10 @@ function Story({
     const chosen = size.current
     owner.current = lineup < 0.5 ? "hero" : chosen.scent === "monsoon" ? "left" : chosen.scent === "jasmine-hour" ? "middle" : "hero"
     const showing = (slot: Slot) => chosen.scent !== null && owner.current === slot
-    const heroTurn = showing("hero") ? nearestTurn(hero.current.rotation.y, path.azimuth) : s.turn + pointer.current.x * tilt * 2
+    // A dragged bottle keeps its spin and coasts to a stop (at once for reduced motion)
+    const board = spin.current
+    coastBoard(board, dt, calm)
+    const heroTurn = showing("hero") ? nearestTurn(hero.current.rotation.y, path.azimuth) : s.turn + pointer.current.x * tilt * 2 + board.hero.angle
     hero.current.rotation.y = THREE.MathUtils.damp(hero.current.rotation.y, heroTurn, still ? 60 : 6, dt)
     hero.current.rotation.x = THREE.MathUtils.damp(hero.current.rotation.x, pointer.current.y * tilt * s.storm, 6, dt)
     hero.current.rotation.z = THREE.MathUtils.damp(hero.current.rotation.z, -pointer.current.x * tilt * 0.4 * s.storm, 6, dt)
@@ -280,7 +301,9 @@ function Story({
       group.current.position.set(slot * SLOT * spread, LINEUP_Y - (1 - k) * 1.5, 0)
       group.current.scale.setScalar(lineupScale * k)
       if (showing(name)) group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, nearestTurn(group.current.rotation.y, path.azimuth), 6, dt)
-      else group.current.rotation.y += still ? 0 : dt * 0.25
+      else group.current.rotation.y += (still ? 0 : dt * 0.25) + board[name].angle - spun.current[name]
+      spun.current[name] = board[name].angle
+      if (isLifted(board, name)) group.current.position.y += 0.09 * lineupScale
     }
 
     // The camera aims at the middle of the resting bottle (not its rise or bob) or of the line-up

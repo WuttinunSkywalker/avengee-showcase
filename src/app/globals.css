@@ -1012,3 +1012,68 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
     display: none;
   }
 }
+
+/*
+ * Klin's grab handles over the 3D bottles (features/klin/components/spin-zones.tsx).
+ * The page sets data-stage from the scroll: "single" in the hero and chapters,
+ * "lineup" over the collection's bottles, "off" over the cards and the atelier.
+ */
+.klin-spin {
+  position: fixed;
+  z-index: 20;
+  display: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.klin-spin:active {
+  cursor: grabbing;
+}
+.klin-root[data-stage="single"] .klin-spin[data-zone="single"] {
+  display: block;
+  top: 15%;
+  bottom: 15%;
+  right: 6%;
+  width: 34%;
+}
+.klin-root[data-stage="lineup"] .klin-spin[data-zone^="line-"] {
+  display: block;
+  top: 9%;
+  height: 40%;
+  width: 26%;
+}
+.klin-root[data-stage="lineup"] .klin-spin[data-zone="line-left"] {
+  left: 8%;
+}
+.klin-root[data-stage="lineup"] .klin-spin[data-zone="line-middle"] {
+  left: 37%;
+}
+.klin-root[data-stage="lineup"] .klin-spin[data-zone="line-right"] {
+  left: 66%;
+}
+@media (max-width: 767px) {
+  /* Phones: the bottle stands in the upper part of the screen, above the text panels */
+  .klin-root[data-stage="single"] .klin-spin[data-zone="single"] {
+    top: 9%;
+    bottom: auto;
+    height: 34%;
+    left: 18%;
+    right: 18%;
+    width: auto;
+  }
+  .klin-root[data-stage="lineup"] .klin-spin[data-zone^="line-"] {
+    top: 8%;
+    height: 30%;
+    width: 30%;
+  }
+  .klin-root[data-stage="lineup"] .klin-spin[data-zone="line-left"] {
+    left: 4%;
+  }
+  .klin-root[data-stage="lineup"] .klin-spin[data-zone="line-middle"] {
+    left: 35%;
+  }
+  .klin-root[data-stage="lineup"] .klin-spin[data-zone="line-right"] {
+    left: 66%;
+  }
+}

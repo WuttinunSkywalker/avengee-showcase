@@ -62,6 +62,27 @@ test.describe("Klin perfume house", () => {
     await expect(intro).toHaveCount(0, { timeout: 10_000 })
   })
 
+  test("bottles spin when dragged, and the handles never cover the page's own controls", async ({ page }) => {
+    await page.goto("/en/klin")
+    const single = page.getByTestId("spin-single")
+    await expect(single).toBeVisible()
+    const box = (await single.boundingBox())!
+    await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.85, box.y + box.height / 2, { steps: 8 })
+    await page.mouse.up()
+    await expect(single).toHaveAttribute("data-spun", "")
+
+    // Over the collection: one handle per bottle, all above the cards
+    await page.locator("#collection").evaluate((section) => window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY))
+    const middle = page.getByTestId("spin-line-middle")
+    await expect(middle).toBeVisible()
+    await expect(single).toBeHidden()
+    const handle = (await middle.boundingBox())!
+    const card = (await page.getByRole("button", { name: "Choose Jasmine Hour" }).last().boundingBox())!
+    expect(handle.y + handle.height).toBeLessThan(card.y)
+  })
+
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
     await page.goto("/th/klin")
     await expect(page.getByRole("heading", { level: 1, name: "กรุงเทพฯ หลังฝนซา" })).toBeVisible()

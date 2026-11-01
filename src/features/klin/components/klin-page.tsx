@@ -12,6 +12,8 @@ import { klinMessages } from "../i18n/messages"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { KlinIntro } from "./intro"
+import { SpinZones } from "./spin-zones"
+import { emptyBoard, type SpinBoard } from "../lib/spin"
 import type { ChosenSize } from "./scene"
 import { ScentSheet } from "./scent-sheet"
 
@@ -65,6 +67,8 @@ export function KlinPage() {
   const [chosen, setChosen] = useState<ScentId | null>(null)
   // The size picked in the scent sheet, so the 3D bottle can take its proportions while the sheet is open
   const size = useRef<ChosenSize>({ scent: null, ml: 50, engraving: "" })
+  // Bottles spun by dragging, shared by the grab handles and the 3D layer
+  const spin = useRef<SpinBoard>(emptyBoard())
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
   // The opening curtain holds until the 3D layer has its textures (or there's no 3D layer to wait for)
@@ -92,6 +96,8 @@ export function KlinPage() {
       page.style.setProperty("--klin-backdrop", scene.backdrop)
       page.style.setProperty("--klin-accent", scene.accent)
       page.dataset.scent = scene.scent.id
+      // Which grab handles to show: over the single bottle, over the line-up, or none (cards and atelier)
+      page.dataset.stage = scene.exit > 0.45 ? "off" : scene.lineup > 0.6 ? "lineup" : scene.lineup > 0.12 ? "off" : "single"
     }
     measure()
     update()
@@ -138,10 +144,11 @@ export function KlinPage() {
       <KlinHeader />
       {webgl && reduced !== null && (
         <SceneBoundary>
-          <KlinScene state={state} still={reduced} size={size} onReady={() => setSceneReady(true)} />
+          <KlinScene state={state} still={reduced} size={size} spin={spin} onReady={() => setSceneReady(true)} />
         </SceneBoundary>
       )}
 
+      {webgl && reduced !== null && <SpinZones board={spin} />}
       <main id="main" className="relative z-10">
         <section
           ref={hero}
