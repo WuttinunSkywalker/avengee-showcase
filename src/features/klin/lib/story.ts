@@ -206,6 +206,17 @@ export function nearestTurn(current: number, target: number): number {
   return target + full * Math.round((current - target) / full)
 }
 
+/**
+ * Where the camera's lens shifts to frame a bottle picked from the line-up on
+ * a wide screen, in CSS pixels: centred in the space right of the scent
+ * sheet, which (like its classes) sits 1.5rem in from the edge or 2rem inside
+ * the 80rem page column, and is 28rem wide.
+ */
+export function pickedLensShift(width: number): number {
+  const sheetRight = Math.max(24, (width - 1280) / 2 + 32) + 448
+  return -sheetRight / 2
+}
+
 /** Longest a frame may take before it counts as a stall, in seconds. */
 export const STALL = 0.35
 

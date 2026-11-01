@@ -11,7 +11,7 @@ import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
-import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, nearestTurn, nextTier, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -246,6 +246,9 @@ function Story({
   // How much of each side bottle's spin has been applied, and how high the pointed-at bottle is lifted
   const spun = useRef({ left: 0, middle: 0 })
   const lift = useRef(0)
+  // How far the camera has moved in on the bottle picked from the line-up, and where that bottle stands
+  const pick = useRef(0)
+  const pickX = useRef(0)
   const engraving = useMemo<EngravingSource>(() => ({ chosen: size, owner }), [size])
   const left = useRef<THREE.Group>(null)
   const middle = useRef<THREE.Group>(null)
@@ -337,17 +340,35 @@ function Story({
       if (isLifted(board, name)) group.current.position.y += 0.09 * lineupScale
     }
 
+    // Choosing a scent from the line-up on a wide screen opens the sheet on the left, over where the
+    // monsoon bottle stands: the camera moves in on the chosen bottle and frames it to the right of the
+    // sheet, so its size and engraving change in view, then eases back when the sheet closes
+    const picking = !narrow && lineup > 0.5 && chosen.scent !== null
+    if (picking) pickX.current = (owner.current === "left" ? -SLOT : owner.current === "middle" ? 0 : SLOT) * spread
+    pick.current = still ? Number(picking) : THREE.MathUtils.damp(pick.current, picking ? 1 : 0, 3.5, dt)
+    const close = pick.current
+
     // The camera aims at the middle of the resting bottle (not its rise or bob) or of the line-up
     const sway = still ? 0 : Math.sin(clock.elapsedTime * 0.12) * 0.03 + pointer.current.x * 0.05
-    const shot = { ...path, azimuth: path.azimuth + sway, radius: path.radius * (narrow ? THREE.MathUtils.lerp(1, 1.12, lineup) : 1) }
-    aim.set(THREE.MathUtils.lerp(narrow ? 0 : 1.35, 0, lineup), THREE.MathUtils.lerp(baseY + 0.585 * scale, LINEUP_Y + 0.585 * lineupScale, lineup), 0)
+    const radius = path.radius * (narrow ? THREE.MathUtils.lerp(1, 1.12, lineup) : 1)
+    const shot = {
+      radius: THREE.MathUtils.lerp(radius, 6.2, close),
+      azimuth: THREE.MathUtils.lerp(path.azimuth, 0, close) + sway,
+      elevation: THREE.MathUtils.lerp(path.elevation, 0.06, close),
+    }
+    aim.set(
+      THREE.MathUtils.lerp(THREE.MathUtils.lerp(narrow ? 0 : 1.35, 0, lineup), pickX.current, close),
+      THREE.MathUtils.lerp(baseY + 0.585 * scale, LINEUP_Y + 0.585 * lineupScale, lineup),
+      0,
+    )
     frameCamera(camera as THREE.PerspectiveCamera, shot, aim, s.exit, {
       width: viewport.width,
       height: viewport.height,
       // Wide screens: the bottle in the right third beside the text, then the line-up centred above the
-      // collection cards. Phones: always in the upper part of the screen, above the text panels.
-      x: narrow ? 0 : -0.21 * viewport.width * (1 - lineup),
-      y: (narrow ? 0.24 : 0.2 * lineup) * viewport.height,
+      // collection cards, then the picked bottle beside the sheet. Phones: always in the upper part of
+      // the screen, above the text panels.
+      x: narrow ? 0 : THREE.MathUtils.lerp(-0.21 * viewport.width * (1 - lineup), pickedLensShift(viewport.width), close),
+      y: (narrow ? 0.24 : THREE.MathUtils.lerp(0.2 * lineup, 0.1, close)) * viewport.height,
     })
   })
 

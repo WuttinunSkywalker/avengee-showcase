@@ -263,3 +263,19 @@ describe("isSoftwareRenderer", async () => {
     expect(isSoftwareRenderer("ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)")).toBe(false)
   })
 })
+
+describe("pickedLensShift", async () => {
+  const { pickedLensShift } = await import("@/features/klin/lib/story")
+  it("centres the picked bottle in the space right of the scent sheet", () => {
+    // 1440: the sheet runs 112–560 px, leaving 560–1440, centred at 1000 = 720 + 280
+    expect(pickedLensShift(1440)).toBe(-280)
+    // A tablet: the sheet sits 24 px in and ends at 472, so the bottle centres at 646
+    expect(pickedLensShift(820)).toBe(-236)
+    // The free space always lies right of the sheet and the bottle stays on screen
+    for (const width of [768, 1024, 1280, 1920, 2560]) {
+      const centre = width / 2 - pickedLensShift(width)
+      expect(centre).toBeGreaterThan(Math.max(24, (width - 1280) / 2 + 32) + 448)
+      expect(centre).toBeLessThan(width)
+    }
+  })
+})
