@@ -11,6 +11,7 @@ import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
+import type { ChosenSize } from "./scene"
 import { ScentSheet } from "./scent-sheet"
 
 const KlinScene = dynamic(() => import("./scene").then((module) => module.KlinScene), { ssr: false })
@@ -61,6 +62,8 @@ export function KlinPage() {
   const collection = useRef<HTMLElement>(null)
   const state = useRef<SceneState>(sceneAt({ hero: 0, chapter: 0, lineup: 0 }))
   const [chosen, setChosen] = useState<ScentId | null>(null)
+  // The size picked in the scent sheet, so the 3D bottle can take its proportions while the sheet is open
+  const size = useRef<ChosenSize>({ scent: null, ml: 50 })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
 
@@ -131,7 +134,7 @@ export function KlinPage() {
       <KlinHeader />
       {webgl && reduced !== null && (
         <SceneBoundary>
-          <KlinScene state={state} still={reduced} />
+          <KlinScene state={state} still={reduced} size={size} />
         </SceneBoundary>
       )}
 
@@ -257,7 +260,14 @@ export function KlinPage() {
         </div>
       </footer>
 
-      <ScentSheet scentId={chosen} onClose={() => setChosen(null)} />
+      <ScentSheet
+        scentId={chosen}
+        onSize={(ml) => (size.current = { scent: chosen, ml })}
+        onClose={() => {
+          size.current = { scent: null, ml: 50 }
+          setChosen(null)
+        }}
+      />
     </div>
   )
 }

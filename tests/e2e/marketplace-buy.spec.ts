@@ -125,7 +125,13 @@ test.describe("Talad basket and checkout", () => {
 
   test("removes a piece from the basket", async ({ page }) => {
     await hold(page, "/en/marketplace/items/karen-tall-basket")
-    await page.getByRole("button", { name: "Basket, 1 piece" }).click()
+    // The "added" toast opens below the sticky header, so the basket button stays tappable while it shows
+    const toast = page.locator("[data-sonner-toast]").first()
+    await expect(toast).toBeVisible()
+    const header = (await page.getByRole("banner").first().boundingBox())!
+    // Measured once it has slid into place
+    await expect.poll(async () => (await toast.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height - 1)
+    await page.getByRole("button", { name: "Basket, 1 piece" }).click({ timeout: 5_000 })
     await page.getByRole("button", { name: "Remove Tall open basket with a square foot" }).click()
     await expect(page.getByTestId("basket-sheet")).toContainText("Your basket is empty")
     await expect(page.getByText("Tall open basket with a square foot is back on the shelf")).toBeVisible()

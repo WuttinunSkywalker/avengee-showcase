@@ -52,13 +52,18 @@ export function bottleSilhouette(profile: readonly [number, number][] = bottlePr
   return `M0 0 L${right.join(" L")} L${left.join(" L")} Z`
 }
 
+/** Body width and height of each size relative to the 50 ml house flacon. */
+export function sizeFactors(ml: number): [number, number] {
+  return ml <= 30 ? [0.8, 0.84] : ml >= 100 ? [1.12, 1.14] : [1, 1]
+}
+
 /**
  * The flacon for each size: 30 ml slimmer and shorter, 100 ml taller and
  * broader, the 50 ml the house shape. Every size has the same points, so one
  * outline can morph into another.
  */
 export function bottleProfileFor(ml: number): [number, number][] {
-  const [width, height] = ml <= 30 ? [0.8, 0.84] : ml >= 100 ? [1.12, 1.14] : [1, 1]
+  const [width, height] = sizeFactors(ml)
   const base = bottleProfile()
   if (width === 1 && height === 1) return base
   // The neck starts where the outline narrows to the collar, above the shoulders

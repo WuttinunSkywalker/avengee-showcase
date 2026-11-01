@@ -830,9 +830,10 @@ test.describe("Kaffa Roasters checkout", () => {
     // The order is listed on the orders page, and the status survives a reload
     await page.getByRole("link", { name: "คำสั่งซื้อของคุณ" }).first().click()
     await expect(page.getByRole("heading", { level: 1, name: "คำสั่งซื้อของคุณ" })).toBeVisible()
-    await expect(page.getByText("กำลังคั่ว")).toBeVisible()
+    // The list's status chip (the open order repeats it in its own details on wider screens)
+    await expect(page.getByTestId("order-list-status").first()).toHaveText("กำลังคั่ว")
     await page.reload()
-    await expect(page.getByText("กำลังคั่ว")).toBeVisible()
+    await expect(page.getByTestId("order-list-status").first()).toHaveText("กำลังคั่ว")
   })
 
   test("orders page explains when there are no orders yet", async ({ page }) => {

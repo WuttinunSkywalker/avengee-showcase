@@ -153,6 +153,13 @@ describe("bottle sizes", async () => {
     expect(new Set(counts).size).toBe(1)
   })
 
+  it("gives each size its body proportions", async () => {
+    const { sizeFactors } = await import("@/features/klin/lib/bottle")
+    expect(sizeFactors(30)).toEqual([0.8, 0.84])
+    expect(sizeFactors(50)).toEqual([1, 1])
+    expect(sizeFactors(100)).toEqual([1.12, 1.14])
+  })
+
   it("leaves the neck the same width", () => {
     const neckWidth = (ml: number) => bottleProfileFor(ml).find(([radius]) => radius > 0 && radius < 0.25)![0]
     expect(neckWidth(30)).toBe(neckWidth(100))

@@ -28,6 +28,8 @@ test.describe("Klin perfume house", () => {
     await expect(sheet.getByRole("heading", { name: "Jasmine Hour" })).toBeVisible()
     await expect(sheet.getByRole("radio", { name: "50 ml, ฿3,200" })).toBeChecked()
     await sheet.getByRole("radio", { name: "100 ml, ฿4,900" }).click()
+    // The bottle takes the size's shape
+    await expect(sheet.getByTestId("sheet-bottle")).toHaveAttribute("data-ml", "100")
     await sheet.getByRole("button", { name: "Add to Bag, ฿4,900" }).click()
     await expect(sheet).toBeHidden()
     await expect(page.getByText("Jasmine Hour, 100 ml added to your bag")).toBeVisible()

@@ -6,8 +6,8 @@ import { Environment, Lightformer, MeshReflectorMaterial, MeshTransmissionMateri
 import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing"
 import * as THREE from "three"
 import { createRandom } from "@/lib/random"
-import { scents } from "../data/scents"
-import { bottleProfile, liquidProfile } from "../lib/bottle"
+import { scents, type ScentId } from "../data/scents"
+import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { lightning, mixHex, nextTier, type SceneState, type Tier } from "../lib/story"
 
 /**
@@ -20,7 +20,13 @@ import { lightning, mixHex, nextTier, type SceneState, type Tier } from "../lib/
  * screens; phones get the same scene without the costly passes. Nothing in it
  * is needed to read or use the page.
  */
-export function KlinScene({ state, still: reduced }: { state: RefObject<SceneState>; still: boolean }) {
+/** The scent open in the sheet and the size picked there; the matching bottle takes its proportions. */
+export interface ChosenSize {
+  scent: ScentId | null
+  ml: number
+}
+
+export function KlinScene({ state, still: reduced, size }: { state: RefObject<SceneState>; still: boolean; size: RefObject<ChosenSize> }) {
   // Only big screens may earn the full look (mirror floors, refracting glass, post effects)
   const [rich] = useState(() => window.innerWidth >= 768)
   const [tier, setTier] = useState<Tier>("light")
@@ -50,7 +56,7 @@ export function KlinScene({ state, still: reduced }: { state: RefObject<SceneSta
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
-      <Story state={state} still={still} rich={tier === "full"} />
+      <Story state={state} still={still} rich={tier === "full"} size={size} />
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
@@ -121,20 +127,33 @@ function frameCamera(camera: THREE.PerspectiveCamera, distance: number, exit: nu
   camera.lookAt(0, camera.position.y - 0.2, 0)
 }
 
+/** Eases a bottle's width and height (from its base) toward a size's proportions. */
+function shapeToSize(group: THREE.Group, [width, height]: [number, number], dt: number) {
+  const k = 1 - Math.exp(-8 * dt)
+  group.scale.x += (width - group.scale.x) * k
+  group.scale.z = group.scale.x
+  group.scale.y += (height - group.scale.y) * k
+  // Grow from the base, which sits 0.6 below the group's origin
+  group.position.y = 0.6 * (group.scale.y - 1)
+}
+
 const SLOT = 2.1
 /** The line-up stands in the upper half of the screen, above the collection cards. */
 const LINEUP_Y = 0.45
 
-function Story({ state, still, rich }: { state: RefObject<SceneState>; still: boolean; rich: boolean }) {
+function Story({ state, still, rich, size }: { state: RefObject<SceneState>; still: boolean; rich: boolean; size: RefObject<ChosenSize> }) {
   const hero = useRef<THREE.Group>(null)
+  const shape = useRef<THREE.Group>(null)
+  const leftShape = useRef<THREE.Group>(null)
+  const middleShape = useRef<THREE.Group>(null)
   const left = useRef<THREE.Group>(null)
   const middle = useRef<THREE.Group>(null)
   const stage = useRef<THREE.Group>(null)
   const heroLiquid = useRef<THREE.MeshPhysicalMaterial>(null)
   const pointer = useRef({ x: 0, y: 0 })
   const intro = useRef(still ? 1 : 0)
-  const { size, invalidate } = useThree()
-  const narrow = size.width < 768
+  const { size: viewport, invalidate } = useThree()
+  const narrow = viewport.width < 768
 
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
@@ -176,6 +195,13 @@ function Story({ state, still, rich }: { state: RefObject<SceneState>; still: bo
     hero.current.rotation.x = THREE.MathUtils.damp(hero.current.rotation.x, pointer.current.y * tilt * s.storm, 6, dt)
     hero.current.rotation.z = THREE.MathUtils.damp(hero.current.rotation.z, -pointer.current.x * tilt * 0.4 * s.storm, 6, dt)
     heroLiquid.current?.color.set(s.liquid)
+    // The bottle of the scent open in the sheet takes the proportions of the size picked there (slim
+    // 30 ml, broad 100 ml): the main bottle in a chapter, its own place in the line-up
+    const chosen = size.current
+    const owner = lineup < 0.5 ? "hero" : chosen.scent === "monsoon" ? "left" : chosen.scent === "jasmine-hour" ? "middle" : "hero"
+    for (const [name, group] of [["hero", shape], ["left", leftShape], ["middle", middleShape]] as const) {
+      if (group.current) shapeToSize(group.current, sizeFactors(chosen.scent && name === owner ? chosen.ml : 50), still ? 1 : dt)
+    }
 
     // The floor sits under the bottle's base and widens for the line-up
     if (stage.current) {
@@ -200,14 +226,20 @@ function Story({ state, still, rich }: { state: RefObject<SceneState>; still: bo
   return (
     <>
       <group ref={hero}>
-        <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} label />
+        <group ref={shape}>
+          <Bottle liquidRef={heroLiquid} liquid={scents[0].liquid} rich={rich} label />
+        </group>
         <Beam state={state} still={still} />
       </group>
       <group ref={left} visible={false}>
-        <Bottle liquid={scents[0].liquid} rich={false} />
+        <group ref={leftShape}>
+          <Bottle liquid={scents[0].liquid} rich={false} />
+        </group>
       </group>
       <group ref={middle} visible={false}>
-        <Bottle liquid={scents[1].liquid} rich={false} />
+        <group ref={middleShape}>
+          <Bottle liquid={scents[1].liquid} rich={false} />
+        </group>
       </group>
       <group ref={stage}>
         <Suspense fallback={null}>
@@ -276,9 +308,13 @@ function Engraving() {
   useEffect(() => {
     let cancelled = false
     const family = getComputedStyle(document.documentElement).getPropertyValue("--font-bodoni").trim() || "serif"
-    void document.fonts.load(`400 150px ${family}`).then(() => {
-      if (!cancelled) setTexture(engravingTexture(family))
-    })
+    // A load cut short (the page reloading) falls back to drawing with whatever face is ready
+    document.fonts
+      .load(`400 150px ${family}`)
+      .catch(() => undefined)
+      .then(() => {
+        if (!cancelled) setTexture(engravingTexture(family))
+      })
     return () => {
       cancelled = true
     }

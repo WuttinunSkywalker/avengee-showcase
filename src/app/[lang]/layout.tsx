@@ -140,7 +140,8 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             <TooltipProvider>
               {children}
               <HydrationMarker />
-              <Toaster position="top-center" />
+              {/* Below the sticky header (apps with taller headers set --toast-top), so a toast never covers the basket or menu button */}
+              <Toaster position="top-center" offset={{ top: "var(--toast-top, 76px)" }} mobileOffset={{ top: "var(--toast-top, 72px)" }} />
             </TooltipProvider>
           </ThemeProvider>
         </LocaleProvider>

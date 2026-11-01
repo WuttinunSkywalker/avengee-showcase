@@ -922,3 +922,21 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
   55% { transform: scaleY(1); transform-origin: bottom; }
   100% { transform: scaleY(0); transform-origin: bottom; }
 }
+
+/* Toasts open below each app's sticky header: Kaffa's has a shipping strip, Talad's adds a search row on phones */
+:root:has([data-app="shop"]:not([style*="display: none"], [style*="display: none"] *)) {
+  --toast-top: 108px;
+}
+@media (max-width: 767px) {
+  :root:has([data-app="marketplace"]:not([style*="display: none"], [style*="display: none"] *)) {
+    --toast-top: 124px;
+  }
+}
+
+/* Klin's scent sheet leaves the 3D bottle visible beside it on wider screens: a light veil, no blur */
+@media (min-width: 768px) {
+  :root:has([data-app="klin"]:not([style*="display: none"], [style*="display: none"] *)) [data-slot="dialog-overlay"] {
+    background: rgb(0 0 0 / 0.18);
+    backdrop-filter: none;
+  }
+}

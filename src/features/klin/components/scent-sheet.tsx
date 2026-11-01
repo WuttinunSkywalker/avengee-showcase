@@ -23,16 +23,16 @@ function bottleShape(ml: number) {
 const morph = { type: "spring", stiffness: 160, damping: 20 } as const
 
 /** The pop-up for one scent: a drawn bottle in its colours, the notes, a size and the bag button. */
-export function ScentSheet({ scentId, onClose }: { scentId: ScentId | null; onClose: () => void }) {
+export function ScentSheet({ scentId, onSize, onClose }: { scentId: ScentId | null; onSize?: (ml: number) => void; onClose: () => void }) {
   const scent = scentId ? getScent(scentId) : undefined
   return (
     <Dialog open={Boolean(scent)} onOpenChange={(open) => !open && onClose()}>
-      {scent && <SheetBody key={scent.id} scent={scent} onAdded={onClose} />}
+      {scent && <SheetBody key={scent.id} scent={scent} onSize={onSize} onAdded={onClose} />}
     </Dialog>
   )
 }
 
-function SheetBody({ scent, onAdded }: { scent: Scent; onAdded: () => void }) {
+function SheetBody({ scent, onSize, onAdded }: { scent: Scent; onSize?: (ml: number) => void; onAdded: () => void }) {
   const locale = useLocale()
   const t = klinMessages[locale]
   const [ml, setMl] = useState(String(scent.sizes[1].ml))
@@ -44,13 +44,14 @@ function SheetBody({ scent, onAdded }: { scent: Scent; onAdded: () => void }) {
     <DialogContent
       showCloseButton={false}
       data-lenis-prevent
-      className="max-h-[92svh] gap-0 overflow-y-auto border-border p-0 sm:max-w-3xl md:grid md:grid-cols-[0.9fr_1.1fr]"
+      // On wider screens the sheet sits on the left like a configurator, leaving the 3D bottle in view on the right to take the chosen size
+      className="max-h-[92svh] gap-0 overflow-y-auto border-border p-0 sm:max-w-lg md:left-[max(1.5rem,calc((100vw-80rem)/2+2rem))] md:max-w-md md:translate-x-0"
       style={{ backgroundColor: scent.backdrop }}
       data-testid="scent-sheet"
     >
       <MotionConfig reducedMotion="user">
         {/* The bottle pops up and settles, its juice filling from the base */}
-        <div className="relative flex min-h-56 items-end justify-center overflow-hidden pt-10 md:min-h-full" style={{ background: `radial-gradient(70% 60% at 50% 62%, ${scent.liquid}55, transparent 70%)` }} aria-hidden="true">
+        <div className="relative flex min-h-56 items-end justify-center overflow-hidden pt-10 md:hidden" style={{ background: `radial-gradient(70% 60% at 50% 62%, ${scent.liquid}55, transparent 70%)` }} aria-hidden="true">
           <motion.svg
             viewBox="-1 -2.8 2 2.85"
             className="h-52 w-auto md:h-80"
@@ -123,7 +124,11 @@ function SheetBody({ scent, onAdded }: { scent: Scent; onAdded: () => void }) {
             <p id={`size-${scent.id}`} className="text-sm text-muted-foreground">
               {t.sheet.size}
             </p>
-            <ToggleGroup type="single" variant="outline" value={ml} onValueChange={(value) => value && setMl(value)} aria-labelledby={`size-${scent.id}`} className="w-full">
+            <ToggleGroup type="single" variant="outline" value={ml} onValueChange={(value) => {
+                if (!value) return
+                setMl(value)
+                onSize?.(Number(value))
+              }} aria-labelledby={`size-${scent.id}`} className="w-full">
               {scent.sizes.map((option) => (
                 <ToggleGroupItem
                   key={option.ml}
