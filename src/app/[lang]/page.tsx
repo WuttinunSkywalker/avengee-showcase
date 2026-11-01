@@ -15,6 +15,7 @@ import { KineticHeadline } from "@/features/portal/kinetic-headline"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { PortalMotion } from "@/features/portal/portal-motion"
 import { ProcessSteps } from "@/features/portal/process-steps"
+import { ServiceList } from "@/features/portal/service-list"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
 
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
@@ -100,8 +101,8 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
         </section>
 
         <section id="services" aria-labelledby="services-title" className="scroll-mt-16 border-t border-border bg-card">
-          <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.6fr] lg:py-28">
-            <div className="flex flex-col gap-3">
+          <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:py-28">
+            <div className="flex max-w-2xl flex-col gap-3">
               <h2 id="services-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
                 {t.services.title}
               </h2>
@@ -109,19 +110,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
                 {t.services.intro}
               </p>
             </div>
-            <dl className="grid gap-10 sm:grid-cols-2">
-              {t.services.items.map((service, index) => (
-                <div key={service.name} className="flex flex-col gap-2">
-                  <span aria-hidden="true" className="reveal-rule mb-2 h-0.5 bg-foreground" style={stagger(index % 2)} />
-                  <dt className="reveal font-heading text-xl font-semibold" style={stagger(index % 2)}>
-                    {service.name}
-                  </dt>
-                  <dd className="reveal leading-relaxed text-muted-foreground" style={stagger((index % 2) + 1)}>
-                    {service.body}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <ServiceList locale={lang} />
           </div>
         </section>
 

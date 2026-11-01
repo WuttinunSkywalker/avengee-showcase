@@ -118,6 +118,37 @@ test.describe("showcase portal", () => {
     await expect(tilt).not.toHaveAttribute("data-pointer", "")
   })
 
+  test("pointing at a kind of project floats a screen from the matching app beside the list", async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 1280, "the picture floats in the space wide screens leave beside the list")
+    await page.goto("/en")
+    const list = page.getByTestId("service-list")
+    const preview = page.getByTestId("service-preview")
+    await list.scrollIntoViewIfNeeded()
+    await expect(preview).toHaveAttribute("data-visible", "false")
+    const rows = list.locator(":scope > div")
+    const row = async (index: number) => {
+      const box = (await rows.nth(index).boundingBox())!
+      return { x: box.x + 100, y: box.y + box.height / 2 }
+    }
+    const first = await row(0)
+    await expect(async () => {
+      await page.mouse.move(first.x, first.y, { steps: 4 })
+      await expect(preview).toHaveAttribute("data-visible", "true", { timeout: 500 })
+    }).toPass({ timeout: 10_000 })
+    await expect(rows.nth(0)).toHaveAttribute("data-active")
+    await expect(preview).toContainText("Baan Lamai: Booking")
+    // Down the list the picture follows the pointer and changes app
+    const last = await row(3)
+    await page.mouse.move(last.x, last.y, { steps: 6 })
+    await expect(preview).toContainText("Kaffa Roasters: Staff dashboard")
+    await expect.poll(() => preview.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42), { timeout: 5000 }).toBeGreaterThan(80)
+    // It floats clear of the text: right of every description
+    const descriptions = await list.locator("dd").evaluateAll((all) => Math.max(...all.map((dd) => dd.getBoundingClientRect().right)))
+    expect((await preview.boundingBox())!.x).toBeGreaterThan(descriptions)
+    await page.mouse.move(first.x, 10)
+    await expect(preview).toHaveAttribute("data-visible", "false")
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
@@ -321,6 +352,8 @@ test.describe("showcase portal", () => {
     expect(await page.locator("#hero-title .kinetic-letter[style*='translate']").count()).toBe(0)
     const clipped = await page.locator(".reveal").evaluateAll((els) => els.filter((el) => getComputedStyle(el).clipPath !== "none").length)
     expect(clipped).toBe(0)
+    // Nothing floats beside "What we build"
+    await expect(page.getByTestId("service-preview")).toBeHidden()
     // The marquee becomes a still, wrapped list without its duplicate
     await expect(page.getByTestId("business-marquee").locator("ul[aria-hidden]")).toBeHidden()
     // No autoplay either: hovering a card leaves it on the home screen

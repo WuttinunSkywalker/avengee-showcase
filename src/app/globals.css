@@ -1123,6 +1123,29 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 }
 
 /*
+ * "What we build": the app screen that floats beside the row pointed at
+ * (features/portal/service-list.tsx). Script moves the outer box; the card
+ * inside fades and grows in. Never shown for reduced motion.
+ */
+.service-preview-card {
+  opacity: 0;
+  scale: 0.9;
+  transform-origin: 50% 40%;
+  transition:
+    opacity 0.25s ease,
+    scale 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.service-preview[data-visible="true"] .service-preview-card {
+  opacity: 1;
+  scale: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .service-preview {
+    display: none !important;
+  }
+}
+
+/*
  * Portal hero headline as kinetic type (features/portal/kinetic-headline.tsx):
  * phrases stay on one line where they fit, words never break inside, and
  * each letter drops in like a raindrop at its own --d, landing with a small
