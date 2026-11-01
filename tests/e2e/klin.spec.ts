@@ -191,6 +191,26 @@ test.describe("Klin perfume house", () => {
     expect(await page.getByRole("heading", { level: 2, name: "Smell them in person" }).evaluate((heading) => getComputedStyle(heading).color)).toBe("rgb(34, 26, 21)")
   })
 
+  test("a machine without a GPU gets still frames without the costly studio light", async ({ page }) => {
+    // Headless Chromium draws WebGL on the CPU, like a computer without a graphics chip
+    await page.goto("/en/klin")
+    await expect(page.getByTestId("klin-canvas")).toHaveAttribute("data-renderer", "software", { timeout: 15_000 })
+  })
+
+  test("pointing at a note stirs the chapter's scene for a moment", async ({ page, isMobile }) => {
+    test.skip(isMobile, "Notes answer a mouse; a tap does the same but is covered here by the mouse")
+    await page.goto("/en/klin")
+    const root = page.getByTestId("klin-page")
+    await page.locator("#monsoon").evaluate((section) => window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY + 40))
+    const note = page.locator("#monsoon").getByTestId("klin-note").filter({ hasText: "Petrichor" })
+    await expect(note).toBeVisible({ timeout: 15_000 })
+    await note.hover()
+    await expect(root).toHaveAttribute("data-stirred", "", { timeout: 15_000 })
+    // It passes by itself
+    await page.mouse.move(5, 5)
+    await expect(root).not.toHaveAttribute("data-stirred", { timeout: 15_000 })
+  })
+
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
     await page.goto("/th/klin")
     await expect(page.getByRole("heading", { level: 1, name: "กรุงเทพฯ หลังฝนซา" })).toBeVisible()
@@ -217,6 +237,10 @@ test.describe("Klin perfume house", () => {
     // The atelier is simply there on paper, with no burn
     await page.locator("#atelier").scrollIntoViewIfNeeded()
     await expect(page.getByTestId("atelier-burn")).toHaveCount(0)
+    // Notes stir nothing
+    await page.locator("#monsoon").getByTestId("klin-note").first().hover()
+    await page.waitForTimeout(200)
+    await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-stirred")
     // Buttons stay put under the mouse
     await page.evaluate(() => window.scrollTo(0, 0))
     const cta = (await page.getByRole("link", { name: "Find Your Scent" }).boundingBox())!

@@ -22,3 +22,18 @@ export function speedAmount(pxPerSecond: number): number {
 export function grainFor(amount: number): number {
   return 0.035 + Math.min(1, Math.abs(amount)) * 0.09
 }
+
+/** How long a note's burst takes to fade to a third, in seconds. */
+const BURST_FADE = 0.9
+
+/** A burst (1 when a note is pointed at) fading frame by frame, gone once faint. */
+export function fadeBurst(burst: number, dt: number): number {
+  if (burst <= 0 || dt <= 0) return Math.max(0, burst)
+  const next = burst * Math.exp(-dt / BURST_FADE)
+  return next < 0.01 ? 0 : next
+}
+
+/** How stirred the scene's rain, petals and embers are: by the scroll's speed or a note's burst, whichever is more (0–1). */
+export function stir({ speed, burst }: { speed: number; burst: number }): number {
+  return Math.min(1, Math.max(Math.abs(speed), burst))
+}

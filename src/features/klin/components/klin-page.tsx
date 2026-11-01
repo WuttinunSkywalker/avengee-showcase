@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { headlinePieces } from "../lib/headline"
-import { followSpeed, speedAmount } from "../lib/speed"
+import { fadeBurst, followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { AtelierBurn } from "./atelier-burn"
@@ -76,7 +76,7 @@ export function KlinPage() {
   // Bottles spun by dragging, shared by the grab handles and the 3D layer
   const spin = useRef<SpinBoard>(emptyBoard())
   // Scroll speed from −1 to 1, shared with the 3D layer
-  const motion = useRef<ScrollMotion>({ speed: 0 })
+  const motion = useRef<ScrollMotion>({ speed: 0, burst: 0 })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
   // The opening curtain holds until the 3D layer has its textures (or there's no 3D layer to wait for)
@@ -135,6 +135,9 @@ export function KlinPage() {
         speed = followSpeed(speed, dy, (now - lastTime) / 1000)
         const amount = speedAmount(speed)
         motion.current.speed = amount
+        motion.current.burst = fadeBurst(motion.current.burst, (now - lastTime) / 1000)
+        // Marked on the page while a note's burst lasts (changed only when it starts or ends)
+        if ((motion.current.burst > 0) !== (page.dataset.stirred !== undefined)) page.toggleAttribute("data-stirred", motion.current.burst > 0)
         if (Math.abs(amount - shown) > 0.002) {
           shown = amount
           page.style.setProperty("--speed", amount.toFixed(3))
@@ -237,6 +240,7 @@ export function KlinPage() {
                 chapters.current[index] = element
               }}
               onChoose={() => setChosen(scent.id)}
+              onNote={() => (motion.current.burst = 1)}
             />
           ))}
         </div>
@@ -362,7 +366,20 @@ function RainHeadline({ text, locale }: { text: string; locale: string }) {
   )
 }
 
-function Chapter({ scent, index, ref, onChoose }: { scent: Scent; index: number; ref: (element: HTMLElement | null) => void; onChoose: () => void }) {
+function Chapter({
+  scent,
+  index,
+  ref,
+  onChoose,
+  onNote,
+}: {
+  scent: Scent
+  index: number
+  ref: (element: HTMLElement | null) => void
+  onChoose: () => void
+  /** A note was pointed at: the scene answers with a burst of this chapter's rain, petals or embers. */
+  onNote: () => void
+}) {
   const locale = useLocale()
   const t = klinMessages[locale]
   return (
@@ -390,7 +407,7 @@ function Chapter({ scent, index, ref, onChoose }: { scent: Scent; index: number;
                 <div key={layer}>
                   <dt className="text-muted-foreground">{t.chapter.notes[layer]}</dt>
                   {scent.notes[layer][locale].map((note) => (
-                    <dd key={note} className="mt-1">
+                    <dd key={note} data-testid="klin-note" onPointerEnter={onNote} className="mt-1 w-fit cursor-default transition-colors duration-300 hover:text-[var(--klin-accent)]">
                       {note}
                     </dd>
                   ))}

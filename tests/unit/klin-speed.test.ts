@@ -38,3 +38,27 @@ describe("grainFor", async () => {
     expect(grainFor(5)).toBeCloseTo(grainFor(1))
   })
 })
+
+describe("note bursts", async () => {
+  const { fadeBurst, stir } = await import("@/features/klin/lib/speed")
+  it("fades a burst away within a few seconds, smoothly and whatever the frame rate", () => {
+    let fast = 1
+    for (let i = 0; i < 60; i++) fast = fadeBurst(fast, 1 / 60)
+    let slow = 1
+    for (let i = 0; i < 15; i++) slow = fadeBurst(slow, 1 / 15)
+    expect(fast).toBeCloseTo(slow, 5)
+    expect(fast).toBeGreaterThan(0.2)
+    expect(fast).toBeLessThan(0.45)
+    let gone = 1
+    for (let i = 0; i < 300; i++) gone = fadeBurst(gone, 1 / 60)
+    expect(gone).toBe(0)
+    expect(fadeBurst(0, 1 / 60)).toBe(0)
+  })
+
+  it("stirs the scene by whichever is stronger, the scroll or a note", () => {
+    expect(stir({ speed: 0, burst: 0 })).toBe(0)
+    expect(stir({ speed: -0.6, burst: 0.2 })).toBeCloseTo(0.6)
+    expect(stir({ speed: 0.1, burst: 0.9 })).toBeCloseTo(0.9)
+    expect(stir({ speed: 3, burst: 0 })).toBe(1)
+  })
+})

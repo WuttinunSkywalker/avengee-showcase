@@ -11,7 +11,7 @@ import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
-import { grainFor } from "../lib/speed"
+import { grainFor, stir } from "../lib/speed"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -37,7 +37,10 @@ type Slot = BottleSlot
 
 /** How fast the page is scrolling, −1 (racing up) to 1 (racing down), written by the page every frame. */
 export interface ScrollMotion {
+  /** The scroll's speed, −1 (racing up) to 1 (racing down). */
   speed: number
+  /** A note just pointed at, 1 fading to 0: stirs the scene like a fast scroll, without the lean. */
+  burst: number
 }
 
 /** What the bottles need to engrave the right one: who's chosen, and which bottle stands for them now. */
@@ -66,7 +69,8 @@ export function KlinScene({
   // Only big screens may earn the full look (mirror floors, refracting glass, post effects)
   const [rich] = useState(() => window.innerWidth >= 768)
   // WebGL drawn on the CPU can't animate this scene: it starts (and stays) on still frames
-  const [tier, setTier] = useState<Tier>(() => (softwareWebGL() ? "still" : "light"))
+  const [software] = useState(softwareWebGL)
+  const [tier, setTier] = useState<Tier>(software ? "still" : "light")
   // A device that can't keep up stops animating and draws a fresh still on each scroll, like reduced motion
   const still = reduced || tier === "still"
   return (
@@ -80,18 +84,25 @@ export function KlinScene({
       frameloop={still ? "demand" : "always"}
       aria-hidden="true"
       data-testid="klin-canvas"
+      data-renderer={software ? "software" : "gpu"}
     >
       <Backdrop state={state} still={still} />
       <ambientLight intensity={0.35} />
       <directionalLight position={[3, 5, 4]} intensity={1.4} />
       <pointLight position={[-3, 1.5, 2]} intensity={12} distance={9} color="#ffd7a0" />
-      {/* A studio of soft light panels built on the GPU, so the glass has something to reflect without an HDR download */}
+      {/* A studio of soft light panels built on the GPU, so the glass has something to reflect without an HDR download.
+          Drawn on the CPU, building it (a cube render, then blur shaders to compile) doubles the first frame and freezes
+          the page for seconds, so there the glass goes without its reflections */}
+      {software ? (
+        <SoftwareStudio />
+      ) : (
       <Environment resolution={256} frames={1}>
         <Lightformer form="rect" intensity={3} position={[0, 4, -2]} scale={[8, 2, 1]} />
         <Lightformer form="rect" intensity={2} position={[-4, 1, 1]} rotation-y={Math.PI / 2} scale={[4, 6, 1]} />
         <Lightformer form="rect" intensity={1.4} color="#ffcf9e" position={[4, 0, 2]} rotation-y={-Math.PI / 2} scale={[3, 5, 1]} />
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
+      )}
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
       <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} spin={spin} motion={motion} onReady={onReady} />
       {tier === "full" && (
@@ -103,6 +114,15 @@ export function KlinScene({
       )}
     </Canvas>
   )
+}
+
+/**
+ * Light for renderers drawing on the CPU in place of the studio (see KlinScene): only a little more of
+ * the ambient light, which costs nothing. Extra lamps were tried: each one slows every lit pixel drawn
+ * on the CPU and they put no visible shine on the glass.
+ */
+function SoftwareStudio() {
+  return <ambientLight intensity={0.3} />
 }
 
 /** Fine film grain over the full look, thickening while the page races. */
@@ -867,7 +887,7 @@ function Ripples({ state, still, motion }: { state: RefObject<SceneState>; still
     if (!mesh.current || !s) return
     const strength = s.stone * s.rain
     mesh.current.visible = strength > 0.01
-    if (!still) time.current += Math.min(delta, 1 / 20) * (1 + Math.abs(motion.current.speed) * 2)
+    if (!still) time.current += Math.min(delta, 1 / 20) * (1 + stir(motion.current) * 2)
     if (mesh.current.visible) placeRipples(mesh.current, dummy, colour, drops, time.current, strength)
   })
   return (
@@ -915,8 +935,8 @@ function stepRain(geometry: THREE.BufferGeometry, speeds: Float32Array, dt: numb
   geometry.attributes.position.needsUpdate = true
 }
 
-function leanRain(sheet: THREE.Group, rush: number) {
-  sheet.scale.y = 1 + Math.abs(rush) * 1.4
+function leanRain(sheet: THREE.Group, rush: number, pour: number) {
+  sheet.scale.y = 1 + pour * 1.4
   sheet.rotation.z = -rush * 0.22
 }
 
@@ -947,9 +967,11 @@ function Rain({ state, still, motion }: { state: RefObject<SceneState>; still: b
     if (material.current) material.current.opacity = 0.45 * strength
     if (still || strength < 0.01) return
     // Racing down the page the rain streaks stretch, slant and fall harder; it settles when the page stops
+    // The scroll leans the rain; the scroll or a note makes it pour
     const rush = motion.current.speed
-    if (sheet.current) leanRain(sheet.current, rush)
-    stepRain(geometry, speeds, Math.min(delta, 1 / 20) * (1 + (s?.storm ?? 0) * 0.6 + Math.abs(rush) * 1.8))
+    const pour = stir(motion.current)
+    if (sheet.current) leanRain(sheet.current, rush, pour)
+    stepRain(geometry, speeds, Math.min(delta, 1 / 20) * (1 + (s?.storm ?? 0) * 0.6 + pour * 1.8))
   })
 
   return (
@@ -1095,7 +1117,7 @@ function Bulbs({ state, still, motion }: { state: RefObject<SceneState>; still: 
     const s = state.current
     if (!points.current || !material.current || !s) return
     points.current.visible = s.petals > 0.01
-    if (points.current.visible) setBulbs(material.current, still ? 0 : clock.elapsedTime, s.petals, Math.abs(motion.current.speed), viewport.height * gl.getPixelRatio(), delta)
+    if (points.current.visible) setBulbs(material.current, still ? 0 : clock.elapsedTime, s.petals, stir(motion.current), viewport.height * gl.getPixelRatio(), delta)
   })
   return (
     <points ref={points} geometry={geometry} visible={false} frustumCulled={false}>
@@ -1235,7 +1257,7 @@ function Petals({ state, still, motion }: { state: RefObject<SceneState>; still:
     mesh.current.visible = strength > 0.01
     if (!mesh.current.visible) return
     // A racing scroll scatters the petals wider and whirls them faster
-    const rush = Math.abs(motion.current.speed)
+    const rush = stir(motion.current)
     if (!still) time.current += Math.min(delta, 1 / 20) * (1 + rush * 2.5)
     scatter.current = THREE.MathUtils.damp(scatter.current, 1 + rush * 0.7, 6, Math.min(delta, 1 / 20))
     const centreX = size.width < 768 ? 0 : s && s.lineup < 0.5 ? 1.35 : 0
@@ -1284,7 +1306,7 @@ function Embers({ state, still, motion }: { state: RefObject<SceneState>; still:
     if (material.current) material.current.opacity = strength
     if (still || strength < 0.01) return
     // Sparks fly up faster while the page races
-    const dt = Math.min(delta, 1 / 20) * (1 + Math.abs(motion.current.speed) * 2)
+    const dt = Math.min(delta, 1 / 20) * (1 + stir(motion.current) * 2)
     time.current += dt
     stepEmbers(geometry, drift, dt, time.current)
   })
