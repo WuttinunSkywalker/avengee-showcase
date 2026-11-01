@@ -17,3 +17,8 @@ export function followSpeed(previous: number, dy: number, dt: number): number {
 export function speedAmount(pxPerSecond: number): number {
   return Math.max(-1, Math.min(1, pxPerSecond / FULL_SPEED))
 }
+
+/** Film grain over the full look: fine at rest, thicker the faster the page races (`amount` from speedAmount). */
+export function grainFor(amount: number): number {
+  return 0.035 + Math.min(1, Math.abs(amount)) * 0.09
+}

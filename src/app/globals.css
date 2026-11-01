@@ -911,6 +911,31 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
   clip-path: inset(-2rem);
 }
 
+/*
+ * Klin's atelier: the one paper-light part of the page (blotter paper, with
+ * a faint fibre), its ink set by overriding the theme's text colours here.
+ */
+.klin-paper {
+  --foreground: #221a15;
+  --muted-foreground: #5b5048;
+  --border: rgb(34 26 21 / 0.16);
+  background-color: #efece5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  color: var(--foreground);
+}
+/* The blotters hang closed, then swing open into a fan as the atelier comes into view */
+.klin-blotter {
+  transform-box: view-box;
+  transform: rotate(var(--fan, 0deg));
+}
+.klin-root[data-motion] .klin-blotter {
+  transition: transform 1.4s cubic-bezier(0.3, 1.4, 0.4, 1);
+  transition-delay: calc(var(--i, 0) * 120ms + 300ms);
+}
+.klin-root[data-motion] .klin-rise:not([data-shown]) .klin-blotter {
+  transform: rotate(0deg);
+}
+
 /* A thin line that drips down under "Scroll to begin" */
 .klin-root[data-motion] .klin-scroll-cue {
   transform-origin: top;

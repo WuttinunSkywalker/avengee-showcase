@@ -173,6 +173,21 @@ test.describe("Klin perfume house", () => {
     await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 15_000 }).toBeGreaterThan(300)
   })
 
+  test("the atelier burns in from the dark page onto paper, then the burn is gone", async ({ page }) => {
+    await page.goto("/en/klin")
+    const atelier = page.locator("#atelier")
+    const burn = page.getByTestId("atelier-burn")
+    // Waiting below the fold, covered by the page's own colour
+    await expect(burn).toBeAttached()
+    await atelier.scrollIntoViewIfNeeded()
+    // It plays on the clock once seen (slower when the 3D layer is drawn on the CPU), then goes
+    await expect(burn).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.getByRole("heading", { level: 2, name: "Smell them in person" })).toBeVisible()
+    // The one paper-light part of the page, in dark ink
+    expect(await atelier.evaluate((section) => getComputedStyle(section).backgroundColor)).toBe("rgb(239, 236, 229)")
+    expect(await page.getByRole("heading", { level: 2, name: "Smell them in person" }).evaluate((heading) => getComputedStyle(heading).color)).toBe("rgb(34, 26, 21)")
+  })
+
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
     await page.goto("/th/klin")
     await expect(page.getByRole("heading", { level: 1, name: "กรุงเทพฯ หลังฝนซา" })).toBeVisible()
@@ -196,6 +211,9 @@ test.describe("Klin perfume house", () => {
     await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.5))
     expect(await page.locator(".klin-fall-letter").first().evaluate((letter) => getComputedStyle(letter).transform)).toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/)
     await expect(page.locator("html.lenis")).toHaveCount(0)
+    // The atelier is simply there on paper, with no burn
+    await page.locator("#atelier").scrollIntoViewIfNeeded()
+    await expect(page.getByTestId("atelier-burn")).toHaveCount(0)
     // Buttons stay put under the mouse
     await page.evaluate(() => window.scrollTo(0, 0))
     const cta = (await page.getByRole("link", { name: "Find Your Scent" }).boundingBox())!

@@ -28,3 +28,13 @@ describe("scroll speed", () => {
     expect(speedAmount(99999)).toBe(1)
   })
 })
+
+describe("grainFor", async () => {
+  const { grainFor } = await import("@/features/klin/lib/speed")
+  it("keeps fine grain at rest and thickens it as the page races either way", () => {
+    expect(grainFor(0)).toBeCloseTo(0.035)
+    expect(grainFor(0.5)).toBeGreaterThan(grainFor(0))
+    expect(grainFor(-1)).toBeCloseTo(grainFor(1))
+    expect(grainFor(5)).toBeCloseTo(grainFor(1))
+  })
+})

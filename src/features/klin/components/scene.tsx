@@ -4,12 +4,14 @@ import { Suspense, useEffect, useMemo, useRef, useState, type RefObject } from "
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Environment, Lightformer, MeshReflectorMaterial, MeshTransmissionMaterial, Sparkles, useTexture } from "@react-three/drei"
 import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing"
+import type { NoiseEffect } from "postprocessing"
 import * as THREE from "three"
 import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
+import { grainFor } from "../lib/speed"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -95,12 +97,23 @@ export function KlinScene({
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
-          <Noise opacity={0.035} premultiply />
+          <Grain motion={motion} />
           <Vignette offset={0.28} darkness={0.62} />
         </EffectComposer>
       )}
     </Canvas>
   )
+}
+
+/** Fine film grain over the full look, thickening while the page races. */
+function Grain({ motion }: { motion: RefObject<ScrollMotion> }) {
+  const grain = useRef<NoiseEffect>(null)
+  useFrame(() => setGrain(grain.current, grainFor(motion.current.speed)))
+  return <Noise ref={grain} opacity={grainFor(0)} premultiply />
+}
+
+function setGrain(effect: NoiseEffect | null, opacity: number) {
+  if (effect) effect.blendMode.opacity.value = opacity
 }
 
 /**

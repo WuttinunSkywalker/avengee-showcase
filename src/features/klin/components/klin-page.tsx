@@ -13,6 +13,8 @@ import { headlinePieces } from "../lib/headline"
 import { followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
+import { AtelierBurn } from "./atelier-burn"
+import { Blotters } from "./blotters"
 import { KlinIntro } from "./intro"
 import { Magnetic } from "./magnetic"
 import { DropletCursor } from "./droplet-cursor"
@@ -275,7 +277,9 @@ export function KlinPage() {
           </div>
         </section>
 
-        <section id="atelier" aria-labelledby="atelier-title" className="relative bg-[var(--klin-backdrop,#2a1a12)] py-24">
+        {/* The one paper-light part of the page, like the blotters a scent is tried on; it burns in from the dark page above */}
+        <section id="atelier" aria-labelledby="atelier-title" className="klin-paper relative py-24">
+          <AtelierBurn />
           <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 sm:px-8 md:grid-cols-[1.2fr_1fr]">
             <div>
               <h2 id="atelier-title" className="klin-rise font-heading text-5xl md:text-6xl">
@@ -283,7 +287,9 @@ export function KlinPage() {
               </h2>
               <p className="klin-rise mt-5 max-w-[48ch] text-lg leading-relaxed text-muted-foreground">{t.atelier.body}</p>
             </div>
-            <dl className="klin-rise grid gap-6 self-end text-sm">
+            <div className="flex flex-col justify-between gap-10">
+            <Blotters className="klin-rise hidden w-56 self-center md:block lg:w-64" />
+            <dl className="klin-rise grid gap-6 text-sm">
               <div>
                 <dt className="text-muted-foreground">{t.atelier.address}</dt>
                 <dd className="mt-1 text-base">{klin.atelier.address[locale]}</dd>
@@ -302,6 +308,7 @@ export function KlinPage() {
                 </dd>
               </div>
             </dl>
+            </div>
           </div>
         </section>
       </main>
