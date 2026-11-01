@@ -48,6 +48,20 @@ test.describe("Klin perfume house", () => {
     expectNoConsoleErrors(consoleErrors)
   })
 
+  test("opens with a curtain that parts, and parts straight away on a return visit", async ({ page }) => {
+    await page.goto("/en/klin")
+    const intro = page.getByTestId("klin-intro")
+    await expect(intro).toHaveAttribute("data-state", "hold")
+    // It's only a picture: the page beneath can be used while it's up
+    await expect(intro).toHaveAttribute("aria-hidden", "true")
+    await expect(intro).toHaveCSS("pointer-events", "none")
+    await expect(intro).toHaveCount(0, { timeout: 10_000 })
+    expect(await page.evaluate(() => localStorage.getItem("klin:intro-seen"))).toBe("1")
+    // A return visit parts at once (exact timings are covered by the integration test; a CPU-drawn page here runs slow)
+    await page.reload()
+    await expect(intro).toHaveCount(0, { timeout: 10_000 })
+  })
+
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
     await page.goto("/th/klin")
     await expect(page.getByRole("heading", { level: 1, name: "กรุงเทพฯ หลังฝนซา" })).toBeVisible()
@@ -64,6 +78,7 @@ test.describe("Klin perfume house", () => {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/en/klin")
     await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-motion")
+    await expect(page.getByTestId("klin-intro")).toBeHidden()
     await expect(page.locator("html.lenis")).toHaveCount(0)
     await page.locator("#agarwood-dusk").scrollIntoViewIfNeeded()
     await expect(page.getByRole("heading", { level: 2, name: "Agarwood Dusk" })).toBeVisible()

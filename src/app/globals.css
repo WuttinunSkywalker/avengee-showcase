@@ -940,3 +940,75 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
     backdrop-filter: none;
   }
 }
+
+/*
+ * Klin's opening curtain (features/klin/components/intro.tsx): twelve strips of
+ * the storm's colour that fall away like sheets of rain. If script never runs,
+ * it lifts on its own after four seconds; reduced motion never shows it.
+ */
+.klin-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  animation: klin-intro-failsafe 0s 4s forwards;
+}
+/* Strips start 10rem above the screen with a soft top, so they fall like sheets of rain rather than blocks */
+.klin-intro-strips {
+  position: absolute;
+  inset: -10rem 0 0 0;
+  display: flex;
+}
+.klin-intro-strips > span {
+  flex: 1;
+  margin-right: -1px;
+  background: linear-gradient(to bottom, rgb(27 40 45 / 0), #1b282d 10rem);
+  transition: transform 800ms cubic-bezier(0.7, 0, 0.25, 1) var(--d, 0ms);
+}
+.klin-intro[data-state="reveal"] .klin-intro-strips > span {
+  transform: translateY(104%);
+}
+.klin-intro-mark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--foreground);
+  transition:
+    opacity 450ms ease,
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.klin-intro[data-state="reveal"] .klin-intro-mark {
+  opacity: 0;
+  transform: translateY(-24px);
+}
+/* A drop of light running down a thin line while the scene loads */
+.klin-intro-drop {
+  position: relative;
+  width: 1px;
+  height: 3.5rem;
+  margin-top: 0.75rem;
+  background: color-mix(in srgb, var(--foreground) 20%, transparent);
+  overflow: hidden;
+}
+.klin-intro-drop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--foreground);
+  transform-origin: top;
+  animation: klin-drip 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes klin-intro-failsafe {
+  to {
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .klin-intro {
+    display: none;
+  }
+}

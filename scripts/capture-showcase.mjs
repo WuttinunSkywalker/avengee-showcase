@@ -139,8 +139,8 @@ const shots = [
     path: "/klin",
     // The WebGL layer renders every frame, and a second visit to the page can sit waiting for "networkidle"
     waitUntil: "load",
-    // The bottle rises in and the rain settles over about two seconds
-    settle: 2600,
+    // The opening curtain parts (up to 2.8 s on a first visit) and the bottle rises in
+    settle: 3800,
     // The Jasmine chapter, pinned on screen with its petals
     mobilePath: "/klin#jasmine-hour",
     tour: [

@@ -37,7 +37,18 @@ interface EngravingSource {
   owner: RefObject<Slot>
 }
 
-export function KlinScene({ state, still: reduced, size }: { state: RefObject<SceneState>; still: boolean; size: RefObject<ChosenSize> }) {
+export function KlinScene({
+  state,
+  still: reduced,
+  size,
+  onReady,
+}: {
+  state: RefObject<SceneState>
+  still: boolean
+  size: RefObject<ChosenSize>
+  /** Called once the floors' textures have loaded, so the opening curtain can lift. */
+  onReady?: () => void
+}) {
   // Only big screens may earn the full look (mirror floors, refracting glass, post effects)
   const [rich] = useState(() => window.innerWidth >= 768)
   const [tier, setTier] = useState<Tier>("light")
@@ -67,7 +78,7 @@ export function KlinScene({ state, still: reduced, size }: { state: RefObject<Sc
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
-      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} />
+      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} onReady={onReady} />
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
@@ -176,6 +187,7 @@ function Story({
   calm,
   rich,
   size,
+  onReady,
 }: {
   state: RefObject<SceneState>
   still: boolean
@@ -183,6 +195,7 @@ function Story({
   calm: boolean
   rich: boolean
   size: RefObject<ChosenSize>
+  onReady?: () => void
 }) {
   const hero = useRef<THREE.Group>(null)
   const shape = useRef<THREE.Group>(null)
@@ -304,7 +317,7 @@ function Story({
       </group>
       <group ref={stage}>
         <Suspense fallback={null}>
-          <Floors state={state} still={still} rich={rich} />
+          <Floors state={state} still={still} rich={rich} onReady={onReady} />
         </Suspense>
       </group>
       <Rain state={state} still={still} />
@@ -561,7 +574,7 @@ const BEAM_FRAGMENT = /* glsl */ `
  * each chapter's surface laid over it: CC0 wet stone, nothing for the black
  * lacquer, dark wood. Rain rings spread on the stone.
  */
-function Floors({ state, still, rich }: { state: RefObject<SceneState>; still: boolean; rich: boolean }) {
+function Floors({ state, still, rich, onReady }: { state: RefObject<SceneState>; still: boolean; rich: boolean; onReady?: () => void }) {
   const textures = useTexture([
     "/images/klin/stone-color.jpg",
     "/images/klin/stone-normal.jpg",
@@ -575,6 +588,8 @@ function Floors({ state, still, rich }: { state: RefObject<SceneState>; still: b
   // Each floor dissolves in and out through the same noise, its edge glowing: cool silver on wet stone, ember on wood
   const stoneDissolve = useMemo(() => dissolver("#9fd0e0"), [])
   const woodDissolve = useMemo(() => dissolver("#ff8a3d"), [])
+  // Rendering here means the textures above have loaded
+  useEffect(() => onReady?.(), [onReady])
   const mirror = useRef<THREE.MeshStandardMaterial>(null)
   const stone = useRef<THREE.MeshStandardMaterial>(null)
   const wood = useRef<THREE.MeshStandardMaterial>(null)

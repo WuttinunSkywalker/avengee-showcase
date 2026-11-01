@@ -11,6 +11,7 @@ import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
+import { KlinIntro } from "./intro"
 import type { ChosenSize } from "./scene"
 import { ScentSheet } from "./scent-sheet"
 
@@ -66,6 +67,8 @@ export function KlinPage() {
   const size = useRef<ChosenSize>({ scent: null, ml: 50, engraving: "" })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
+  // The opening curtain holds until the 3D layer has its textures (or there's no 3D layer to wait for)
+  const [sceneReady, setSceneReady] = useState(false)
 
   // Scroll position → scene state, page colour and the chapter on screen
   useEffect(() => {
@@ -130,11 +133,12 @@ export function KlinPage() {
 
   return (
     <div ref={root} className="klin-root relative flex min-h-full flex-1 flex-col bg-[var(--klin-backdrop,#1b282d)] text-foreground" data-testid="klin-page">
+      <KlinIntro ready={sceneReady || (reduced !== null && !webgl)} />
       <SkipLink label={t.skip} />
       <KlinHeader />
       {webgl && reduced !== null && (
         <SceneBoundary>
-          <KlinScene state={state} still={reduced} size={size} />
+          <KlinScene state={state} still={reduced} size={size} onReady={() => setSceneReady(true)} />
         </SceneBoundary>
       )}
 
