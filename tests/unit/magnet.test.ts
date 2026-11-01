@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { FOLLOW, MAGNET_REACH, magnetPull, RELEASE, springSettled, springStep, type Spring } from "@/features/klin/lib/magnet"
+import { FOLLOW, MAGNET_REACH, magnetPull, RELEASE, springSettled, springStep, type Spring } from "@/lib/magnet"
 
 describe("magnetPull", () => {
   it("leans toward a pointer near the button, a share of the way, and only a few pixels", () => {

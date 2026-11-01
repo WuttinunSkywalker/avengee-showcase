@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { FOLLOW, magnetPull, RELEASE, springSettled, springStep, type Spring } from "../lib/magnet"
+import { FOLLOW, magnetPull, RELEASE, springSettled, springStep, type Spring } from "@/lib/magnet"
 
 /**
  * Wraps a button so it leans toward a nearby mouse and springs back with a
@@ -10,7 +10,7 @@ import { FOLLOW, magnetPull, RELEASE, springSettled, springStep, type Spring } f
  * The wrapper moves, so the button keeps its own hover and press transitions.
  * Mouse only; nothing moves for touch or reduced motion.
  */
-export function Magnetic({ children, className }: { children: ReactNode; className?: string }) {
+export function Magnetic({ children, className, testId = "magnet" }: { children: ReactNode; className?: string; testId?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export function Magnetic({ children, className }: { children: ReactNode; classNa
   }, [])
 
   return (
-    <span ref={ref} data-testid="klin-magnet" className={cn("inline-block", className)}>
+    <span ref={ref} data-testid={testId} className={cn("inline-block", className)}>
       {children}
     </span>
   )

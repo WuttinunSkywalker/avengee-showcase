@@ -137,16 +137,45 @@ test.describe("showcase portal", () => {
     }).toPass({ timeout: 10_000 })
     await expect(rows.nth(0)).toHaveAttribute("data-active")
     await expect(preview).toContainText("Baan Lamai: Booking")
-    // Down the list the picture follows the pointer and changes app
+    // Down the list the picture follows the pointer and changes app, rippling through the swap
+    await page.getByTestId("service-screen").evaluate((screen) => {
+      new MutationObserver(() => {
+        if (screen.hasAttribute("data-rippling")) screen.dataset.rippled = ""
+      }).observe(screen, { attributes: true, attributeFilter: ["data-rippling"] })
+    })
     const last = await row(3)
     await page.mouse.move(last.x, last.y, { steps: 6 })
     await expect(preview).toContainText("Kaffa Roasters: Staff dashboard")
+    await expect(page.getByTestId("service-screen")).toHaveAttribute("data-rippled", "")
+    // The filter is only on while it ripples
+    await expect.poll(() => page.getByTestId("service-screen").evaluate((screen) => screen.style.filter)).toBe("")
     await expect.poll(() => preview.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42), { timeout: 5000 }).toBeGreaterThan(80)
     // It floats clear of the text: right of every description
     const descriptions = await list.locator("dd").evaluateAll((all) => Math.max(...all.map((dd) => dd.getBoundingClientRect().right)))
     expect((await preview.boundingBox())!.x).toBeGreaterThan(descriptions)
     await page.mouse.move(first.x, 10)
     await expect(preview).toHaveAttribute("data-visible", "false")
+  })
+
+  test("the contact band drifts with colour, and the email button leans toward the mouse", async ({ page }) => {
+    await page.goto("/th")
+    const contact = page.locator("#contact")
+    await contact.scrollIntoViewIfNeeded()
+    // Three pools of colour, drifting on their own
+    const pools = page.getByTestId("contact-mesh").locator("span")
+    await expect(pools).toHaveCount(3)
+    expect(await pools.evaluateAll((all) => all.every((pool) => pool.getAnimations().length > 0))).toBe(true)
+    // Behind everything: the heading and the email link still take the pointer
+    await expect(contact.getByRole("link", { name: /avengee\.team@gmail\.com/ })).toBeVisible()
+    test.skip(page.viewportSize()!.width < 768, "the pull follows a mouse")
+    const email = contact.getByRole("link", { name: /avengee\.team@gmail\.com/ })
+    const magnet = contact.getByTestId("magnet")
+    const box = (await email.boundingBox())!
+    await expect(async () => {
+      await page.mouse.move(box.x + box.width + 24, box.y + box.height / 2, { steps: 3 })
+      await expect(magnet).toHaveAttribute("data-magnet", "", { timeout: 500 })
+    }).toPass({ timeout: 10_000 })
+    await expect.poll(async () => parseFloat(await magnet.evaluate((element) => element.style.translate))).toBeGreaterThan(4)
   })
 
   test("filter chips sit apart, not touching", async ({ page }) => {

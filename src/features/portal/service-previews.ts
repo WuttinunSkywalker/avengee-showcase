@@ -42,3 +42,16 @@ export function previewTop(pointerY: number, listHeight: number, cardHeight: num
 export function previewTilt(velocity: number): number {
   return Math.max(-7, Math.min(7, velocity * 0.35))
 }
+
+/** How long a swap between screens ripples, in ms. */
+export const RIPPLE_MS = 650
+
+/**
+ * How hard the screen ripples (an SVG displacement scale, px) at `t` (0–1)
+ * through a swap: still at both ends, strongest just before the middle, while
+ * the new screen fades in through it.
+ */
+export function rippleAt(t: number): number {
+  const clamped = Math.max(0, Math.min(1, t))
+  return Math.sin(Math.PI * clamped ** 0.8) ** 2 * 34
+}

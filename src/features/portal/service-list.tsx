@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import type { Locale } from "@/i18n/config"
 import { stagger } from "@/lib/motion"
 import { portalMessages } from "./messages"
-import { previewTilt, previewTop, servicePreview } from "./service-previews"
+import { previewTilt, previewTop, RIPPLE_MS, rippleAt, servicePreview } from "./service-previews"
 
 /**
  * "What we build" as a list of rows. On wide screens with a mouse, pointing
@@ -21,6 +21,41 @@ export function ServiceList({ locale }: { locale: Locale }) {
   const [hover, setHover] = useState({ index: 0, on: false })
   const list = useRef<HTMLDivElement>(null)
   const card = useRef<HTMLDivElement>(null)
+  const screen = useRef<HTMLDivElement>(null)
+  const displace = useRef<SVGFEDisplacementMapElement>(null)
+  // The screen on show while the picture is up, so a change of row can ripple from one to the next
+  const showing = useRef<number | null>(null)
+
+  // Moving to another row swaps the screen through a ripple of turbulence (as in Codrops' WebGL
+  // distortion hovers, here an SVG filter), applied only while it runs
+  useEffect(() => {
+    const frame = screen.current
+    const map = displace.current
+    const before = showing.current
+    showing.current = hover.on ? hover.index : null
+    if (!hover.on || before === null || before === hover.index || !frame || !map) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let raf = 0
+    const start = performance.now()
+    frame.style.filter = "url(#service-ripple)"
+    frame.dataset.rippling = ""
+    const stop = () => {
+      map.setAttribute("scale", "0")
+      frame.style.removeProperty("filter")
+      delete frame.dataset.rippling
+    }
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / RIPPLE_MS)
+      map.setAttribute("scale", rippleAt(t).toFixed(1))
+      if (t < 1) raf = requestAnimationFrame(step)
+      else stop()
+    }
+    raf = requestAnimationFrame(step)
+    return () => {
+      cancelAnimationFrame(raf)
+      stop()
+    }
+  }, [hover])
 
   useEffect(() => {
     const node = list.current
@@ -100,8 +135,14 @@ export function ServiceList({ locale }: { locale: Locale }) {
         data-visible={hover.on && previews[hover.index] !== null}
         className="service-preview pointer-events-none absolute top-0 right-0 hidden w-[20rem] will-change-transform xl:block"
       >
+        <svg width="0" height="0" className="absolute">
+          <filter id="service-ripple" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.03" numOctaves="2" seed="7" result="ripple" />
+            <feDisplacementMap ref={displace} in="SourceGraphic" in2="ripple" scale="0" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </svg>
         <div className="service-preview-card">
-          <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted shadow-2xl">
+          <div ref={screen} data-testid="service-screen" className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted shadow-2xl">
             {previews.map((preview, index) =>
               preview ? (
                 <Image
@@ -111,7 +152,7 @@ export function ServiceList({ locale }: { locale: Locale }) {
                   fill
                   sizes="320px"
                   data-active={hover.index === index || undefined}
-                  className="object-cover object-top opacity-0 transition-opacity duration-300 data-active:opacity-100"
+                  className="object-cover object-top opacity-0 transition-opacity duration-500 data-active:opacity-100"
                 />
               ) : null,
             )}

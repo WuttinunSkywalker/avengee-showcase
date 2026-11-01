@@ -49,6 +49,9 @@ test.describe("Klin perfume house", () => {
   })
 
   test("opens with a curtain that parts, and parts straight away on a return visit", async ({ page }) => {
+    // The curtain parts on timers, which can't run while a CPU-drawn 3D layer draws its first frame
+    // (about ten seconds on CI's runners), so this waits as long as the other WebGL tests
+    test.slow()
     await page.goto("/en/klin")
     const intro = page.getByTestId("klin-intro")
     // Holding (or already parting, if the page was slow to load)
@@ -56,11 +59,11 @@ test.describe("Klin perfume house", () => {
     // It's only a picture: the page beneath can be used while it's up
     await expect(intro).toHaveAttribute("aria-hidden", "true")
     await expect(intro).toHaveCSS("pointer-events", "none")
-    await expect(intro).toHaveCount(0, { timeout: 15_000 })
+    await expect(intro).toHaveCount(0, { timeout: 30_000 })
     expect(await page.evaluate(() => localStorage.getItem("klin:intro-seen"))).toBe("1")
     // A return visit parts at once (exact timings are covered by the integration test; a CPU-drawn page here runs slow)
     await page.reload()
-    await expect(intro).toHaveCount(0, { timeout: 10_000 })
+    await expect(intro).toHaveCount(0, { timeout: 30_000 })
   })
 
   test("the headline falls like rain as the hero scrolls away, and comes back", async ({ page }) => {
@@ -154,7 +157,7 @@ test.describe("Klin perfume house", () => {
     test.skip(isMobile, "The pull follows a mouse; touch screens keep plain buttons")
     await page.goto("/en/klin")
     const cta = page.getByRole("link", { name: "Find Your Scent" })
-    const magnet = page.getByTestId("klin-magnet").filter({ has: cta })
+    const magnet = page.getByTestId("magnet").filter({ has: cta })
     await expect(cta).toBeVisible()
     const box = (await cta.boundingBox())!
     const lean = () => magnet.evaluate((element) => element.style.translate)
@@ -219,7 +222,7 @@ test.describe("Klin perfume house", () => {
     const cta = (await page.getByRole("link", { name: "Find Your Scent" }).boundingBox())!
     await page.mouse.move(cta.x + cta.width + 20, cta.y + cta.height / 2, { steps: 3 })
     await page.waitForTimeout(300)
-    expect(await page.getByTestId("klin-magnet").first().evaluate((element) => element.style.translate)).toBe("")
+    expect(await page.getByTestId("magnet").first().evaluate((element) => element.style.translate)).toBe("")
     await page.locator("#agarwood-dusk").scrollIntoViewIfNeeded()
     await expect(page.getByRole("heading", { level: 2, name: "Agarwood Dusk" })).toBeVisible()
   })

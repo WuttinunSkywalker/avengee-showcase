@@ -1148,6 +1148,68 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 }
 
 /*
+ * The portal's contact band: three soft pools of the brand blue and signal
+ * yellow drifting slowly (transform only) low in the band, under the email
+ * button, never behind the heading. Still for reduced motion.
+ */
+.contact-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.contact-mesh span {
+  position: absolute;
+  width: 44rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--pool), transparent);
+  will-change: transform;
+}
+.contact-mesh span:nth-child(1) {
+  --pool: color-mix(in oklab, var(--primary) 60%, transparent);
+  left: -14rem;
+  bottom: -24rem;
+  animation: pool-a 22s ease-in-out infinite alternate;
+}
+.contact-mesh span:nth-child(2) {
+  --pool: color-mix(in oklab, var(--signal) 26%, transparent);
+  left: 12rem;
+  bottom: -30rem;
+  animation: pool-b 27s ease-in-out infinite alternate;
+}
+.contact-mesh span:nth-child(3) {
+  --pool: color-mix(in oklab, var(--primary) 45%, transparent);
+  right: -18rem;
+  bottom: -22rem;
+  animation: pool-c 31s ease-in-out infinite alternate;
+}
+.dark .contact-mesh span {
+  opacity: 0.45;
+}
+@keyframes pool-a {
+  to {
+    transform: translate(16rem, -4rem) scale(1.15);
+  }
+}
+@keyframes pool-b {
+  to {
+    transform: translate(-10rem, -6rem) scale(0.9);
+  }
+}
+@keyframes pool-c {
+  to {
+    transform: translate(-14rem, -3rem) scale(1.2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-mesh span {
+    animation: none;
+  }
+}
+
+/*
  * "What we build": the app screen that floats beside the row pointed at
  * (features/portal/service-list.tsx). Script moves the outer box; the card
  * inside fades and grows in. Never shown for reduced motion.

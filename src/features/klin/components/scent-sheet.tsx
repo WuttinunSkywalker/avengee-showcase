@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, MotionConfig } from "motion/react"
 import { XIcon } from "lucide-react"
 import { toast } from "sonner"
+import { Magnetic } from "@/components/magnetic"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -15,7 +16,6 @@ import { bottleProfileFor, bottleSilhouette, neckTop } from "../lib/bottle"
 import { cleanEngraving, engravingLeft } from "../lib/engraving"
 import { formatPrice } from "../lib/story"
 import { useBagStore } from "../store/bag-store"
-import { Magnetic } from "./magnetic"
 
 /** Outline, juice level and collar height for each size, so the drawn bottle can morph between them. */
 function bottleShape(ml: number) {

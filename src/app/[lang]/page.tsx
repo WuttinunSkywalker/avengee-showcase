@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { MailIcon } from "lucide-react"
+import { Magnetic } from "@/components/magnetic"
 import { Phrased } from "@/components/phrased"
 import { SkipLink } from "@/components/skip-link"
 import { Button } from "@/components/ui/button"
@@ -123,7 +124,13 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
-        <section id="contact" aria-labelledby="contact-title" className="scroll-mt-16 bg-foreground text-background">
+        <section id="contact" aria-labelledby="contact-title" className="relative isolate scroll-mt-16 overflow-hidden bg-foreground text-background">
+          {/* Soft pools of colour drifting slowly under the email button, kept low and away from the text */}
+          <div aria-hidden="true" data-testid="contact-mesh" className="contact-mesh">
+            <span />
+            <span />
+            <span />
+          </div>
           <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:py-28">
             <div className="flex max-w-3xl flex-col gap-4">
               <h2 id="contact-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-6xl">
@@ -134,16 +141,18 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
               </p>
             </div>
             <div className="reveal flex flex-col gap-4 sm:flex-row" style={stagger(1)}>
-              <a
-                href={`mailto:${site.email}`}
-                className="flex items-center gap-3 rounded-xl bg-background px-5 py-4 text-foreground transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-signal focus-visible:outline-none motion-reduce:transition-none"
-              >
-                <MailIcon className="size-5" aria-hidden="true" />
-                <span className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">{t.contact.email}</span>
-                  <span className="font-medium">{site.email}</span>
-                </span>
-              </a>
+              <Magnetic className="flex flex-col">
+                <a
+                  href={`mailto:${site.email}`}
+                  className="flex items-center gap-3 rounded-xl bg-background px-5 py-4 text-foreground shadow-lg transition-shadow hover:shadow-2xl focus-visible:ring-3 focus-visible:ring-signal focus-visible:outline-none motion-reduce:transition-none"
+                >
+                  <MailIcon className="size-5" aria-hidden="true" />
+                  <span className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">{t.contact.email}</span>
+                    <span className="font-medium">{site.email}</span>
+                  </span>
+                </a>
+              </Magnetic>
             </div>
           </div>
         </section>

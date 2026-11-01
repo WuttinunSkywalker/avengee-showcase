@@ -2,7 +2,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { portalMessages } from "@/features/portal/messages"
-import { previewTilt, previewTop, servicePreview } from "@/features/portal/service-previews"
+import { previewTilt, previewTop, rippleAt, servicePreview } from "@/features/portal/service-previews"
 
 describe("servicePreview", () => {
   it("gives every service a real screen from a matching app, in both languages", () => {
@@ -40,5 +40,17 @@ describe("placing the floating preview", () => {
     expect(previewTilt(-10)).toBeCloseTo(-3.5)
     expect(previewTilt(400)).toBe(7)
     expect(previewTilt(-400)).toBe(-7)
+  })
+})
+
+describe("rippleAt", () => {
+  it("is still at both ends of a swap and strongest in between", () => {
+    expect(rippleAt(0)).toBe(0)
+    expect(rippleAt(1)).toBeCloseTo(0)
+    const peak = Math.max(...Array.from({ length: 21 }, (_, i) => rippleAt(i / 20)))
+    expect(peak).toBeGreaterThan(30)
+    expect(peak).toBeLessThanOrEqual(34)
+    expect(rippleAt(-1)).toBe(0)
+    expect(rippleAt(2)).toBeCloseTo(0)
   })
 })
