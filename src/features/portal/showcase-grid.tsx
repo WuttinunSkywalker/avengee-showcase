@@ -14,7 +14,7 @@ import { stagger } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
 import { dealt } from "./deck"
-import { AppStage } from "@/components/app-stage"
+import { AppStage, cardAnchor } from "@/components/app-stage"
 import { ShowcasePreview } from "./showcase-preview"
 
 type Filter = "all" | ShowcaseKind
@@ -114,7 +114,9 @@ function LiveCard({ showcase, locale }: { showcase: Showcase; locale: Locale }) 
       onFocus={() => setFocused(true)}
       onBlur={(event) => !event.currentTarget.contains(event.relatedTarget) && setFocused(false)}
       data-deck=""
-      className="showcase-deck group flex flex-col overflow-clip rounded-2xl border border-border bg-card shadow-sm md:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.5fr_1fr]">
+      // The app's way back to the portal lands here, so its page can shrink back into this card
+      id={showcase.href ? cardAnchor(showcase.href.replace(/^\//, "")) : undefined}
+      className="showcase-deck group flex scroll-mt-24 flex-col overflow-clip rounded-2xl border border-border bg-card shadow-sm md:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.5fr_1fr]">
       {/* Opening the app grows this screen into its page */}
       {showcase.images &&
         (showcase.href ? (

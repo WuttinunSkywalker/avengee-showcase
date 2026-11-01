@@ -5,6 +5,16 @@ export function appStageName(slug: string): string {
   return `app-${slug}`
 }
 
+/** The id of an app's card on the portal, e.g. "showcase-spa", so the way back from the app can land on it. */
+export function cardAnchor(slug: string): string {
+  return `showcase-${slug}`
+}
+
+/** The app an in-app path belongs to: "/th/spa/book" → "spa". */
+export function appSlug(pathname: string): string | undefined {
+  return pathname.split("/")[2] || undefined
+}
+
 /**
  * Marks an app's whole page, or its screen on a portal card, as the same
  * thing seen twice: opening the app from the card grows the card's screen

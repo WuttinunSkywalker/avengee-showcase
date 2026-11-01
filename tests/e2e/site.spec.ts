@@ -258,6 +258,14 @@ test.describe("showcase portal", () => {
     await page.getByRole("link", { name: /Book a Treatment/ }).first().click()
     await expect(page).toHaveURL(/\/en\/spa\/book/)
     expect(await page.evaluate(() => (window as unknown as { viewTransitions: string[][] }).viewTransitions.length)).toBe(before)
+
+    // The way back lands on the app's own card, which the page shrinks back into
+    await page.waitForLoadState("networkidle")
+    await page.getByRole("link", { name: "All Avengee Team showcases" }).click()
+    await expect(page).toHaveURL(/\/en#showcase-spa$/)
+    await expect(card).toBeInViewport()
+    const back = await page.evaluate((from) => (window as unknown as { viewTransitions: string[][] }).viewTransitions.slice(from), before)
+    expect(back.some((names) => names.includes("app-spa"))).toBe(true)
   })
 
   test("filter chips sit apart, not touching", async ({ page }) => {
@@ -375,7 +383,7 @@ test.describe("showcase portal", () => {
       await expect.poll(primary).not.toBe(portal)
       // Back by the in-app link, then by browser history: both keep the app mounted but hidden
       await page.getByRole("link", { name: "All Avengee Team showcases" }).click()
-      await expect(page).toHaveURL(/\/en$/)
+      await expect(page).toHaveURL(/\/en#showcase-(shop|spa)$/)
       await expect.poll(primary).toBe(portal)
       await page.goBack()
       await expect(page).toHaveURL(/\/admin$/)

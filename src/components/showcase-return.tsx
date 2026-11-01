@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { LayoutGridIcon } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { site } from "@/config/site"
+import { appSlug, cardAnchor } from "@/components/app-stage"
+import { showcases, site } from "@/config/site"
 import { localePath } from "@/i18n/config"
 import { useLocale } from "@/i18n/locale-provider"
 import { cn } from "@/lib/utils"
@@ -45,13 +46,16 @@ export function ShowcaseReturn({ inline = false }: { inline?: boolean }) {
   }, [])
 
   if (!inline && /\/admin(\/|$)/.test(pathname)) return null
+  // Back to this app's own card in the portal's list, which its page shrinks into on the way
+  const slug = appSlug(pathname)
+  const href = slug && showcases.some((showcase) => showcase.href === `/${slug}`) ? `${localePath(locale, "/")}#${cardAnchor(slug)}` : localePath(locale, "/")
 
   if (inline) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            href={localePath(locale, "/")}
+            href={href}
             aria-label={labels[locale]}
             className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
@@ -67,7 +71,7 @@ export function ShowcaseReturn({ inline = false }: { inline?: boolean }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Link
-          href={localePath(locale, "/")}
+          href={href}
           aria-label={labels[locale]}
           data-hidden={hidden || undefined}
           className={cn(
