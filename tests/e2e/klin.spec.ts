@@ -87,6 +87,26 @@ test.describe("Klin perfume house", () => {
       .toBe(0)
   })
 
+  test("racing down the page stirs the scene, and it settles when the page stops", async ({ page }) => {
+    await page.goto("/en/klin")
+    const speed = () => page.getByTestId("klin-page").evaluate((root) => Number(root.style.getPropertyValue("--speed") || 0))
+    // Scroll in quick steps, a frame apart, as a flick of the wheel would
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) => {
+          let steps = 0
+          const step = () => {
+            window.scrollBy(0, 160)
+            if (++steps < 12) requestAnimationFrame(step)
+            else done()
+          }
+          requestAnimationFrame(step)
+        }),
+    )
+    await expect.poll(speed, { timeout: 15_000 }).toBeGreaterThan(0.05)
+    await expect.poll(speed, { timeout: 15_000 }).toBe(0)
+  })
+
   test("bottles spin when dragged, and the handles never cover the page's own controls", async ({ page }) => {
     await page.goto("/en/klin")
     const single = page.getByTestId("spin-single")
@@ -125,6 +145,8 @@ test.describe("Klin perfume house", () => {
     await page.goto("/en/klin")
     await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-motion")
     await expect(page.getByTestId("klin-intro")).toBeHidden()
+    await page.evaluate(() => window.scrollBy(0, 600))
+    expect(await page.getByTestId("klin-page").evaluate((root) => root.style.getPropertyValue("--speed"))).toBe("")
     // The headline stays put
     await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.5))
     expect(await page.locator(".klin-fall-letter").first().evaluate((letter) => getComputedStyle(letter).transform)).toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/)

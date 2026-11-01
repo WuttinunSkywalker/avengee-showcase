@@ -32,6 +32,11 @@ export interface ChosenSize {
 
 type Slot = BottleSlot
 
+/** How fast the page is scrolling, −1 (racing up) to 1 (racing down), written by the page every frame. */
+export interface ScrollMotion {
+  speed: number
+}
+
 /** What the bottles need to engrave the right one: who's chosen, and which bottle stands for them now. */
 interface EngravingSource {
   chosen: RefObject<ChosenSize>
@@ -43,6 +48,7 @@ export function KlinScene({
   still: reduced,
   size,
   spin,
+  motion,
   onReady,
 }: {
   state: RefObject<SceneState>
@@ -50,6 +56,7 @@ export function KlinScene({
   size: RefObject<ChosenSize>
   /** Bottles spun by dragging the grab handles over them. */
   spin: RefObject<SpinBoard>
+  motion: RefObject<ScrollMotion>
   /** Called once the floors' textures have loaded, so the opening curtain can lift. */
   onReady?: () => void
 }) {
@@ -82,7 +89,7 @@ export function KlinScene({
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
-      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} spin={spin} onReady={onReady} />
+      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} spin={spin} motion={motion} onReady={onReady} />
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
@@ -200,6 +207,7 @@ function Story({
   rich,
   size,
   spin,
+  motion,
   onReady,
 }: {
   state: RefObject<SceneState>
@@ -209,6 +217,7 @@ function Story({
   rich: boolean
   size: RefObject<ChosenSize>
   spin: RefObject<SpinBoard>
+  motion: RefObject<ScrollMotion>
   onReady?: () => void
 }) {
   const hero = useRef<THREE.Group>(null)
@@ -344,13 +353,13 @@ function Story({
       </group>
       <group ref={stage}>
         <Suspense fallback={null}>
-          <Floors state={state} still={still} rich={rich} onReady={onReady} />
+          <Floors state={state} still={still} rich={rich} motion={motion} onReady={onReady} />
         </Suspense>
       </group>
-      <Rain state={state} still={still} />
+      <Rain state={state} still={still} motion={motion} />
       <Mist state={state} still={still} />
-      <Petals state={state} still={still} />
-      <Embers state={state} still={still} />
+      <Petals state={state} still={still} motion={motion} />
+      <Embers state={state} still={still} motion={motion} />
       <Smoke state={state} still={still} />
     </>
   )
@@ -601,7 +610,19 @@ const BEAM_FRAGMENT = /* glsl */ `
  * each chapter's surface laid over it: CC0 wet stone, nothing for the black
  * lacquer, dark wood. Rain rings spread on the stone.
  */
-function Floors({ state, still, rich, onReady }: { state: RefObject<SceneState>; still: boolean; rich: boolean; onReady?: () => void }) {
+function Floors({
+  state,
+  still,
+  rich,
+  motion,
+  onReady,
+}: {
+  state: RefObject<SceneState>
+  still: boolean
+  rich: boolean
+  motion: RefObject<ScrollMotion>
+  onReady?: () => void
+}) {
   const textures = useTexture([
     "/images/klin/stone-color.jpg",
     "/images/klin/stone-normal.jpg",
@@ -688,7 +709,7 @@ function Floors({ state, still, rich, onReady }: { state: RefObject<SceneState>;
           customProgramCacheKey={dissolveCacheKey}
         />
       </mesh>
-      <Ripples state={state} still={still} />
+      <Ripples state={state} still={still} motion={motion} />
     </group>
   )
 }
@@ -779,7 +800,7 @@ const DISSOLVE_EDGE = /* glsl */ `
 const RIPPLES = 28
 
 /** Rings spreading where rain lands on the stone, each on its own clock. */
-function Ripples({ state, still }: { state: RefObject<SceneState>; still: boolean }) {
+function Ripples({ state, still, motion }: { state: RefObject<SceneState>; still: boolean; motion: RefObject<ScrollMotion> }) {
   const mesh = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const colour = useMemo(() => new THREE.Color(), [])
@@ -787,12 +808,15 @@ function Ripples({ state, still }: { state: RefObject<SceneState>; still: boolea
     const random = createRandom("klin:ripples")
     return Array.from({ length: RIPPLES }, () => ({ x: (random() - 0.5) * 6, y: (random() - 0.5) * 6, phase: random(), period: 1.1 + random() * 1.4 }))
   }, [])
-  useFrame(({ clock }) => {
+  // Rings spread faster while the page races
+  const time = useRef(0.5)
+  useFrame((_, delta) => {
     const s = state.current
     if (!mesh.current || !s) return
     const strength = s.stone * s.rain
     mesh.current.visible = strength > 0.01
-    if (mesh.current.visible) placeRipples(mesh.current, dummy, colour, drops, still ? 0.5 : clock.elapsedTime, strength)
+    if (!still) time.current += Math.min(delta, 1 / 20) * (1 + Math.abs(motion.current.speed) * 2)
+    if (mesh.current.visible) placeRipples(mesh.current, dummy, colour, drops, time.current, strength)
   })
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, RIPPLES]} position-z={0.006} visible={false}>
@@ -839,9 +863,15 @@ function stepRain(geometry: THREE.BufferGeometry, speeds: Float32Array, dt: numb
   geometry.attributes.position.needsUpdate = true
 }
 
+function leanRain(sheet: THREE.Group, rush: number) {
+  sheet.scale.y = 1 + Math.abs(rush) * 1.4
+  sheet.rotation.z = -rush * 0.22
+}
+
 /** Thin streaks falling at a slant: heavy in the storm, steady over the stone. */
-function Rain({ state, still }: { state: RefObject<SceneState>; still: boolean }) {
+function Rain({ state, still, motion }: { state: RefObject<SceneState>; still: boolean; motion: RefObject<ScrollMotion> }) {
   const material = useRef<THREE.LineBasicMaterial>(null)
+  const sheet = useRef<THREE.Group>(null)
   const { geometry, speeds } = useMemo(() => {
     const random = createRandom("klin:rain")
     const positions = new Float32Array(RAIN_DROPS * 6)
@@ -864,13 +894,18 @@ function Rain({ state, still }: { state: RefObject<SceneState>; still: boolean }
     const strength = s ? Math.max(s.rain, s.storm) : 0
     if (material.current) material.current.opacity = 0.45 * strength
     if (still || strength < 0.01) return
-    stepRain(geometry, speeds, Math.min(delta, 1 / 20) * (1 + (s?.storm ?? 0) * 0.6))
+    // Racing down the page the rain streaks stretch, slant and fall harder; it settles when the page stops
+    const rush = motion.current.speed
+    if (sheet.current) leanRain(sheet.current, rush)
+    stepRain(geometry, speeds, Math.min(delta, 1 / 20) * (1 + (s?.storm ?? 0) * 0.6 + Math.abs(rush) * 1.8))
   })
 
   return (
-    <lineSegments geometry={geometry}>
-      <lineBasicMaterial ref={material} color="#cfe3ea" transparent opacity={0} depthWrite={false} />
-    </lineSegments>
+    <group ref={sheet}>
+      <lineSegments geometry={geometry}>
+        <lineBasicMaterial ref={material} color="#cfe3ea" transparent opacity={0} depthWrite={false} />
+      </lineSegments>
+    </group>
   )
 }
 
@@ -989,10 +1024,11 @@ interface Orbit {
 }
 
 /** Sets each petal on its orbit at time t, tumbling, sized by the chapter's strength. */
-function placePetals(mesh: THREE.InstancedMesh, dummy: THREE.Object3D, orbits: readonly Orbit[], t: number, strength: number, centreX: number) {
+function placePetals(mesh: THREE.InstancedMesh, dummy: THREE.Object3D, orbits: readonly Orbit[], t: number, strength: number, centreX: number, scatter = 1) {
   orbits.forEach((orbit, i) => {
     const angle = orbit.phase + t * orbit.speed
-    dummy.position.set(centreX + Math.cos(angle) * orbit.radius, orbit.height + Math.sin(t * 0.6 + orbit.phase) * 0.25, Math.sin(angle) * orbit.radius - 0.5)
+    const radius = orbit.radius * scatter
+    dummy.position.set(centreX + Math.cos(angle) * radius, orbit.height * scatter + Math.sin(t * 0.6 + orbit.phase) * 0.25, Math.sin(angle) * radius - 0.5)
     dummy.rotation.set(orbit.spin + t * 0.8, angle, orbit.spin * 0.5 + t * 0.4)
     dummy.scale.setScalar(orbit.size * strength)
     dummy.updateMatrix()
@@ -1002,7 +1038,7 @@ function placePetals(mesh: THREE.InstancedMesh, dummy: THREE.Object3D, orbits: r
 }
 
 /** Jasmine petals circling the bottle on slow, uneven orbits. */
-function Petals({ state, still }: { state: RefObject<SceneState>; still: boolean }) {
+function Petals({ state, still, motion }: { state: RefObject<SceneState>; still: boolean; motion: RefObject<ScrollMotion> }) {
   const mesh = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const orbits = useMemo(() => {
@@ -1029,6 +1065,7 @@ function Petals({ state, still }: { state: RefObject<SceneState>; still: boolean
     return petal
   }, [])
   const time = useRef(0)
+  const scatter = useRef(1)
 
   useFrame(({ size }, delta) => {
     const s = state.current
@@ -1036,9 +1073,12 @@ function Petals({ state, still }: { state: RefObject<SceneState>; still: boolean
     if (!mesh.current) return
     mesh.current.visible = strength > 0.01
     if (!mesh.current.visible) return
-    if (!still) time.current += Math.min(delta, 1 / 20)
+    // A racing scroll scatters the petals wider and whirls them faster
+    const rush = Math.abs(motion.current.speed)
+    if (!still) time.current += Math.min(delta, 1 / 20) * (1 + rush * 2.5)
+    scatter.current = THREE.MathUtils.damp(scatter.current, 1 + rush * 0.7, 6, Math.min(delta, 1 / 20))
     const centreX = size.width < 768 ? 0 : s && s.lineup < 0.5 ? 1.35 : 0
-    placePetals(mesh.current, dummy, orbits, time.current, strength, centreX)
+    placePetals(mesh.current, dummy, orbits, time.current, strength, centreX, scatter.current)
   })
 
   return (
@@ -1062,7 +1102,7 @@ function stepEmbers(geometry: THREE.BufferGeometry, drift: Float32Array, dt: num
 }
 
 /** Sparks rising like incense embers; bright enough to bloom. */
-function Embers({ state, still }: { state: RefObject<SceneState>; still: boolean }) {
+function Embers({ state, still, motion }: { state: RefObject<SceneState>; still: boolean; motion: RefObject<ScrollMotion> }) {
   const material = useRef<THREE.PointsMaterial>(null)
   const { geometry, drift } = useMemo(() => {
     const random = createRandom("klin:embers")
@@ -1082,7 +1122,8 @@ function Embers({ state, still }: { state: RefObject<SceneState>; still: boolean
     const strength = state.current?.embers ?? 0
     if (material.current) material.current.opacity = strength
     if (still || strength < 0.01) return
-    const dt = Math.min(delta, 1 / 20)
+    // Sparks fly up faster while the page races
+    const dt = Math.min(delta, 1 / 20) * (1 + Math.abs(motion.current.speed) * 2)
     time.current += dt
     stepEmbers(geometry, drift, dt, time.current)
   })

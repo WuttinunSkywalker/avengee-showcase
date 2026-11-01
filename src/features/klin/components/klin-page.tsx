@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils"
 import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { headlinePieces } from "../lib/headline"
+import { followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { KlinIntro } from "./intro"
 import { SpinZones } from "./spin-zones"
 import { emptyBoard, type SpinBoard } from "../lib/spin"
-import type { ChosenSize } from "./scene"
+import type { ChosenSize, ScrollMotion } from "./scene"
 import { ScentSheet } from "./scent-sheet"
 
 const KlinScene = dynamic(() => import("./scene").then((module) => module.KlinScene), { ssr: false })
@@ -70,6 +71,8 @@ export function KlinPage() {
   const size = useRef<ChosenSize>({ scent: null, ml: 50, engraving: "" })
   // Bottles spun by dragging, shared by the grab handles and the 3D layer
   const spin = useRef<SpinBoard>(emptyBoard())
+  // Scroll speed from −1 to 1, shared with the 3D layer
+  const motion = useRef<ScrollMotion>({ speed: 0 })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
   // The opening curtain holds until the 3D layer has its textures (or there's no 3D layer to wait for)
@@ -114,11 +117,26 @@ export function KlinPage() {
     // Also catch up on the next frame whenever the scroll moved without an event reaching us in time
     // (the smooth scroller and a busy main thread can both delay one), so the page never sticks on a stale position
     let lastY = window.scrollY
-    let frame = requestAnimationFrame(function follow() {
-      if (window.scrollY !== lastY) {
+    let lastTime = performance.now()
+    let speed = 0
+    let shown = 0
+    let frame = requestAnimationFrame(function follow(now) {
+      const dy = window.scrollY - lastY
+      if (dy !== 0) {
         lastY = window.scrollY
         update()
       }
+      // How fast the page is scrolling, for the rain, petals and type to react (not for reduced motion)
+      if (page.dataset.motion !== undefined) {
+        speed = followSpeed(speed, dy, (now - lastTime) / 1000)
+        const amount = speedAmount(speed)
+        motion.current.speed = amount
+        if (Math.abs(amount - shown) > 0.002) {
+          shown = amount
+          page.style.setProperty("--speed", amount.toFixed(3))
+        }
+      }
+      lastTime = now
       frame = requestAnimationFrame(follow)
     })
     return () => {
@@ -159,7 +177,7 @@ export function KlinPage() {
       <KlinHeader />
       {webgl && reduced !== null && (
         <SceneBoundary>
-          <KlinScene state={state} still={reduced} size={size} spin={spin} onReady={() => setSceneReady(true)} />
+          <KlinScene state={state} still={reduced} size={size} spin={spin} motion={motion} onReady={() => setSceneReady(true)} />
         </SceneBoundary>
       )}
 
@@ -338,7 +356,7 @@ function Chapter({ scent, index, ref, onChoose }: { scent: Scent; index: number;
       <div className="sticky top-0 flex h-[100svh] items-end md:items-center">
         <div className="mx-auto w-full max-w-7xl px-5 pb-10 sm:px-8 md:pb-0">
           {/* On phones the text sits over the lower screen, on a fade of the page colour so it always reads */}
-          <div className="relative max-w-md before:absolute before:-inset-x-5 before:-top-16 before:-bottom-10 before:-z-10 before:bg-gradient-to-t before:from-[var(--klin-backdrop)] before:via-[var(--klin-backdrop)]/85 before:to-transparent md:max-w-lg md:before:hidden">
+          <div className="klin-skew relative max-w-md before:absolute before:-inset-x-5 before:-top-16 before:-bottom-10 before:-z-10 before:bg-gradient-to-t before:from-[var(--klin-backdrop)] before:via-[var(--klin-backdrop)]/85 before:to-transparent md:max-w-lg md:before:hidden">
             <p className="klin-rise text-sm text-muted-foreground tabular-nums">{t.chapter.of(index + 1, scents.length)}</p>
             <h2
               id={`${scent.id}-name`}

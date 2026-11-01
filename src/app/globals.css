@@ -1095,3 +1095,9 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
   opacity: calc(1 - var(--f) * 1.3);
   will-change: transform;
 }
+
+/* Klin's chapter text leans a touch with the scroll speed (--speed, −1 to 1, set only when motion is allowed) */
+.klin-root[data-motion] .klin-skew {
+  transform: skewY(calc(var(--speed, 0) * -2.5deg));
+  transform-origin: left center;
+}
