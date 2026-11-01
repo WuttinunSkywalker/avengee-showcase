@@ -1123,6 +1123,51 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 }
 
 /*
+ * Portal hero headline as kinetic type (features/portal/kinetic-headline.tsx):
+ * phrases stay on one line where they fit, words never break inside, and
+ * each letter drops in like a raindrop at its own --d, landing with a small
+ * squash. With a mouse, letters near the pointer get a `translate` and a
+ * --heat (0–1) that warms them toward the brand colour.
+ */
+.kinetic-phrase {
+  display: inline-block;
+  max-width: 100%;
+}
+.kinetic-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.kinetic-letter {
+  display: inline-block;
+  color: color-mix(in oklab, currentColor, var(--primary) calc(var(--heat, 0) * 75%));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .kinetic-letter {
+    transform-origin: 50% 100%;
+    animation: letter-drop 0.8s both;
+    animation-delay: calc(var(--d, 0) * 1ms + 80ms);
+  }
+}
+@keyframes letter-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.55em) scaleY(1.12);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08, 0.86);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  75% {
+    transform: translateY(-0.05em) scale(0.97, 1.04);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/*
  * Portal showcase deck: each live card is dealt onto the table as it scrolls
  * in, tipped back and a touch small at first, flat and full size once well in
  * view (--enter from features/portal/showcase-grid.tsx; unset for reduced motion).

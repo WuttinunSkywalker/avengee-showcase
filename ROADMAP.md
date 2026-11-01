@@ -26,10 +26,12 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 
 - [x] Klin, the flagship, leads the hero's fan of app screens (each showcase can claim the back card, the front card or the phone in `site.ts`): Klin's storm in front, Baan Lamai behind, Kaffa on the phone
 - [x] The live showcase cards are dealt onto the table as they scroll in: tipped back in perspective and a touch small, standing up flat once well in view (scroll-linked `--enter`, reverses scrolling up, plain for reduced motion). A sticky stacking deck was tried first and dropped: the next card covered the buttons of the one beneath
-- [ ] Hero headline as kinetic type: on load the words drop in like the letters of Klin's rain headline, and the pointer pushes nearby letters a little (mouse only)
+- [x] Hero headline as kinetic type: on load each letter drops in like a raindrop (seeded moments in reading order, a small squash as it lands; phrases and Thai words never break inside, Thai letters keep their marks), and with a mouse the letters near the pointer lean away on a bell curve and warm toward the brand blue, echoing the grid that lights up under it, then settle when it leaves. Transform-only (`translate`, so lines never rewrap), a frame loop that stops once letters settle, off for touch and reduced motion; the heading keeps its text as its label
+- [x] Found while building it: Turbopack's dev server once more served globals.css without the new rules (letters `inline`, no animation) until `.next-dev` was cleared; the production build was fine
 - [ ] "What we build" as an interactive list: hovering a kind of project shows a floating preview of the matching app, following the pointer (as on many studio sites)
 - [ ] The contact band: a slowly drifting gradient mesh behind the email button, and a magnetic button
 - [ ] Section-to-section transitions: the background colour eases between sections as they pass (light hero, tinted showcases, deep contact), driven by the scroll
+- [ ] Research 2026-11-01 (variable-font proximity effects, as in "Text Pressure" and Framer's ProximityText): the contact heading thickens letter by letter toward the pointer along Bricolage Grotesque's weight axis. Weight changes letter widths, so the line needs fixed-width letter boxes (measured at the heaviest weight) to keep it from rewrapping
 
 ## Showcase 6: Klin (3D perfume house, `/[lang]/klin`)
 

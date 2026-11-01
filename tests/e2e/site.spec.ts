@@ -96,6 +96,14 @@ test.describe("showcase portal", () => {
     const hero = page.locator('section[aria-labelledby="hero-title"]')
     await nudge(400, 300, () => expect(hero).toHaveAttribute("data-pointer", "", { timeout: 300 }))
     expect(await hero.evaluate((el) => el.style.getPropertyValue("--px"))).toMatch(/px$/)
+    // Letters of the headline near the pointer lean away from it and warm to the brand colour, then settle
+    const title = page.locator("#hero-title")
+    const pushed = () => title.locator(".kinetic-letter").evaluateAll((letters) => letters.filter((letter) => (letter as HTMLElement).style.translate !== "").length)
+    const near = (await title.boundingBox())!
+    await nudge(near.x + near.width * 0.3, near.y + near.height * 0.45, async () => expect(await pushed()).toBeGreaterThan(2))
+    await expect(title).toHaveAttribute("data-pointer", "")
+    await page.mouse.move(near.x + near.width * 0.3, 20)
+    await expect.poll(pushed).toBe(0)
     // The hero stack tilts in 3D toward the pointer
     await nudge(1200, 240, async () =>
       expect(await page.getByTestId("hero-tilt").evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix3d/),
@@ -306,6 +314,11 @@ test.describe("showcase portal", () => {
     await page.goto("/en")
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
+    // The headline's letters stay put under the mouse
+    const title = (await page.locator("#hero-title").boundingBox())!
+    await page.mouse.move(title.x + title.width * 0.3, title.y + title.height * 0.45, { steps: 4 })
+    await page.waitForTimeout(300)
+    expect(await page.locator("#hero-title .kinetic-letter[style*='translate']").count()).toBe(0)
     const clipped = await page.locator(".reveal").evaluateAll((els) => els.filter((el) => getComputedStyle(el).clipPath !== "none").length)
     expect(clipped).toBe(0)
     // The marquee becomes a still, wrapped list without its duplicate

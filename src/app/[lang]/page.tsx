@@ -11,6 +11,7 @@ import { portalMessages } from "@/features/portal/messages"
 import { HeroShowcase } from "@/features/portal/hero-showcase"
 import { BusinessMarquee } from "@/features/portal/business-marquee"
 import { HeroSpotlight } from "@/features/portal/hero-spotlight"
+import { KineticHeadline } from "@/features/portal/kinetic-headline"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { PortalMotion } from "@/features/portal/portal-motion"
 import { ProcessSteps } from "@/features/portal/process-steps"
@@ -61,9 +62,10 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
             </p>
             <h1
               id="hero-title"
-              className="max-w-4xl font-heading text-5xl leading-[0.98] font-semibold tracking-[-0.035em] sm:text-6xl lg:text-7xl"
+              aria-label={t.hero.title}
+              className="relative max-w-4xl font-heading text-5xl leading-[0.98] font-semibold tracking-[-0.035em] sm:text-6xl lg:text-7xl"
             >
-              <Phrased text={t.hero.title} phraseClassName="intro" offset={1} />
+              <KineticHeadline text={t.hero.title} locale={lang} />
             </h1>
             <p className="intro max-w-2xl text-lg leading-relaxed text-muted-foreground" style={stagger(heroPhrases + 1)}>
               {t.hero.body}
