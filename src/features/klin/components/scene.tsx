@@ -8,7 +8,7 @@ import * as THREE from "three"
 import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
-import { lightning, mixHex, nextTier, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -56,7 +56,7 @@ export function KlinScene({ state, still: reduced, size }: { state: RefObject<Sc
         <Lightformer form="ring" intensity={2} position={[0, 0, 4]} scale={2} />
       </Environment>
       {!still && <Governor rich={rich} tier={tier} onChange={setTier} />}
-      <Story state={state} still={still} rich={tier === "full"} size={size} />
+      <Story state={state} still={still} calm={reduced} rich={tier === "full"} size={size} />
       {tier === "full" && (
         <EffectComposer multisampling={4}>
           <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} />
@@ -101,7 +101,7 @@ function Backdrop({ state, still }: { state: RefObject<SceneState>; still: boole
     const s = state.current
     if (!s) return
     const bolt = still ? 0 : lightning(clock.elapsedTime) * s.storm
-    paintBackdrop(scene, mixHex(s.backdrop, "#6f8d99", bolt * 0.35))
+    paintBackdrop(scene, mixHex(s.backdrop, "#6f8d99", bolt * 0.25))
     if (flash.current) flash.current.intensity = bolt * 90
   })
   return <pointLight ref={flash} position={[1, 6, -3]} distance={20} color="#cfe6ff" intensity={0} />
@@ -115,16 +115,26 @@ function paintBackdrop(scene: THREE.Scene, colour: string) {
 }
 
 /**
- * Pulls the camera back for the line-up, drifts it a little, and once the
- * collection scrolls up the screen raises it by the same share of its view,
- * so the bottles leave with the page.
+ * Puts the camera on its shot around the bottle (`target`), drifting a touch
+ * and following the pointer, then shifts the lens so the bottle sits beside
+ * the text instead of behind it: in the right third on wide screens, the upper
+ * part of a phone screen. Once the collection scrolls up the screen, camera
+ * and aim rise together by the same share of the view, so the bottles leave
+ * with the page.
  */
-function frameCamera(camera: THREE.PerspectiveCamera, distance: number, exit: number, drift: number) {
-  camera.position.z = distance
-  const viewHeight = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
-  camera.position.x = drift
-  camera.position.y = 0.2 - exit * viewHeight
-  camera.lookAt(0, camera.position.y - 0.2, 0)
+function frameCamera(
+  camera: THREE.PerspectiveCamera,
+  shot: CameraShot,
+  target: THREE.Vector3,
+  exit: number,
+  lens: { width: number; height: number; x: number; y: number },
+) {
+  const viewHeight = 2 * shot.radius * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+  const lift = exit * viewHeight
+  const flat = shot.radius * Math.cos(shot.elevation)
+  camera.position.set(target.x + flat * Math.sin(shot.azimuth), target.y + shot.radius * Math.sin(shot.elevation) - lift, target.z + flat * Math.cos(shot.azimuth))
+  camera.lookAt(target.x, target.y - lift, target.z)
+  camera.setViewOffset(lens.width, lens.height, lens.x, lens.y, lens.width, lens.height)
 }
 
 /** Eases a bottle's width and height (from its base) toward a size's proportions. */
@@ -137,11 +147,32 @@ function shapeToSize(group: THREE.Group, [width, height]: [number, number], dt: 
   group.position.y = 0.6 * (group.scale.y - 1)
 }
 
+function lerpShot(from: CameraShot, to: CameraShot, k: number): CameraShot {
+  return {
+    radius: THREE.MathUtils.lerp(from.radius, to.radius, k),
+    azimuth: THREE.MathUtils.lerp(from.azimuth, to.azimuth, k),
+    elevation: THREE.MathUtils.lerp(from.elevation, to.elevation, k),
+  }
+}
+
 const SLOT = 2.1
 /** The line-up stands in the upper half of the screen, above the collection cards. */
 const LINEUP_Y = 0.45
 
-function Story({ state, still, rich, size }: { state: RefObject<SceneState>; still: boolean; rich: boolean; size: RefObject<ChosenSize> }) {
+function Story({
+  state,
+  still,
+  calm,
+  rich,
+  size,
+}: {
+  state: RefObject<SceneState>
+  still: boolean
+  /** Reduced motion: the camera keeps one view instead of travelling with the scroll. */
+  calm: boolean
+  rich: boolean
+  size: RefObject<ChosenSize>
+}) {
   const hero = useRef<THREE.Group>(null)
   const shape = useRef<THREE.Group>(null)
   const leftShape = useRef<THREE.Group>(null)
@@ -152,6 +183,7 @@ function Story({ state, still, rich, size }: { state: RefObject<SceneState>; sti
   const heroLiquid = useRef<THREE.MeshPhysicalMaterial>(null)
   const pointer = useRef({ x: 0, y: 0 })
   const intro = useRef(still ? 1 : 0)
+  const aim = useMemo(() => new THREE.Vector3(), [])
   const { size: viewport, invalidate } = useThree()
   const narrow = viewport.width < 768
 
@@ -219,8 +251,20 @@ function Story({ state, still, rich, size }: { state: RefObject<SceneState>; sti
       group.current.rotation.y += still ? 0 : dt * 0.25
     }
 
-    const drift = still ? 0 : Math.sin(clock.elapsedTime * 0.12) * 0.12
-    frameCamera(camera as THREE.PerspectiveCamera, THREE.MathUtils.lerp(7, narrow ? 8.5 : 7.6, lineup), s.exit, drift)
+    // The camera travels its path of shots with the scroll (one fixed view for reduced motion), aimed at
+    // the middle of the resting bottle (not its rise or bob) or of the line-up
+    const path = calm ? lerpShot(CAMERA_SHOTS[0], CAMERA_SHOTS[CAMERA_SHOTS.length - 1], lineup) : cameraShot(s.shot)
+    const sway = still ? 0 : Math.sin(clock.elapsedTime * 0.12) * 0.03 + pointer.current.x * 0.05
+    const shot = { ...path, azimuth: path.azimuth + sway, radius: path.radius * (narrow ? THREE.MathUtils.lerp(1, 1.12, lineup) : 1) }
+    aim.set(THREE.MathUtils.lerp(narrow ? 0 : 1.35, 0, lineup), THREE.MathUtils.lerp(baseY + 0.585 * scale, LINEUP_Y + 0.585 * lineupScale, lineup), 0)
+    frameCamera(camera as THREE.PerspectiveCamera, shot, aim, s.exit, {
+      width: viewport.width,
+      height: viewport.height,
+      // Wide screens: the bottle in the right third beside the text, then the line-up centred above the
+      // collection cards. Phones: always in the upper part of the screen, above the text panels.
+      x: narrow ? 0 : -0.21 * viewport.width * (1 - lineup),
+      y: (narrow ? 0.24 : 0.2 * lineup) * viewport.height,
+    })
   })
 
   return (
@@ -701,13 +745,15 @@ function Mist({ state, still }: { state: RefObject<SceneState>; still: boolean }
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const tint = useMemo(() => new THREE.Color(), [])
   const texture = useMemo(() => softDisc(), [])
-  const list = useMemo(() => puffs("klin:mist", MIST, [14, 6, 3], [2.5, 5]), [])
+  const list = useMemo(() => puffs("klin:mist", MIST, [8, 5, 3], [2.2, 4]), [])
   useFrame(({ clock, size }) => {
     const s = state.current
     if (!mesh.current || !s) return
     mesh.current.visible = s.storm > 0.01
-    const strength = s.storm * (size.width < 768 ? 0.07 : 0.16)
-    if (mesh.current.visible) placePuffs(mesh.current, dummy, tint, list, still ? 0 : clock.elapsedTime, strength, false, "#9fb6c2", 0)
+    const narrow = size.width < 768
+    const strength = s.storm * (narrow ? 0.06 : 0.075)
+    // Centred on the bottle (the camera aims there), so the brightest cloud stays behind it, not the headline
+    if (mesh.current.visible) placePuffs(mesh.current, dummy, tint, list, still ? 0 : clock.elapsedTime, strength, false, "#9fb6c2", narrow ? 0 : 1.35)
   })
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, MIST]} visible={false}>

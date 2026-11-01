@@ -1,3 +1,4 @@
+import { CatmullRomCurve3, Vector3 } from "three"
 import { scents, type Scent } from "../data/scents"
 
 /** "#1b282d" → [27, 40, 45] */
@@ -48,6 +49,8 @@ export interface SceneState {
   exit: number
   /** The hero's storm (lightning, mist), fading as the hero scrolls away, 0–1. */
   storm: number
+  /** Position along the camera path (see `cameraShot`), 0–4. */
+  shot: number
   /** How much of each floor shows under the bottle: none in the storm, then each chapter's own. */
   stone: number
   lacquer: number
@@ -95,6 +98,7 @@ export function sceneAt({ hero, chapter, lineup, exit = 0 }: StoryPosition): Sce
     lineup: smoothstep(lineup),
     exit: Math.max(0, exit),
     storm: 1 - smoothstep(hero),
+    shot: shotProgress({ hero, chapter, lineup }),
     stone: weight("rain") * smoothstep(hero),
     lacquer: weight("petals") * smoothstep(hero),
     wood: weight("embers") * smoothstep(hero),
@@ -156,4 +160,42 @@ export function nextTier(tier: Tier, readings: readonly number[], canBeFull: boo
   if (tier === "full" && recent.every((fps) => fps < 30)) return "light"
   if (tier === "light" && recent.every((fps) => fps < 15)) return "still"
   return tier
+}
+
+/** Where the camera sits around the bottle: distance, angle round it (radians, + to the right) and height above it (radians). */
+export interface CameraShot {
+  radius: number
+  azimuth: number
+  elevation: number
+}
+
+/**
+ * One shot per beat, in order: the storm straight on and a little low, low
+ * across the wet stone for Monsoon, circling above for Jasmine, close on the
+ * wood for Agarwood, then pulled back for the line-up.
+ */
+export const CAMERA_SHOTS: readonly CameraShot[] = [
+  { radius: 7, azimuth: 0, elevation: 0.03 },
+  { radius: 6.4, azimuth: -0.42, elevation: 0.05 },
+  { radius: 6.6, azimuth: 0.55, elevation: 0.42 },
+  { radius: 6.1, azimuth: -0.22, elevation: 0.2 },
+  { radius: 7.6, azimuth: 0, elevation: 0.05 },
+]
+
+const shotPath = new CatmullRomCurve3(
+  CAMERA_SHOTS.map((shot) => new Vector3(shot.radius, shot.azimuth, shot.elevation)),
+  false,
+  "centripetal",
+)
+
+/** How far along the shots the page is: the hero 0→1, the chapters 1→3, the line-up 3→4. */
+export function shotProgress({ hero, chapter, lineup }: StoryPosition): number {
+  return clamp01(hero) + Math.min(scents.length - 1, Math.max(0, chapter)) + clamp01(lineup)
+}
+
+/** The camera shot at a point along the path, passing through each beat's shot on a smooth curve. */
+export function cameraShot(progress: number): CameraShot {
+  const t = Math.min(1, Math.max(0, progress / (CAMERA_SHOTS.length - 1)))
+  const point = shotPath.getPoint(t)
+  return { radius: point.x, azimuth: point.y, elevation: point.z }
 }

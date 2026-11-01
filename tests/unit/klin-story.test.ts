@@ -198,3 +198,35 @@ describe("nextTier", async () => {
     expect(nextTier("still", [60, 60, 60], true)).toBe("still")
   })
 })
+
+describe("camera path", async () => {
+  const { CAMERA_SHOTS, cameraShot, shotProgress } = await import("@/features/klin/lib/story")
+
+  it("passes through each beat's shot", () => {
+    CAMERA_SHOTS.forEach((shot, i) => {
+      const at = cameraShot(i)
+      expect(at.radius).toBeCloseTo(shot.radius, 2)
+      expect(at.azimuth).toBeCloseTo(shot.azimuth, 2)
+      expect(at.elevation).toBeCloseTo(shot.elevation, 2)
+    })
+  })
+
+  it("moves smoothly between them, with no jumps", () => {
+    let last = cameraShot(0)
+    for (let p = 0.02; p <= 4; p += 0.02) {
+      const next = cameraShot(p)
+      expect(Math.abs(next.radius - last.radius)).toBeLessThan(0.1)
+      expect(Math.abs(next.azimuth - last.azimuth)).toBeLessThan(0.05)
+      expect(Math.abs(next.elevation - last.elevation)).toBeLessThan(0.05)
+      last = next
+    }
+  })
+
+  it("maps the page onto the path: hero, then chapters, then the line-up", () => {
+    expect(shotProgress({ hero: 0, chapter: 0, lineup: 0 })).toBe(0)
+    expect(shotProgress({ hero: 1, chapter: 0, lineup: 0 })).toBe(1)
+    expect(shotProgress({ hero: 1, chapter: 1.5, lineup: 0 })).toBe(2.5)
+    expect(shotProgress({ hero: 1, chapter: 2, lineup: 1 })).toBe(4)
+    expect(cameraShot(9)).toEqual(cameraShot(4))
+  })
+})
