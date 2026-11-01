@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { marketplaceMessages } from "@/features/marketplace/i18n/messages"
@@ -23,9 +24,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/marketpl
 /** Marks the subtree as Talad so globals.css applies its theme and fonts to the whole page. */
 export default function MarketplaceAppLayout({ children }: LayoutProps<"/[lang]/marketplace">) {
   return (
-    <div data-app="marketplace" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="marketplace">
+      <div data-app="marketplace" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

@@ -1148,6 +1148,32 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 }
 
 /*
+ * Opening an app from its portal card: the card's screen grows into the
+ * app's page (components/app-stage.tsx), softening mid-flight so the two
+ * pictures blend rather than show their seams. No motion when asked.
+ */
+::view-transition-group(.app-morph) {
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.3, 0, 0.1, 1);
+}
+::view-transition-image-pair(.app-morph) {
+  animation-name: app-morph-soften;
+}
+@keyframes app-morph-soften {
+  35% {
+    filter: blur(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/*
  * Portal section tones: each light section has a faint tint of its own (the
  * page, a breath of brand blue, of the live-status green, then a deeper grey before
  * the dark contact band). With motion, features/portal/section-tones.tsx

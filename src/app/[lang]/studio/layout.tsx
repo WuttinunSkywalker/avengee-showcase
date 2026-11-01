@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { studio } from "@/features/studio/data/projects"
@@ -24,9 +25,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/studio">
 /** Marks the subtree as Sorn Studio so globals.css applies its theme and fonts to the whole page. */
 export default function StudioAppLayout({ children }: LayoutProps<"/[lang]/studio">) {
   return (
-    <div data-app="studio" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="studio">
+      <div data-app="studio" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

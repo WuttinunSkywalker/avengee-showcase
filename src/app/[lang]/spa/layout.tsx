@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { spa } from "@/features/spa/data/spa"
@@ -25,9 +26,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/spa">): 
 /** Marks the subtree as the spa app so globals.css applies its theme and fonts to the whole page. */
 export default function SpaAppLayout({ children }: LayoutProps<"/[lang]/spa">) {
   return (
-    <div data-app="spa" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="spa">
+      <div data-app="spa" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

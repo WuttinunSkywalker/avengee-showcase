@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { shop } from "@/features/shop/data/shop"
@@ -25,9 +26,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/shop">):
 /** Marks the subtree as the shop app so globals.css applies its theme and fonts to the whole page. */
 export default function ShopAppLayout({ children }: LayoutProps<"/[lang]/shop">) {
   return (
-    <div data-app="shop" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="shop">
+      <div data-app="shop" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

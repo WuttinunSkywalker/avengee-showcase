@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { klin } from "@/features/klin/data/scents"
@@ -19,9 +20,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/klin">):
 /** Marks the subtree as Klin so globals.css applies its theme and fonts to the whole page. */
 export default function KlinLayout({ children }: LayoutProps<"/[lang]/klin">) {
   return (
-    <div data-app="klin" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="klin">
+      <div data-app="klin" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

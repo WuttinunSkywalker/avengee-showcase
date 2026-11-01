@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppStage } from "@/components/app-stage"
 import { ShowcaseReturn } from "@/components/showcase-return"
 import { isLocale } from "@/i18n/config"
 import { restaurant } from "@/features/restaurant/data/menu"
@@ -25,9 +26,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]/restaura
 /** Marks the subtree as Krua Yai so globals.css applies its theme and fonts to the whole page. */
 export default function RestaurantAppLayout({ children }: LayoutProps<"/[lang]/restaurant">) {
   return (
-    <div data-app="restaurant" className="flex min-h-full flex-1 flex-col">
-      {children}
-      <ShowcaseReturn />
-    </div>
+    <AppStage slug="restaurant">
+      <div data-app="restaurant" className="flex min-h-full flex-1 flex-col">
+        {children}
+        <ShowcaseReturn />
+      </div>
+    </AppStage>
   )
 }

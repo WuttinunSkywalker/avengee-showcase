@@ -230,6 +230,36 @@ test.describe("showcase portal", () => {
     await expect(main).toHaveAttribute("data-tone", "services")
   })
 
+  test("opening an app grows the card's screen into its page", async ({ page }) => {
+    // Note each view transition the page starts, with the names it carries
+    await page.addInitScript(() => {
+      const record: string[][] = []
+      Object.assign(window, { viewTransitions: record })
+      const start = Document.prototype.startViewTransition
+      if (!start) return
+      Document.prototype.startViewTransition = function (...args: Parameters<typeof start>) {
+        record.push(Array.from(document.querySelectorAll("*"), (element) => getComputedStyle(element).viewTransitionName).filter((name) => name && name !== "none"))
+        return start.apply(this, args)
+      }
+    })
+    await page.goto("/en")
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Baan Lamai" }) })
+    await card.scrollIntoViewIfNeeded()
+    // The morph forms when the app's page is ready the moment it's opened, as it is once its link has
+    // prefetched (a visitor reads the card first; the test waits for the network to settle)
+    await page.waitForLoadState("networkidle")
+    await card.getByRole("link", { name: "Open App" }).click()
+    await expect(page).toHaveURL(/\/en\/spa$/)
+    await expect(page.getByRole("heading", { level: 1, name: "Thai massage in a teak house in Ari." })).toBeVisible()
+    const transitions = await page.evaluate(() => (window as unknown as { viewTransitions: string[][] }).viewTransitions)
+    expect(transitions.some((names) => names.includes("app-spa"))).toBe(true)
+    // Moving around inside the app starts no transition of its own
+    const before = transitions.length
+    await page.getByRole("link", { name: /Book a Treatment/ }).first().click()
+    await expect(page).toHaveURL(/\/en\/spa\/book/)
+    expect(await page.evaluate(() => (window as unknown as { viewTransitions: string[][] }).viewTransitions.length)).toBe(before)
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>

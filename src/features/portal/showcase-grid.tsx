@@ -14,6 +14,7 @@ import { stagger } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { portalMessages } from "./messages"
 import { dealt } from "./deck"
+import { AppStage } from "@/components/app-stage"
 import { ShowcasePreview } from "./showcase-preview"
 
 type Filter = "all" | ShowcaseKind
@@ -114,7 +115,15 @@ function LiveCard({ showcase, locale }: { showcase: Showcase; locale: Locale }) 
       onBlur={(event) => !event.currentTarget.contains(event.relatedTarget) && setFocused(false)}
       data-deck=""
       className="showcase-deck group flex flex-col overflow-clip rounded-2xl border border-border bg-card shadow-sm md:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.5fr_1fr]">
-      {showcase.images && <ShowcasePreview showcase={showcase} locale={locale} active={active} />}
+      {/* Opening the app grows this screen into its page */}
+      {showcase.images &&
+        (showcase.href ? (
+          <AppStage slug={showcase.href.replace(/^\//, "")}>
+            <ShowcasePreview showcase={showcase} locale={locale} active={active} />
+          </AppStage>
+        ) : (
+          <ShowcasePreview showcase={showcase} locale={locale} active={active} />
+        ))}
       {/* A container, so the feature list and buttons fit the column's real width, not the viewport's. */}
       <div className="@container flex flex-col gap-5 p-6 sm:p-8">
         <div className="reveal flex flex-wrap items-center gap-2">
