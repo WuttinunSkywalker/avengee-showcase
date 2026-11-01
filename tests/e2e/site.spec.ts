@@ -178,6 +178,37 @@ test.describe("showcase portal", () => {
     await expect.poll(async () => parseFloat(await magnet.evaluate((element) => element.style.translate))).toBeGreaterThan(4)
   })
 
+  test("the email address scrambles and settles, and Copy puts it on the clipboard", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"])
+    await page.goto("/en")
+    const contact = page.locator("#contact")
+    await contact.scrollIntoViewIfNeeded()
+    const address = page.getByTestId("contact-address")
+    // Note any moment the address shows something other than itself
+    await address.evaluate((element) =>
+      new MutationObserver(() => {
+        if (element.textContent !== "avengee.team@gmail.com") element.dataset.scrambled = ""
+      }).observe(element, { characterData: true, childList: true, subtree: true }),
+    )
+    // Keyboard focus scrambles it too; its name stays the real address throughout
+    const link = contact.getByRole("link", { name: "Email avengee.team@gmail.com" })
+    await link.focus()
+    await expect(address).toHaveAttribute("data-scrambled", "")
+    await expect(address).toHaveText("avengee.team@gmail.com")
+    await expect(link).toHaveAttribute("href", "mailto:avengee.team@gmail.com")
+
+    await contact.getByRole("button", { name: "Copy email address" }).click()
+    await expect(page.getByText("Email address copied")).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("avengee.team@gmail.com")
+  })
+
+  test("copying the email reads in Thai", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"])
+    await page.goto("/th")
+    await page.locator("#contact").getByRole("button", { name: "คัดลอกอีเมล" }).click()
+    await expect(page.getByText("คัดลอกอีเมลแล้ว")).toBeVisible()
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
@@ -381,6 +412,11 @@ test.describe("showcase portal", () => {
     expect(await page.locator("#hero-title .kinetic-letter[style*='translate']").count()).toBe(0)
     const clipped = await page.locator(".reveal").evaluateAll((els) => els.filter((el) => getComputedStyle(el).clipPath !== "none").length)
     expect(clipped).toBe(0)
+    // The email address holds still when focused
+    const address = page.getByTestId("contact-address")
+    await page.locator("#contact").getByRole("link", { name: "Email avengee.team@gmail.com" }).focus()
+    await page.waitForTimeout(200)
+    await expect(address).toHaveText("avengee.team@gmail.com")
     // Nothing floats beside "What we build"
     await expect(page.getByTestId("service-preview")).toBeHidden()
     // The marquee becomes a still, wrapped list without its duplicate

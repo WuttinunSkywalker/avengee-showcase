@@ -63,6 +63,10 @@ const en = {
     title: "Tell us what you want to build.",
     body: "A few lines is enough: what the project is for, who will use it, and anything you've already got. We reply within one working day.",
     email: "Email",
+    copy: "Copy",
+    copyLabel: "Copy email address",
+    copied: "Email address copied",
+    copyFailed: "Couldn't copy from here. Select the address and copy it yourself.",
   },
   footer: { rights: "All rights reserved." },
 }
@@ -132,6 +136,10 @@ const th: PortalMessages = {
     title: "อยากทำเว็บแบบไหน เล่าให้เราฟังได้เลย",
     body: "พิมพ์มาสั้น ๆ ก็พอ ว่าอยากทำอะไร ใครจะเป็นคนใช้ และตอนนี้มีอะไรอยู่แล้วบ้าง เราตอบกลับภายในหนึ่งวันทำการ",
     email: "อีเมล",
+    copy: "คัดลอก",
+    copyLabel: "คัดลอกอีเมล",
+    copied: "คัดลอกอีเมลแล้ว",
+    copyFailed: "คัดลอกจากตรงนี้ไม่ได้ ลองกดเลือกที่อยู่อีเมลแล้วคัดลอกเองนะ",
   },
   footer: { rights: "สงวนลิขสิทธิ์" },
 }

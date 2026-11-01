@@ -1,7 +1,5 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { MailIcon } from "lucide-react"
-import { Magnetic } from "@/components/magnetic"
 import { Phrased } from "@/components/phrased"
 import { SkipLink } from "@/components/skip-link"
 import { Button } from "@/components/ui/button"
@@ -11,6 +9,7 @@ import { stagger } from "@/lib/motion"
 import { portalMessages } from "@/features/portal/messages"
 import { HeroShowcase } from "@/features/portal/hero-showcase"
 import { BusinessMarquee } from "@/features/portal/business-marquee"
+import { ContactEmail } from "@/features/portal/contact-email"
 import { HeroSpotlight } from "@/features/portal/hero-spotlight"
 import { KineticHeadline } from "@/features/portal/kinetic-headline"
 import { PortalHeader } from "@/features/portal/portal-header"
@@ -141,18 +140,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
               </p>
             </div>
             <div className="reveal flex flex-col gap-4 sm:flex-row" style={stagger(1)}>
-              <Magnetic className="flex flex-col">
-                <a
-                  href={`mailto:${site.email}`}
-                  className="flex items-center gap-3 rounded-xl bg-background px-5 py-4 text-foreground shadow-lg transition-shadow hover:shadow-2xl focus-visible:ring-3 focus-visible:ring-signal focus-visible:outline-none motion-reduce:transition-none"
-                >
-                  <MailIcon className="size-5" aria-hidden="true" />
-                  <span className="flex flex-col">
-                    <span className="text-xs text-muted-foreground">{t.contact.email}</span>
-                    <span className="font-medium">{site.email}</span>
-                  </span>
-                </a>
-              </Magnetic>
+              <ContactEmail locale={lang} />
             </div>
           </div>
         </section>
