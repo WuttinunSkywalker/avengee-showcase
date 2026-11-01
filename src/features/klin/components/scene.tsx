@@ -8,6 +8,7 @@ import * as THREE from "three"
 import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
+import { valueNoise } from "../lib/noise"
 import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nextTier, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
@@ -493,6 +494,9 @@ function Floors({ state, still, rich }: { state: RefObject<SceneState>; still: b
   ])
   const [stoneColour, stoneNormal, stoneRough, woodColour, woodNormal, woodRough] = useMemo(() => prepareTextures(textures), [textures])
   const alpha = useMemo(() => softDisc(true), [])
+  // Each floor dissolves in and out through the same noise, its edge glowing: cool silver on wet stone, ember on wood
+  const stoneDissolve = useMemo(() => dissolver("#9fd0e0"), [])
+  const woodDissolve = useMemo(() => dissolver("#ff8a3d"), [])
   const mirror = useRef<THREE.MeshStandardMaterial>(null)
   const stone = useRef<THREE.MeshStandardMaterial>(null)
   const wood = useRef<THREE.MeshStandardMaterial>(null)
@@ -539,8 +543,11 @@ function Floors({ state, still, rich }: { state: RefObject<SceneState>; still: b
           color="#b3c4c8"
           alphaMap={alpha}
           transparent
-          opacity={0}
+          opacity={0.85}
           depthWrite={false}
+          userData={{ dissolve: stoneDissolve.uniforms }}
+          onBeforeCompile={stoneDissolve.onBeforeCompile}
+          customProgramCacheKey={dissolveCacheKey}
         />
       </mesh>
       <mesh position-z={0.004} renderOrder={1}>
@@ -554,8 +561,11 @@ function Floors({ state, still, rich }: { state: RefObject<SceneState>; still: b
           color="#d6a37a"
           alphaMap={alpha}
           transparent
-          opacity={0}
+          opacity={0.9}
           depthWrite={false}
+          userData={{ dissolve: woodDissolve.uniforms }}
+          onBeforeCompile={woodDissolve.onBeforeCompile}
+          customProgramCacheKey={dissolveCacheKey}
         />
       </mesh>
       <Ripples state={state} still={still} />
@@ -581,10 +591,70 @@ function fadeFloors(s: SceneState, mirror: THREE.MeshStandardMaterial | null, st
     mirror.opacity = s.stone + s.lacquer + s.wood
     mirror.color.set(mixHex(s.backdrop, "#000000", 0.55))
   }
-  // The stone lets more of the mirror through, so it reads as wet
-  if (stone) stone.opacity = s.stone * 0.85
-  if (wood) wood.opacity = s.wood * 0.9
+  // Stone and wood dissolve through the noise rather than fading (the stone lets the mirror through, so it reads as wet)
+  setDissolve(stone, s.stone)
+  setDissolve(wood, s.wood)
 }
+
+function setDissolve(material: THREE.Material | null, amount: number) {
+  if (!material) return
+  material.visible = amount > 0.001
+  const uniforms = material.userData.dissolve as DissolveUniforms | undefined
+  if (uniforms) uniforms.uDissolve.value = amount
+}
+
+interface DissolveUniforms {
+  uDissolve: { value: number }
+  uNoise: { value: THREE.Texture }
+  uEdge: { value: THREE.Color }
+}
+
+let dissolveNoise: THREE.DataTexture | null = null
+/** The shared mask the floors dissolve through: tileable fractal noise, made once. */
+function dissolveTexture(): THREE.DataTexture {
+  if (!dissolveNoise) {
+    dissolveNoise = new THREE.DataTexture(valueNoise(256, "klin:dissolve"), 256, 256, THREE.RedFormat, THREE.UnsignedByteType)
+    dissolveNoise.wrapS = dissolveNoise.wrapT = THREE.RepeatWrapping
+    dissolveNoise.magFilter = dissolveNoise.minFilter = THREE.LinearFilter
+    dissolveNoise.needsUpdate = true
+  }
+  return dissolveNoise
+}
+
+const dissolveCacheKey = () => "klin-dissolve"
+
+/**
+ * Patches a standard material so it shows only where the noise is below
+ * `uDissolve` (0 hidden, 1 whole), with a glowing band along the edge while
+ * it moves. Lighting and maps are untouched.
+ */
+function dissolver(edge: string) {
+  const uniforms: DissolveUniforms = { uDissolve: { value: 0 }, uNoise: { value: dissolveTexture() }, uEdge: { value: new THREE.Color(edge) } }
+  const onBeforeCompile = (shader: THREE.WebGLProgramParametersWithUniforms) => {
+    Object.assign(shader.uniforms, uniforms)
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\n" + DISSOLVE_DECLARATIONS)
+      .replace("#include <alphamap_fragment>", "#include <alphamap_fragment>\n" + DISSOLVE_MASK)
+      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n" + DISSOLVE_EDGE)
+  }
+  return { uniforms, onBeforeCompile }
+}
+
+const DISSOLVE_DECLARATIONS = /* glsl */ `
+  uniform float uDissolve;
+  uniform sampler2D uNoise;
+  uniform vec3 uEdge;
+  float dissolveValue;
+`
+// Sampled in the floor's own texture space, so the pattern sits on the stone or the grain
+const DISSOLVE_MASK = /* glsl */ `
+  dissolveValue = texture2D(uNoise, vMapUv * 0.45).r;
+  if (dissolveValue > uDissolve) discard;
+`
+const DISSOLVE_EDGE = /* glsl */ `
+  float dissolveBand = 1.0 - smoothstep(0.0, 0.05, uDissolve - dissolveValue);
+  totalEmissiveRadiance += uEdge * dissolveBand * step(0.002, uDissolve) * (1.0 - step(0.998, uDissolve)) * 2.0;
+`
 
 const RIPPLES = 28
 
