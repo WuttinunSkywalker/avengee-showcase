@@ -197,7 +197,7 @@ test.describe("Klin perfume house", () => {
     await expect(page.getByTestId("klin-canvas")).toHaveAttribute("data-renderer", "software", { timeout: 15_000 })
   })
 
-  test("pointing at a note stirs the chapter's scene for a moment", async ({ page, isMobile }) => {
+  test("pointing at a note answers with its own effect for a moment", async ({ page, isMobile }) => {
     test.skip(isMobile, "Notes answer a mouse; a tap does the same but is covered here by the mouse")
     await page.goto("/en/klin")
     const root = page.getByTestId("klin-page")
@@ -209,6 +209,14 @@ test.describe("Klin perfume house", () => {
     // It passes by itself
     await page.mouse.move(5, 5)
     await expect(root).not.toHaveAttribute("data-stirred", { timeout: 15_000 })
+
+    // Other notes have their own flourish on the bottle: a sweep of light, a glow in the juice, falling leaves
+    for (const [name, kind] of [["Lemongrass", "glint"], ["Kaffir lime leaf", "leaves"], ["Vetiver", "glow"]]) {
+      await page.locator("#monsoon").getByTestId("klin-note").filter({ hasText: name }).hover()
+      await expect(root, name).toHaveAttribute("data-flourish", kind, { timeout: 15_000 })
+    }
+    await page.mouse.move(5, 5)
+    await expect(root).not.toHaveAttribute("data-flourish", { timeout: 15_000 })
   })
 
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
@@ -237,10 +245,12 @@ test.describe("Klin perfume house", () => {
     // The atelier is simply there on paper, with no burn
     await page.locator("#atelier").scrollIntoViewIfNeeded()
     await expect(page.getByTestId("atelier-burn")).toHaveCount(0)
-    // Notes stir nothing
+    // Notes stir nothing and draw nothing
     await page.locator("#monsoon").getByTestId("klin-note").first().hover()
+    await page.locator("#monsoon").getByTestId("klin-note").filter({ hasText: "Lemongrass" }).hover()
     await page.waitForTimeout(200)
     await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-stirred")
+    await expect(page.getByTestId("klin-page")).not.toHaveAttribute("data-flourish")
     // Buttons stay put under the mouse
     await page.evaluate(() => window.scrollTo(0, 0))
     const cta = (await page.getByRole("link", { name: "Find Your Scent" }).boundingBox())!

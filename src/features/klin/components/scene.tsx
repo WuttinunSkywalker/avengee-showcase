@@ -12,6 +12,7 @@ import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
 import { grainFor, stir } from "../lib/speed"
+import { NOTE_MS, noteEnvelope, type NoteEffect } from "../lib/notes"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -41,6 +42,8 @@ export interface ScrollMotion {
   speed: number
   /** A note just pointed at, 1 fading to 0: stirs the scene like a fast scroll, without the lean. */
   burst: number
+  /** A note's own flourish on the main bottle, and when it began (performance.now()). */
+  note: { effect: NoteEffect; at: number } | null
 }
 
 /** What the bottles need to engrave the right one: who's chosen, and which bottle stands for them now. */
@@ -433,8 +436,195 @@ function Story({
       <Bulbs state={state} still={still} motion={motion} />
       <Embers state={state} still={still} motion={motion} />
       <Smoke state={state} still={still} />
+      <NoteFlourish hero={hero} liquid={heroLiquid} motion={motion} still={still} />
     </>
   )
+}
+
+const LEAVES = 7
+
+interface LeafFlight {
+  x: number
+  delay: number
+  sway: number
+  spin: number
+  size: number
+}
+
+/** Where each falling leaf starts across the bottle, when it lets go and how it flutters (seeded, the same every time). */
+function leafFlights(): LeafFlight[] {
+  const random = createRandom("klin:leaves")
+  return Array.from({ length: LEAVES }, (_, i) => ({
+    x: (i / (LEAVES - 1) - 0.5) * 1.8 + (random() - 0.5) * 0.3,
+    delay: random() * 0.3,
+    sway: 0.6 + random() * 0.8,
+    spin: (random() < 0.5 ? -1 : 1) * (2 + random() * 3),
+    size: 0.8 + random() * 0.5,
+  }))
+}
+
+/** A small leaf, pointed at both ends with a midrib, white so the material tints it. */
+function leafArt(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas")
+  canvas.width = 128
+  canvas.height = 64
+  const context = canvas.getContext("2d")!
+  context.fillStyle = "#ffffff"
+  context.beginPath()
+  context.moveTo(6, 32)
+  context.quadraticCurveTo(64, -6, 122, 32)
+  context.quadraticCurveTo(64, 70, 6, 32)
+  context.fill()
+  context.strokeStyle = "rgba(0, 0, 0, 0.28)"
+  context.lineWidth = 2.5
+  context.beginPath()
+  context.moveTo(10, 32)
+  context.lineTo(118, 32)
+  context.stroke()
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  return texture
+}
+
+const GLINT_SHADER = {
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform float uProgress;
+    uniform float uStrength;
+    uniform vec3 uColour;
+    varying vec2 vUv;
+    void main() {
+      // A bright, narrow sheen with a softer halo, sweeping up diagonally across the glass
+      float d = vUv.x * 0.55 + vUv.y;
+      float front = mix(0.1, 1.4, uProgress);
+      float gap = abs(d - front);
+      float band = smoothstep(0.1, 0.0, gap) + 0.35 * smoothstep(0.3, 0.0, gap);
+      // Kept on the bottle's body (base to shoulder, side to side), softly cornered
+      vec2 c = abs(vUv - vec2(0.5, 0.46)) / vec2(0.38, 0.28);
+      float onGlass = 1.0 - smoothstep(0.72, 1.0, max(c.x, c.y));
+      gl_FragColor = vec4(uColour * band * onGlass * uStrength, 1.0);
+    }
+  `,
+}
+
+/**
+ * The note last pointed at, on the main bottle: a sweep of coloured light
+ * across the glass, a glow in the juice, or a few leaves falling past it.
+ * Each runs once and goes (NOTE_MS); nothing on still frames.
+ */
+function NoteFlourish({
+  hero,
+  liquid,
+  motion,
+  still,
+}: {
+  hero: RefObject<THREE.Group | null>
+  liquid: RefObject<THREE.MeshPhysicalMaterial | null>
+  motion: RefObject<ScrollMotion>
+  still: boolean
+}) {
+  const glint = useRef<THREE.Mesh>(null)
+  const leaves = useRef<THREE.InstancedMesh>(null)
+  const glintMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        ...GLINT_SHADER,
+        uniforms: { uProgress: { value: 0 }, uStrength: { value: 0 }, uColour: { value: new THREE.Color() } },
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    [],
+  )
+  const leafMaterial = useMemo(() => new THREE.MeshBasicMaterial({ map: leafArt(), transparent: true, alphaTest: 0.2, side: THREE.DoubleSide, depthWrite: false }), [])
+  const flights = useMemo(() => leafFlights(), [])
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const centre = useMemo(() => new THREE.Vector3(), [])
+
+  useFrame(({ camera }) => {
+    const note = motion.current.note
+    const t = note ? (performance.now() - note.at) / NOTE_MS : 1
+    const strength = still || !note ? 0 : noteEnvelope(t)
+    const effect = note?.effect
+    const colour = effect && effect.kind !== "stir" ? effect.colour : "#ffffff"
+    if (!hero.current) return
+    hero.current.getWorldPosition(centre)
+    const scale = hero.current.scale.x
+    sweepGlint(glint.current, glintMaterial, effect?.kind === "glint" ? strength : 0, t, colour, centre, scale, camera)
+    glowJuice(liquid.current, effect?.kind === "glow" ? strength : 0, colour)
+    dropLeaves(leaves.current, leafMaterial, dummy, flights, effect?.kind === "leaves" && !still ? t : -1, colour, centre, scale)
+  })
+
+  return (
+    <>
+      <mesh ref={glint} material={glintMaterial} renderOrder={6} visible={false}>
+        <planeGeometry args={[1.7, 2.7]} />
+      </mesh>
+      <instancedMesh ref={leaves} args={[undefined, leafMaterial, LEAVES]} renderOrder={5} visible={false}>
+        <planeGeometry args={[0.34, 0.17]} />
+      </instancedMesh>
+    </>
+  )
+}
+
+function sweepGlint(mesh: THREE.Mesh | null, material: THREE.ShaderMaterial, strength: number, t: number, colour: string, centre: THREE.Vector3, scale: number, camera: THREE.Camera) {
+  if (!mesh) return
+  mesh.visible = strength > 0.001
+  if (!mesh.visible) return
+  material.uniforms.uStrength.value = strength * 1.1
+  // The sweep crosses in the first two thirds of the run, then fades where it ended
+  material.uniforms.uProgress.value = Math.min(1, t / 0.65)
+  material.uniforms.uColour.value.set(colour)
+  // On the near side of the glass, facing the camera
+  mesh.position.copy(camera.position).sub(centre).setLength(0.7 * scale).add(centre)
+  mesh.position.y += 0.25 * scale
+  mesh.scale.setScalar(scale)
+  mesh.lookAt(camera.position)
+}
+
+function glowJuice(material: THREE.MeshPhysicalMaterial | null, strength: number, colour: string) {
+  if (!material) return
+  if (strength > 0.001) material.emissive.set(colour)
+  material.emissiveIntensity = strength * 0.85
+}
+
+function dropLeaves(
+  mesh: THREE.InstancedMesh | null,
+  material: THREE.MeshBasicMaterial,
+  dummy: THREE.Object3D,
+  flights: readonly LeafFlight[],
+  t: number,
+  colour: string,
+  centre: THREE.Vector3,
+  scale: number,
+) {
+  if (!mesh) return
+  mesh.visible = t >= 0 && t < 1
+  if (!mesh.visible) return
+  material.color.set(colour)
+  flights.forEach((leaf, i) => {
+    // Each leaf falls from above the cap to below the base in the time it has after letting go
+    const k = THREE.MathUtils.clamp((t - leaf.delay) / (1 - leaf.delay), 0, 1)
+    const fall = k * k * (3 - 2 * k)
+    dummy.position.set(
+      centre.x + (leaf.x + Math.sin(k * Math.PI * 2 * leaf.sway) * 0.25) * scale,
+      centre.y + (2.1 - fall * 3.6) * scale,
+      centre.z + 0.9 * scale,
+    )
+    dummy.rotation.set(Math.sin(k * 6) * 0.6, k * leaf.spin, k * leaf.spin * 0.7 + i)
+    // Unseen until it lets go, and fading away at the very end
+    dummy.scale.setScalar(k > 0 && k < 1 ? leaf.size * scale * Math.min(1, (1 - k) * 6) : 0)
+    dummy.updateMatrix()
+    mesh.setMatrixAt(i, dummy.matrix)
+  })
+  mesh.instanceMatrix.needsUpdate = true
 }
 
 /** A heavy glass flacon turned on a lathe, its juice inside, a brass collar and cap, and the house name engraved in gold. */

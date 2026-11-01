@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { klin, scents, type Scent, type ScentId } from "../data/scents"
 import { klinMessages } from "../i18n/messages"
 import { headlinePieces } from "../lib/headline"
+import { NOTE_MS, noteEffect } from "../lib/notes"
 import { fadeBurst, followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
@@ -76,7 +77,7 @@ export function KlinPage() {
   // Bottles spun by dragging, shared by the grab handles and the 3D layer
   const spin = useRef<SpinBoard>(emptyBoard())
   // Scroll speed from −1 to 1, shared with the 3D layer
-  const motion = useRef<ScrollMotion>({ speed: 0, burst: 0 })
+  const motion = useRef<ScrollMotion>({ speed: 0, burst: 0, note: null })
   // Checked once in the browser; false on the server
   const webgl = useSyncExternalStore(noSubscription, hasWebGL, () => false)
   // The opening curtain holds until the 3D layer has its textures (or there's no 3D layer to wait for)
@@ -138,6 +139,11 @@ export function KlinPage() {
         motion.current.burst = fadeBurst(motion.current.burst, (now - lastTime) / 1000)
         // Marked on the page while a note's burst lasts (changed only when it starts or ends)
         if ((motion.current.burst > 0) !== (page.dataset.stirred !== undefined)) page.toggleAttribute("data-stirred", motion.current.burst > 0)
+        // A note's flourish ends on its own
+        if (motion.current.note && now - motion.current.note.at > NOTE_MS) {
+          motion.current.note = null
+          delete page.dataset.flourish
+        }
         if (Math.abs(amount - shown) > 0.002) {
           shown = amount
           page.style.setProperty("--speed", amount.toFixed(3))
@@ -240,7 +246,13 @@ export function KlinPage() {
                 chapters.current[index] = element
               }}
               onChoose={() => setChosen(scent.id)}
-              onNote={() => (motion.current.burst = 1)}
+              onNote={(note) => {
+                const effect = noteEffect(note)
+                if (effect.kind === "stir") motion.current.burst = 1
+                else motion.current.note = { effect, at: performance.now() }
+                const page = root.current
+                if (page?.dataset.motion !== undefined) page.dataset.flourish = effect.kind
+              }}
             />
           ))}
         </div>
@@ -377,8 +389,8 @@ function Chapter({
   index: number
   ref: (element: HTMLElement | null) => void
   onChoose: () => void
-  /** A note was pointed at: the scene answers with a burst of this chapter's rain, petals or embers. */
-  onNote: () => void
+  /** A note was pointed at (its English name): the scene answers with that note's effect. */
+  onNote: (note: string) => void
 }) {
   const locale = useLocale()
   const t = klinMessages[locale]
@@ -406,8 +418,8 @@ function Chapter({
               {(["top", "heart", "base"] as const).map((layer) => (
                 <div key={layer}>
                   <dt className="text-muted-foreground">{t.chapter.notes[layer]}</dt>
-                  {scent.notes[layer][locale].map((note) => (
-                    <dd key={note} data-testid="klin-note" onPointerEnter={onNote} className="mt-1 w-fit cursor-default transition-colors duration-300 hover:text-[var(--klin-accent)]">
+                  {scent.notes[layer][locale].map((note, i) => (
+                    <dd key={note} data-testid="klin-note" onPointerEnter={() => onNote(scent.notes[layer].en[i])} className="mt-1 w-fit cursor-default transition-colors duration-300 hover:text-[var(--klin-accent)]">
                       {note}
                     </dd>
                   ))}
