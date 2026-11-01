@@ -130,6 +130,7 @@ const soonPatterns: Record<ShowcaseKind, string> = {
   shop: "bg-[radial-gradient(circle_at_20%_80%,var(--accent)_0,transparent_55%)]",
   restaurant: "bg-[radial-gradient(circle_at_80%_70%,var(--accent)_0,transparent_55%)]",
   landing: "bg-[radial-gradient(circle_at_50%_50%,var(--accent)_0,transparent_60%)]",
+  immersive: "bg-[radial-gradient(circle_at_40%_60%,var(--accent)_0,transparent_60%)]",
 }
 
 function SoonCard({ showcase, locale, index }: { showcase: Showcase; locale: Locale; index: number }) {

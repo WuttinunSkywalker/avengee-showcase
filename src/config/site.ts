@@ -20,7 +20,7 @@ export const site = {
   } satisfies Localized,
 } as const
 
-export type ShowcaseKind = "booking" | "marketplace" | "shop" | "restaurant" | "landing"
+export type ShowcaseKind = "booking" | "marketplace" | "shop" | "restaurant" | "landing" | "immersive"
 
 export interface Showcase {
   id: string
@@ -55,6 +55,7 @@ export const showcaseKinds: Record<ShowcaseKind, Localized> = {
   shop: { en: "Online shop", th: "ร้านค้าออนไลน์" },
   restaurant: { en: "Restaurant ordering", th: "สั่งอาหารออนไลน์" },
   landing: { en: "Single-page website", th: "เว็บไซต์หน้าเดียว" },
+  immersive: { en: "3D brand website", th: "เว็บแบรนด์ 3 มิติ" },
 }
 
 export const showcases: Showcase[] = [
@@ -237,6 +238,42 @@ export const showcases: Showcase[] = [
         {
           src: { en: "/images/showcase/sorn-studio-en-schedule.jpg", th: "/images/showcase/sorn-studio-th-schedule.jpg" },
           label: { en: "Design schedule", th: "ตารางเวลา" },
+        },
+      ],
+    },
+  },
+  {
+    id: "klin",
+    kind: "immersive",
+    status: "live",
+    name: "Klin",
+    category: { en: "Perfume house, told in 3D", th: "แบรนด์น้ำหอม เล่าเรื่องแบบ 3 มิติ" },
+    summary: {
+      en: "A Bangkok perfume launch told as one scroll. A glass bottle rendered live in 3D turns, changes colour and fills with rain, jasmine petals and incense embers as each scent's chapter passes, then lines up with the collection.",
+      th: "เปิดตัวน้ำหอมจากกรุงเทพฯ ที่เล่าเรื่องผ่านการเลื่อนหน้าเดียว ขวดแก้ว 3 มิติที่เรนเดอร์สด ๆ หมุน เปลี่ยนสี และมีฝน กลีบมะลิ กับประกายควันธูปลอยรอบขวดตามแต่ละกลิ่น ก่อนเรียงขวดให้เลือกซื้อ",
+    },
+    features: {
+      en: ["Live 3D bottle (three.js)", "Scroll-driven scenes", "Smooth scrolling", "Pop-up product sheet", "Thai & English"],
+      th: ["ขวด 3 มิติแบบเรียลไทม์ (three.js)", "ฉากเปลี่ยนตามการเลื่อน", "เลื่อนหน้าแบบนุ่มลื่น", "หน้าต่างสินค้าแบบป๊อปอัป", "ไทยและอังกฤษ"],
+    },
+    href: "/klin",
+    pages: ["/klin"],
+    images: {
+      desktop: { en: "/images/showcase/klin-en.jpg", th: "/images/showcase/klin-th.jpg" },
+      mobile: { en: "/images/showcase/klin-en-mobile.jpg", th: "/images/showcase/klin-th-mobile.jpg" },
+      alt: {
+        en: "Klin's opening screen with a glass perfume bottle in the rain, and the Jasmine Hour chapter on a phone",
+        th: "หน้าแรกของ Klin ที่มีขวดน้ำหอมแก้วกลางสายฝน และบทมะลิยามค่ำบนมือถือ",
+      },
+      phoneSide: "left",
+      tour: [
+        {
+          src: { en: "/images/showcase/klin-en-jasmine.jpg", th: "/images/showcase/klin-th-jasmine.jpg" },
+          label: { en: "Jasmine chapter", th: "บทมะลิ" },
+        },
+        {
+          src: { en: "/images/showcase/klin-en-collection.jpg", th: "/images/showcase/klin-th-collection.jpg" },
+          label: { en: "Collection", th: "คอลเลกชัน" },
         },
       ],
     },

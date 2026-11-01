@@ -4,6 +4,7 @@ import {
   Anuphan,
   Archivo,
   Bai_Jamjuree,
+  Bodoni_Moda,
   Bricolage_Grotesque,
   Chonburi,
   Figtree,
@@ -11,12 +12,14 @@ import {
   IBM_Plex_Sans_Thai,
   IBM_Plex_Sans_Thai_Looped,
   Instrument_Sans,
+  Jost,
   Kanit,
   Manrope,
   Mitr,
   Noto_Sans_Thai,
   Noto_Serif_Thai,
   Sarabun,
+  Trirong,
   Young_Serif,
 } from "next/font/google"
 import { HydrationMarker } from "@/components/hydration-marker"
@@ -75,6 +78,10 @@ const sarabun = Sarabun({ variable: "--font-sarabun", weight: ["400", "500", "60
 // Talad
 const chonburi = Chonburi({ variable: "--font-chonburi", weight: "400", subsets: ["latin", "thai"], display: "swap", preload: false })
 const notoSansThai = Noto_Sans_Thai({ variable: "--font-noto-sans-thai", subsets: ["latin", "thai"], display: "swap", preload: false })
+// Klin: a fashion-house Didone for display, a geometric sans for reading, and a looped Thai serif for Thai display
+const bodoni = Bodoni_Moda({ variable: "--font-bodoni", subsets: ["latin"], style: ["normal", "italic"], display: "swap", preload: false })
+const jost = Jost({ variable: "--font-jost", subsets: ["latin"], display: "swap", preload: false })
+const trirong = Trirong({ variable: "--font-trirong", weight: ["300", "400", "500"], subsets: ["thai"], display: "swap", preload: false })
 
 const fontVariables = [
   bricolage,
@@ -94,6 +101,9 @@ const fontVariables = [
   sarabun,
   chonburi,
   notoSansThai,
+  bodoni,
+  jost,
+  trirong,
 ]
   .map((font) => font.variable)
   .join(" ")

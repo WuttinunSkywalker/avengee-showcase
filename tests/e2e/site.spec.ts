@@ -9,7 +9,7 @@ test.describe("showcase portal", () => {
     await expect(page.getByRole("heading", { name: "Baan Lamai" })).toBeVisible()
     // Every app is open now: each card says so, none says "Coming soon"
     const cards = page.locator("#showcases li").filter({ has: page.locator("h3") })
-    await expect(cards).toHaveCount(5)
+    await expect(cards).toHaveCount(6)
     for (const card of await cards.all()) await expect(card).toContainText("Live")
     await expect(page.getByText("Coming soon")).toHaveCount(0)
     await page.getByRole("listitem").filter({ hasText: "Baan Lamai" }).getByRole("link", { name: "Open App" }).click()
@@ -24,7 +24,7 @@ test.describe("showcase portal", () => {
     await grid.getByRole("radio", { name: "Online shop" }).click()
     await expect(grid.getByRole("heading", { level: 3 })).toHaveText(["Kaffa Roasters"])
     await grid.getByRole("radio", { name: "All" }).click()
-    await expect(grid.getByRole("heading", { level: 3 })).toHaveCount(5)
+    await expect(grid.getByRole("heading", { level: 3 })).toHaveCount(6)
   })
 
   test("cards swapped in by a filter still reveal their details", async ({ page }) => {
@@ -240,7 +240,7 @@ test.describe("showcase portal", () => {
     await page.goto("/en")
     const names = await page.locator("#showcases li h3").allTextContents()
     expect(names.slice(0, 2)).toEqual(["Baan Lamai", "Kaffa Roasters"])
-    expect(names).toHaveLength(5)
+    expect(names).toHaveLength(6)
   })
 
   test("each live card's two buttons are the same width", async ({ page }) => {

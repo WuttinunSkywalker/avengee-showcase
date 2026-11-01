@@ -22,6 +22,21 @@ Work top to bottom. Each item should finish with the quality gate green (see CLA
 - [x] GitHub Actions workflow (`.github/workflows/ci.yml`): lint, typecheck, unit + integration, then build + Playwright desktop/mobile with the report uploaded on failure. Runs once the project is pushed to GitHub
 - [x] README in Thai and English: what the project is, how to run, scripts, how to add a showcase, how to deploy to Vercel
 
+## Showcase 6: Klin (3D perfume house, `/[lang]/klin`)
+
+Asked for on 2026-11-01: a showcase that goes big on visual effects, 3D and scroll-linked animation. Research: award-winning sites mostly use three.js (often through React Three Fiber) for WebGL, GSAP + ScrollTrigger for timelines (free since 2025) and Lenis for weighted scrolling; Unity WebGL exports are 10–50 MB and load slowly, which suits games, not websites.
+
+- [x] First release: a procedural glass flacon (lathe geometry, physical glass and juice, brass collar) in a fixed WebGL layer behind the page. Scroll drives one continuous scene: the bottle turns one way, its juice and the page colour change per scent, rain → jasmine petals → rising embers, then the camera pulls back to a line-up of all three. Lenis smooth scrolling, text rising from masks, a pop-up scent sheet (drawn bottle that fills, sizes, add to bag with a popping count), bag popover, Thai and English, reduced motion keeps everything readable and still
+- [x] Found while building it: chapter text is pinned with `position: sticky`, so the scent handover is measured from the layout (hold while pinned, blend between one panel letting go and the next pinning) rather than from the middle of the screen; otherwise phones showed one scent's text over the next scent's colours
+- [x] Found while building it: the React compiler lint rules reject mutating memoised three.js objects inside `useFrame`; the per-frame updates live in plain helper functions and the camera comes from the frame callback
+- [x] Found while building it: the bottle's rise ran frame by frame, so SwiftShader (slow, as in CI and screenshots) caught it half-risen; it runs on the clock now. `capture-showcase` launches Chromium with SwiftShader and waits for `load` on Klin (a second visit could sit waiting for network idle)
+- [ ] Feedback 2026-11-01: the hero and the Monsoon chapter look the same. Give the hero its own scene (storm night: lightning flicker, fog, a spotlight on the bottle) and give Monsoon wet stone: a CC0 stone texture (Poly Haven / ambientCG, credited) as a reflective wet floor the bottle stands on, with ripples where rain lands
+- [ ] Feedback 2026-11-01: Agarwood should read as wood: a CC0 teak/dark wood texture (floor or carved panel behind the bottle), warm lamp light, curling incense smoke
+- [ ] Feedback 2026-11-01: choosing a size in the pop-up reshapes the bottle (30 ml slim and short, 50 ml the house flacon, 100 ml tall and broad), morphing between outlines; the 3D bottle could follow too
+- [ ] Feedback 2026-11-01: grander and more luxurious: bloom on highlights and embers (postprocessing), richer glass (transmission with chromatic aberration), an engraved KLIN label on the glass, sparkles/dust in light beams, a slow camera drift; keep phones smooth (lower DPR, fewer particles, pause when hidden)
+- [ ] Share cards (`og-cards.tsx`, layout `openGraph.images`), and a quick Lighthouse check of the page (the 3D layer is code-split and loads after the text)
+- [ ] A bag drawer with checkout (test-mode card, PromptPay to 0000000000) and an order confirmation
+
 ## Showcase 5: Sorn Studio (single-page site, `/[lang]/studio`)
 
 - [x] Brand (Manrope + Bai Jamjuree, concrete paper and drafting ink, roof-and-ground mark), hero with a self-drawing elevation on a titled sheet, gallery of 8 projects with type filter, lightbox with elevation / plan / section drawn as SVG from each project's numbers, URL-synced (?project=&view=), arrow keys, Thai with Buddhist-era years

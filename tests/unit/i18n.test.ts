@@ -6,6 +6,8 @@ import { shopMessages } from "@/features/shop/i18n/messages"
 import { studioMessages } from "@/features/studio/i18n/messages"
 import { marketplaceMessages } from "@/features/marketplace/i18n/messages"
 import { restaurantMessages } from "@/features/restaurant/i18n/messages"
+import { klinMessages } from "@/features/klin/i18n/messages"
+import { scents } from "@/features/klin/data/scents"
 import { formatDayMonth, formatLongDate, formatMonthShort, formatShortDate, formatWeekday } from "@/lib/dates"
 import { formatDuration } from "@/features/spa/lib/time"
 import { services, addOns } from "@/features/spa/data/services"
@@ -93,6 +95,15 @@ describe("translations", () => {
     expect(restaurantMessages.th.landing.title).toMatch(/[\u0E00-\u0E7F]/)
     expect(leafPaths(marketplaceMessages.th).sort()).toEqual(leafPaths(marketplaceMessages.en).sort())
     expect(marketplaceMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
+  })
+
+  it("covers every Klin key in Thai, and names every scent and note in both languages", () => {
+    expect(leafPaths(klinMessages.th).sort()).toEqual(leafPaths(klinMessages.en).sort())
+    expect(klinMessages.th.hero.title).toMatch(/[\u0E00-\u0E7F]/)
+    for (const scent of scents) {
+      expect(scent.name.th).toMatch(/[\u0E00-\u0E7F]/)
+      for (const layer of ["top", "heart", "base"] as const) expect(scent.notes[layer].th).toHaveLength(scent.notes[layer].en.length)
+    }
   })
 
   it("has no empty strings", () => {

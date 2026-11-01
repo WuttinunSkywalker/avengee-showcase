@@ -134,7 +134,28 @@ const shots = [
       },
     ],
   },
+  {
+    id: "klin",
+    path: "/klin",
+    // The WebGL layer renders every frame, and a second visit to the page can sit waiting for "networkidle"
+    waitUntil: "load",
+    // The bottle rises in and the rain settles over about two seconds
+    settle: 2600,
+    // The Jasmine chapter, pinned on screen with its petals
+    mobilePath: "/klin#jasmine-hour",
+    tour: [
+      { key: "jasmine", path: "/klin", prepare: (page) => scrollToSection(page, "#jasmine-hour", 0.15), keepScroll: true },
+      { key: "collection", path: "/klin", prepare: (page) => scrollToSection(page, "#collection", 0), keepScroll: true },
+    ],
+  },
 ]
+
+/** Scrolls so a section's top sits that share of a screen above the viewport's top. */
+async function scrollToSection(page, selector, screens) {
+  const top = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+  await page.evaluate((y) => window.scrollTo(0, y), top + screens * 900)
+  await page.waitForTimeout(400)
+}
 
 /** Holds a piece from each of three Talad dealers, starting from a piece page. */
 async function holdPieces(page) {
@@ -145,18 +166,19 @@ async function holdPieces(page) {
   await page.addStyleTag({ content: hidePortalLink })
 }
 
-const browser = await chromium.launch()
+// SwiftShader gives headless Chromium a WebGL context for the 3D showcase
+const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] })
 for (const shot of shots.filter((s) => !only || s.id === only)) {
   for (const locale of ["en", "th"]) {
     const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale })
     const page = await desktop.newPage()
     await page.clock.setFixedTime(fixedNow)
-    await page.goto(`${base}/${locale}${shot.path}`, { waitUntil: "networkidle" })
+    await page.goto(`${base}/${locale}${shot.path}`, { waitUntil: shot.waitUntil ?? "networkidle" })
     await page.addStyleTag({ content: hidePortalLink })
     await page.waitForTimeout(shot.settle ?? 800)
     await page.screenshot({ path: `${outDir}${shot.id}-${locale}.jpg`, type: "jpeg", quality: 82 })
     for (const screen of shot.tour) {
-      await page.goto(`${base}/${locale}${screen.path}`, { waitUntil: "networkidle" })
+      await page.goto(`${base}/${locale}${screen.path}`, { waitUntil: shot.waitUntil ?? "networkidle" })
       await page.addStyleTag({ content: hidePortalLink })
       await screen.prepare?.(page)
       if (!screen.keepScroll) await page.evaluate(() => window.scrollTo(0, 0))
@@ -168,9 +190,9 @@ for (const shot of shots.filter((s) => !only || s.id === only)) {
     const phone = await browser.newContext({ ...devices["iPhone 15"], locale })
     const mobilePage = await phone.newPage()
     await mobilePage.clock.setFixedTime(fixedNow)
-    await mobilePage.goto(`${base}/${locale}${shot.mobilePath}`, { waitUntil: "networkidle" })
+    await mobilePage.goto(`${base}/${locale}${shot.mobilePath}`, { waitUntil: shot.waitUntil ?? "networkidle" })
     await mobilePage.addStyleTag({ content: hidePortalLink })
-    await mobilePage.waitForTimeout(800)
+    await mobilePage.waitForTimeout(shot.settle ?? 800)
     await mobilePage.screenshot({ path: `${outDir}${shot.id}-${locale}-mobile.jpg`, type: "jpeg", quality: 82 })
     await phone.close()
   }
