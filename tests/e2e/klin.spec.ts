@@ -150,6 +150,29 @@ test.describe("Klin perfume house", () => {
     await expect(droplet).toHaveAttribute("data-visible", "false", { timeout: 15_000 })
   })
 
+  test("buttons lean toward the mouse and spring back when it moves off", async ({ page, isMobile }) => {
+    test.skip(isMobile, "The pull follows a mouse; touch screens keep plain buttons")
+    await page.goto("/en/klin")
+    const cta = page.getByRole("link", { name: "Find Your Scent" })
+    const magnet = page.getByTestId("klin-magnet").filter({ has: cta })
+    await expect(cta).toBeVisible()
+    const box = (await cta.boundingBox())!
+    const lean = () => magnet.evaluate((element) => element.style.translate)
+    // Just off the button's right edge: it leans out toward the mouse
+    await expect(async () => {
+      await page.mouse.move(box.x + box.width + 24, box.y + box.height / 2 + 6, { steps: 3 })
+      await expect(magnet).toHaveAttribute("data-magnet", "", { timeout: 500 })
+    }).toPass({ timeout: 15_000 })
+    await expect.poll(async () => parseFloat(await lean()), { timeout: 15_000 }).toBeGreaterThan(4)
+    // Well away, it springs home and lets go of its offset
+    await page.mouse.move(box.x + box.width + 400, box.y - 200, { steps: 3 })
+    await expect(magnet).not.toHaveAttribute("data-magnet", "")
+    await expect.poll(lean, { timeout: 15_000 }).toBe("")
+    // It still takes a click: down to the first chapter
+    await cta.click()
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 15_000 }).toBeGreaterThan(300)
+  })
+
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {
     await page.goto("/th/klin")
     await expect(page.getByRole("heading", { level: 1, name: "กรุงเทพฯ หลังฝนซา" })).toBeVisible()
@@ -173,6 +196,12 @@ test.describe("Klin perfume house", () => {
     await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.5))
     expect(await page.locator(".klin-fall-letter").first().evaluate((letter) => getComputedStyle(letter).transform)).toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/)
     await expect(page.locator("html.lenis")).toHaveCount(0)
+    // Buttons stay put under the mouse
+    await page.evaluate(() => window.scrollTo(0, 0))
+    const cta = (await page.getByRole("link", { name: "Find Your Scent" }).boundingBox())!
+    await page.mouse.move(cta.x + cta.width + 20, cta.y + cta.height / 2, { steps: 3 })
+    await page.waitForTimeout(300)
+    expect(await page.getByTestId("klin-magnet").first().evaluate((element) => element.style.translate)).toBe("")
     await page.locator("#agarwood-dusk").scrollIntoViewIfNeeded()
     await expect(page.getByRole("heading", { level: 2, name: "Agarwood Dusk" })).toBeVisible()
   })

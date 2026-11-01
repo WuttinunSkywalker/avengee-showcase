@@ -11,7 +11,7 @@ import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { bulbStrings } from "../lib/bulbs"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
-import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -289,8 +289,7 @@ function Story({
     const scale = narrow ? 0.46 : 0.95
     const lineup = s.lineup
     // Phones stand the three bottles closer and smaller so the outer two stay on screen
-    const lineupScale = narrow ? 0.36 : 0.68
-    const spread = narrow ? 0.34 : 1
+    const { spread, scale: lineupScale, distance } = lineupFraming(viewport.width, viewport.height)
     const x = THREE.MathUtils.lerp(narrow ? 0 : 1.35, SLOT * spread, lineup)
     // In the storm the bottle hangs in the air and bobs; on a floor it stands still
     const bob = still ? 0 : Math.sin(clock.elapsedTime * 1.1) * 0.06 * s.storm
@@ -350,7 +349,7 @@ function Story({
 
     // The camera aims at the middle of the resting bottle (not its rise or bob) or of the line-up
     const sway = still ? 0 : Math.sin(clock.elapsedTime * 0.12) * 0.03 + pointer.current.x * 0.05
-    const radius = path.radius * (narrow ? THREE.MathUtils.lerp(1, 1.12, lineup) : 1)
+    const radius = path.radius * THREE.MathUtils.lerp(1, distance, lineup)
     const shot = {
       radius: THREE.MathUtils.lerp(radius, 6.2, close),
       azimuth: THREE.MathUtils.lerp(path.azimuth, 0, close) + sway,

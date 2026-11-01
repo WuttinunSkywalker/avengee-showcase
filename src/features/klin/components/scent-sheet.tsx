@@ -15,6 +15,7 @@ import { bottleProfileFor, bottleSilhouette, neckTop } from "../lib/bottle"
 import { cleanEngraving, engravingLeft } from "../lib/engraving"
 import { formatPrice } from "../lib/story"
 import { useBagStore } from "../store/bag-store"
+import { Magnetic } from "./magnetic"
 
 /** Outline, juice level and collar height for each size, so the drawn bottle can morph between them. */
 function bottleShape(ml: number) {
@@ -199,17 +200,19 @@ function SheetBody({
               {t.sheet.engravingHint(engravingLeft(engraving))}
             </FieldDescription>
           </Field>
-          <button
-            type="button"
-            onClick={() => {
-              add(scent.id, size.ml, words)
-              toast.success(t.sheet.added(scent.name[locale], size.ml))
-              onAdded()
-            }}
-            className="h-12 rounded-full bg-foreground px-6 text-sm font-medium text-background transition-transform hover:scale-[1.02] focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none active:scale-[0.98]"
-          >
-            {t.sheet.add(formatPrice(size.price))}
-          </button>
+          <Magnetic className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => {
+                add(scent.id, size.ml, words)
+                toast.success(t.sheet.added(scent.name[locale], size.ml))
+                onAdded()
+              }}
+              className="h-12 rounded-full bg-foreground px-6 text-sm font-medium text-background transition-transform hover:scale-[1.02] focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none active:scale-[0.98]"
+            >
+              {t.sheet.add(formatPrice(size.price))}
+            </button>
+          </Magnetic>
         </motion.div>
       </MotionConfig>
     </DialogContent>

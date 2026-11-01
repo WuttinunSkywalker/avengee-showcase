@@ -1,10 +1,6 @@
 import { render } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 import { KineticHeadline } from "@/features/portal/kinetic-headline"
-
-beforeAll(() => {
-  window.matchMedia ??= vi.fn((query: string) => ({ matches: false, media: query, addEventListener: () => {}, removeEventListener: () => {} })) as unknown as typeof window.matchMedia
-})
 
 const headline = (text: string, locale: string) =>
   render(

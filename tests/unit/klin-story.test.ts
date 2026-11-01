@@ -279,3 +279,31 @@ describe("pickedLensShift", async () => {
     }
   })
 })
+
+describe("lineupFraming", async () => {
+  const { lineupFraming, CAMERA_SHOTS } = await import("@/features/klin/lib/story")
+  // Where the outer bottles stand across the screen, as a share of its width from the centre
+  const outer = (width: number, height: number) => {
+    const { spread, distance } = lineupFraming(width, height)
+    const seen = 2 * CAMERA_SHOTS.at(-1)!.radius * distance * Math.tan(((32 / 2) * Math.PI) / 180) * (width / height)
+    return (2.1 * spread) / seen
+  }
+
+  it("keeps phones and wide screens as they were laid out", () => {
+    expect(lineupFraming(390, 844)).toEqual({ spread: 0.34, scale: 0.36, distance: 1.12 })
+    expect(lineupFraming(1440, 900)).toEqual({ spread: 1, scale: 0.68, distance: 1 })
+    expect(lineupFraming(2560, 1080)).toEqual({ spread: 1, scale: 0.68, distance: 1 })
+  })
+
+  it("closes the line-up on tablets and other tall screens, so all three bottles stay in view", () => {
+    const portrait = lineupFraming(820, 1180)
+    expect(portrait.spread).toBeGreaterThan(0.34)
+    expect(portrait.spread).toBeLessThan(1)
+    expect(portrait.scale).toBeLessThan(0.68)
+    // The outer bottles stand about two thirds of the way to the edge, whatever the shape
+    for (const [width, height] of [[390, 844], [768, 1024], [820, 1180], [1024, 1366], [1024, 768], [1280, 720], [1440, 900]]) {
+      expect(outer(width, height), `${width}×${height}`).toBeGreaterThan(0.26)
+      expect(outer(width, height), `${width}×${height}`).toBeLessThan(0.34)
+    }
+  })
+})

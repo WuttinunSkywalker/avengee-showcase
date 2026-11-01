@@ -206,6 +206,37 @@ export function nearestTurn(current: number, target: number): number {
   return target + full * Math.round((current - target) / full)
 }
 
+export interface LineupFraming {
+  /** How far apart the bottles stand, as a share of a wide screen's spacing. */
+  spread: number
+  /** Size of each bottle in the line-up. */
+  scale: number
+  /** How much further back the camera stands than the line-up shot. */
+  distance: number
+}
+
+const PHONE_LINEUP: LineupFraming = { spread: 0.34, scale: 0.36, distance: 1.12 }
+const WIDE_LINEUP: LineupFraming = { spread: 1, scale: 0.68, distance: 1 }
+/** Width over height of a phone, and of the wide screen the line-up was laid out for. */
+const PHONE_ASPECT = 0.46
+const WIDE_ASPECT = 1.6
+
+/**
+ * How the collection's line-up stands for a screen of this size: spaced out
+ * on wide screens, closed up and smaller on phones. Tablets and other tall
+ * screens past the phone breakpoint fall in between by their shape, so all
+ * three bottles stay in view (the camera sees less width as a screen narrows).
+ */
+export function lineupFraming(width: number, height: number): LineupFraming {
+  if (width < 768) return PHONE_LINEUP
+  const t = clamp01((width / height - PHONE_ASPECT) / (WIDE_ASPECT - PHONE_ASPECT))
+  return {
+    spread: PHONE_LINEUP.spread + (WIDE_LINEUP.spread - PHONE_LINEUP.spread) * t,
+    scale: PHONE_LINEUP.scale + (WIDE_LINEUP.scale - PHONE_LINEUP.scale) * t,
+    distance: PHONE_LINEUP.distance + (WIDE_LINEUP.distance - PHONE_LINEUP.distance) * t,
+  }
+}
+
 /**
  * Where the camera's lens shifts to frame a bottle picked from the line-up on
  * a wide screen, in CSS pixels: centred in the space right of the scent

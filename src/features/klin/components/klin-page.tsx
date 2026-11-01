@@ -14,6 +14,7 @@ import { followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { KlinIntro } from "./intro"
+import { Magnetic } from "./magnetic"
 import { DropletCursor } from "./droplet-cursor"
 import { SpinZones } from "./spin-zones"
 import { emptyBoard, type SpinBoard } from "../lib/spin"
@@ -207,13 +208,15 @@ export function KlinPage() {
               <p className="klin-rise mt-5 max-w-[46ch] leading-relaxed text-muted-foreground md:mt-6 md:text-lg" style={{ "--i": 2 } as React.CSSProperties}>
                 {t.hero.body}
               </p>
-              <a
-                href="#monsoon"
-                className="klin-rise mt-7 inline-flex h-12 items-center rounded-full border border-foreground/40 px-6 text-sm font-medium transition-colors hover:bg-foreground hover:text-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
-                style={{ "--i": 3 } as React.CSSProperties}
-              >
-                {t.hero.cta}
-              </a>
+              <Magnetic className="mt-7">
+                <a
+                  href="#monsoon"
+                  className="klin-rise inline-flex h-12 items-center rounded-full border border-foreground/40 px-6 text-sm font-medium transition-colors hover:bg-foreground hover:text-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
+                  style={{ "--i": 3 } as React.CSSProperties}
+                >
+                  {t.hero.cta}
+                </a>
+              </Magnetic>
             </div>
           </div>
           <p className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 text-xs text-muted-foreground md:flex" aria-hidden="true">
@@ -256,14 +259,16 @@ export function KlinPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{scent.moment[locale]}</p>
                     <p className="mt-3 text-sm tabular-nums">{t.collection.from(formatPrice(scent.sizes[0].price))}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setChosen(scent.id)}
-                    className="h-11 shrink-0 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.03] focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none active:scale-95"
-                    aria-label={t.chapter.explore(scent.name[locale])}
-                  >
-                    {t.collection.choose}
-                  </button>
+                  <Magnetic className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setChosen(scent.id)}
+                      className="h-11 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.03] focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none active:scale-95"
+                      aria-label={t.chapter.explore(scent.name[locale])}
+                    >
+                      {t.collection.choose}
+                    </button>
+                  </Magnetic>
                 </li>
               ))}
             </ul>
@@ -385,14 +390,16 @@ function Chapter({ scent, index, ref, onChoose }: { scent: Scent; index: number;
                 </div>
               ))}
             </dl>
-            <button
-              type="button"
-              onClick={onChoose}
-              className="klin-rise mt-7 inline-flex h-11 items-center rounded-full border border-current/40 px-5 text-sm font-medium transition-colors hover:bg-foreground hover:text-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
-              style={{ "--i": 5 } as React.CSSProperties}
-            >
-              {t.chapter.explore(scent.name[locale])}
-            </button>
+            <Magnetic className="mt-7">
+              <button
+                type="button"
+                onClick={onChoose}
+                className="klin-rise inline-flex h-11 items-center rounded-full border border-current/40 px-5 text-sm font-medium transition-colors hover:bg-foreground hover:text-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
+                style={{ "--i": 5 } as React.CSSProperties}
+              >
+                {t.chapter.explore(scent.name[locale])}
+              </button>
+            </Magnetic>
           </div>
         </div>
       </div>
