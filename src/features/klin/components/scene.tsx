@@ -9,6 +9,7 @@ import { createRandom } from "@/lib/random"
 import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
+import { bulbStrings } from "../lib/bulbs"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, nearestTurn, nextTier, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -376,6 +377,7 @@ function Story({
       <Rain state={state} still={still} motion={motion} />
       <Mist state={state} still={still} />
       <Petals state={state} still={still} motion={motion} />
+      <Bulbs state={state} still={still} motion={motion} />
       <Embers state={state} still={still} motion={motion} />
       <Smoke state={state} still={still} />
     </>
@@ -1028,6 +1030,115 @@ function Smoke({ state, still }: { state: RefObject<SceneState>; still: boolean 
     </instancedMesh>
   )
 }
+
+/**
+ * Strings of market bulbs behind the bottle in the jasmine chapter, drawn as
+ * out-of-focus discs (bright rim, softer middle, as a lens renders a point of
+ * light), each twinkling on its own; the strings sway, more when the page races.
+ */
+function Bulbs({ state, still, motion }: { state: RefObject<SceneState>; still: boolean; motion: RefObject<ScrollMotion> }) {
+  const material = useRef<THREE.ShaderMaterial>(null)
+  const points = useRef<THREE.Points>(null)
+  const { size } = useThree()
+  const narrow = size.width < 768
+  const geometry = useMemo(() => {
+    // Strung behind the bottle's shoulders: lower on phones, where the bottle sits high on the screen
+    const bulbs = bulbStrings(narrow ? 0 : 1.35, narrow ? 7 : 13, narrow ? -1.3 : 0.2)
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(bulbs.flatMap((bulb) => [bulb.x, bulb.y, bulb.z]), 3))
+    const warm = new THREE.Color("#ffb35c")
+    const pale = new THREE.Color("#ffe6b0")
+    geometry.setAttribute("aColour", new THREE.Float32BufferAttribute(bulbs.flatMap((bulb) => pale.clone().lerp(warm, bulb.warmth).toArray()), 3))
+    geometry.setAttribute("aSize", new THREE.Float32BufferAttribute(bulbs.map((bulb) => bulb.size), 1))
+    geometry.setAttribute("aPhase", new THREE.Float32BufferAttribute(bulbs.map((bulb) => bulb.phase), 1))
+    geometry.setAttribute("aSwing", new THREE.Float32BufferAttribute(bulbs.map((bulb) => bulb.swing), 1))
+    return geometry
+  }, [narrow])
+  const uniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uStrength: { value: 0 }, uSway: { value: 0.05 }, uScale: { value: 300 }, uMap: { value: bokehDisc() } }),
+    [],
+  )
+  useFrame(({ clock, size: viewport, gl }, delta) => {
+    const s = state.current
+    if (!points.current || !material.current || !s) return
+    points.current.visible = s.petals > 0.01
+    if (points.current.visible) setBulbs(material.current, still ? 0 : clock.elapsedTime, s.petals, Math.abs(motion.current.speed), viewport.height * gl.getPixelRatio(), delta)
+  })
+  return (
+    <points ref={points} geometry={geometry} visible={false} frustumCulled={false}>
+      <shaderMaterial
+        ref={material}
+        uniforms={uniforms}
+        vertexShader={BULB_VERTEX}
+        fragmentShader={BULB_FRAGMENT}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </points>
+  )
+}
+
+function setBulbs(material: THREE.ShaderMaterial, time: number, strength: number, rush: number, pixels: number, delta: number) {
+  material.uniforms.uTime.value = time
+  material.uniforms.uStrength.value = strength
+  material.uniforms.uScale.value = pixels * 0.42
+  material.uniforms.uSway.value = THREE.MathUtils.damp(material.uniforms.uSway.value, 0.05 + rush * 0.25, 4, Math.min(delta, 1 / 20))
+}
+
+let bokeh: THREE.CanvasTexture | null = null
+/** A point of light out of focus: a disc with a brighter rim and a softer middle. */
+function bokehDisc(): THREE.CanvasTexture {
+  if (!bokeh) {
+    const size = 128
+    const canvas = document.createElement("canvas")
+    canvas.width = canvas.height = size
+    const context = canvas.getContext("2d")!
+    const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+    gradient.addColorStop(0, "rgba(255,255,255,0.45)")
+    gradient.addColorStop(0.72, "rgba(255,255,255,0.6)")
+    gradient.addColorStop(0.86, "rgba(255,255,255,0.95)")
+    gradient.addColorStop(1, "rgba(255,255,255,0)")
+    context.fillStyle = gradient
+    context.fillRect(0, 0, size, size)
+    bokeh = new THREE.CanvasTexture(canvas)
+  }
+  return bokeh
+}
+
+const BULB_VERTEX = /* glsl */ `
+  uniform float uTime;
+  uniform float uSway;
+  uniform float uScale;
+  attribute vec3 aColour;
+  attribute float aSize;
+  attribute float aPhase;
+  attribute float aSwing;
+  varying vec3 vColour;
+  varying float vGlow;
+  void main() {
+    vec3 p = position;
+    // The middle of each string swings most, slowly, each bulb a little out of step
+    p.x += sin(uTime * 0.7 + aPhase * 0.3) * uSway * aSwing;
+    p.y += cos(uTime * 0.9 + aPhase * 0.3) * uSway * 0.3 * aSwing;
+    vec4 view = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * view;
+    gl_PointSize = aSize * uScale / -view.z;
+    vColour = aColour;
+    vGlow = 0.78 + 0.22 * sin(uTime * 1.7 + aPhase);
+  }
+`
+const BULB_FRAGMENT = /* glsl */ `
+  uniform sampler2D uMap;
+  uniform float uStrength;
+  varying vec3 vColour;
+  varying float vGlow;
+  void main() {
+    vec4 disc = texture2D(uMap, gl_PointCoord);
+    gl_FragColor = vec4(vColour * vGlow * 1.25, disc.a * uStrength);
+  }
+`
 
 const PETALS = 90
 
