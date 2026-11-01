@@ -14,6 +14,7 @@ import { followSpeed, speedAmount } from "../lib/speed"
 import { formatPrice, sceneAt, storyPosition, type SceneState, type SectionBox } from "../lib/story"
 import { KlinHeader } from "./header"
 import { KlinIntro } from "./intro"
+import { DropletCursor } from "./droplet-cursor"
 import { SpinZones } from "./spin-zones"
 import { emptyBoard, type SpinBoard } from "../lib/spin"
 import type { ChosenSize, ScrollMotion } from "./scene"
@@ -182,6 +183,7 @@ export function KlinPage() {
       )}
 
       {webgl && reduced !== null && <SpinZones board={spin} />}
+      {webgl && reduced === false && <DropletCursor board={spin} />}
       <main id="main" className="relative z-10">
         <section
           ref={hero}

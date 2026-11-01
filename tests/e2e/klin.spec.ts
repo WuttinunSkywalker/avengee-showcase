@@ -89,21 +89,30 @@ test.describe("Klin perfume house", () => {
 
   test("racing down the page stirs the scene, and it settles when the page stops", async ({ page }) => {
     await page.goto("/en/klin")
-    const speed = () => page.getByTestId("klin-page").evaluate((root) => Number(root.style.getPropertyValue("--speed") || 0))
-    // Scroll in quick steps, a frame apart, as a flick of the wheel would
+    const root = page.getByTestId("klin-page")
+    const speed = () => root.evaluate((element) => Number(element.style.getPropertyValue("--speed") || 0))
+    // Note the fastest the page registers, since a slow machine may only paint a frame or two of it
+    await root.evaluate((element) => {
+      const record = () => {
+        const value = Number(element.style.getPropertyValue("--speed") || 0)
+        element.dataset.fastest = String(Math.max(Number(element.dataset.fastest || 0), value))
+      }
+      new MutationObserver(record).observe(element, { attributes: true, attributeFilter: ["style"] })
+    })
+    // A hard flick: big jumps a frame apart
     await page.evaluate(
       () =>
         new Promise<void>((done) => {
           let steps = 0
           const step = () => {
-            window.scrollBy(0, 160)
-            if (++steps < 12) requestAnimationFrame(step)
+            window.scrollBy(0, 900)
+            if (++steps < 4) requestAnimationFrame(step)
             else done()
           }
           requestAnimationFrame(step)
         }),
     )
-    await expect.poll(speed, { timeout: 15_000 }).toBeGreaterThan(0.05)
+    await expect.poll(() => root.evaluate((element) => Number(element.dataset.fastest || 0)), { timeout: 15_000 }).toBeGreaterThan(0.05)
     await expect.poll(speed, { timeout: 15_000 }).toBe(0)
   })
 
@@ -126,6 +135,19 @@ test.describe("Klin perfume house", () => {
     const handle = (await middle.boundingBox())!
     const card = (await page.getByRole("button", { name: "Choose Jasmine Hour" }).last().boundingBox())!
     expect(handle.y + handle.height).toBeLessThan(card.y)
+  })
+
+  test("over a bottle the mouse becomes a drop of liquid", async ({ page, isMobile }) => {
+    test.skip(isMobile, "The droplet follows a mouse; touch screens keep their own behaviour")
+    await page.goto("/en/klin")
+    const droplet = page.getByTestId("klin-droplet")
+    await expect(droplet).toHaveAttribute("data-visible", "false")
+    const zone = (await page.getByTestId("spin-single").boundingBox())!
+    await page.mouse.move(zone.x + zone.width / 2, zone.y + zone.height / 2, { steps: 4 })
+    await expect(droplet).toHaveAttribute("data-visible", "true", { timeout: 15_000 })
+    await expect(page.getByTestId("spin-single")).toHaveCSS("cursor", "none")
+    await page.mouse.move(40, 300, { steps: 4 })
+    await expect(droplet).toHaveAttribute("data-visible", "false", { timeout: 15_000 })
   })
 
   test("reads in Thai, with Thai sizes in the pop-up", async ({ page }) => {

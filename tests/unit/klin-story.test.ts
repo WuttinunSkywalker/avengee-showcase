@@ -252,3 +252,14 @@ describe("stalling", async () => {
     expect(stalling([])).toBe(false)
   })
 })
+
+describe("isSoftwareRenderer", async () => {
+  const { isSoftwareRenderer } = await import("@/features/klin/lib/story")
+
+  it("spots WebGL drawn on the CPU, and leaves real GPUs alone", () => {
+    expect(isSoftwareRenderer("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)")).toBe(true)
+    expect(isSoftwareRenderer("llvmpipe (LLVM 15.0.7, 256 bits)")).toBe(true)
+    expect(isSoftwareRenderer("ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)")).toBe(false)
+    expect(isSoftwareRenderer("ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)")).toBe(false)
+  })
+})

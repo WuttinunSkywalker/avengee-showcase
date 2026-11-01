@@ -10,7 +10,7 @@ import { scents, type ScentId } from "../data/scents"
 import { bottleProfile, liquidProfile, sizeFactors } from "../lib/bottle"
 import { valueNoise } from "../lib/noise"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
-import { CAMERA_SHOTS, cameraShot, lightning, mixHex, nearestTurn, nextTier, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
+import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, nearestTurn, nextTier, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
 /**
  * The fixed WebGL layer behind the page, painted in the page's own colour: a
@@ -62,7 +62,8 @@ export function KlinScene({
 }) {
   // Only big screens may earn the full look (mirror floors, refracting glass, post effects)
   const [rich] = useState(() => window.innerWidth >= 768)
-  const [tier, setTier] = useState<Tier>("light")
+  // WebGL drawn on the CPU can't animate this scene: it starts (and stays) on still frames
+  const [tier, setTier] = useState<Tier>(() => (softwareWebGL() ? "still" : "light"))
   // A device that can't keep up stops animating and draws a fresh still on each scroll, like reduced motion
   const still = reduced || tier === "still"
   return (
@@ -129,6 +130,22 @@ function Governor({ rich, tier, onChange }: { rich: boolean; tier: Tier; onChang
     }
   })
   return null
+}
+
+let software: boolean | undefined
+/** Whether the browser's WebGL is drawn on the CPU rather than a graphics chip, checked once. */
+function softwareWebGL(): boolean {
+  if (software === undefined) {
+    try {
+      const gl = document.createElement("canvas").getContext("webgl2")
+      const info = gl?.getExtension("WEBGL_debug_renderer_info")
+      software = Boolean(gl && info && isSoftwareRenderer(String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL))))
+      gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    } catch {
+      software = false
+    }
+  }
+  return software
 }
 
 /** Paints the scene in the page colour, flashing pale in the hero's lightning, with fog that swallows the floor's far edge. */

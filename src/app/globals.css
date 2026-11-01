@@ -1101,3 +1101,23 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
   transform: skewY(calc(var(--speed, 0) * -2.5deg));
   transform-origin: left center;
 }
+
+/* Klin's droplet cursor (features/klin/components/droplet-cursor.tsx), shown over the bottles' grab handles */
+.klin-droplet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  will-change: transform;
+}
+.klin-droplet[data-visible="true"] {
+  opacity: 1;
+}
+.klin-root[data-droplet] .klin-spin,
+.klin-root[data-droplet] .klin-spin:active {
+  cursor: none;
+}

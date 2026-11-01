@@ -219,3 +219,8 @@ export function stalling(frameSeconds: readonly number[]): boolean {
   const last = frameSeconds.slice(-2)
   return last.length === 2 && last.every((seconds) => seconds > STALL)
 }
+
+/** Renderer names of WebGL drawn on the CPU (SwiftShader, llvmpipe and the like), far too slow to animate this scene. */
+export function isSoftwareRenderer(renderer: string): boolean {
+  return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)
+}
