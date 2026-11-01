@@ -15,6 +15,7 @@ import { KineticHeadline } from "@/features/portal/kinetic-headline"
 import { PortalHeader } from "@/features/portal/portal-header"
 import { PortalMotion } from "@/features/portal/portal-motion"
 import { ProcessSteps } from "@/features/portal/process-steps"
+import { SectionTones } from "@/features/portal/section-tones"
 import { ServiceList } from "@/features/portal/service-list"
 import { ShowcaseGrid } from "@/features/portal/showcase-grid"
 
@@ -44,9 +45,10 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
     <>
       <SkipLink label={t.skip} />
       <PortalHeader />
-      <main id="main" className="flex flex-1 flex-col">
+      <main id="main" className="portal-tones flex flex-1 flex-col">
         <PortalMotion />
-        <section aria-labelledby="hero-title" className="relative overflow-hidden">
+        <SectionTones />
+        <section aria-labelledby="hero-title" data-tone="hero" className="relative overflow-hidden">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_50%_0%,black_10%,transparent_70%)] bg-[size:48px_48px] opacity-60"
@@ -86,7 +88,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
 
         <BusinessMarquee locale={lang} />
 
-        <section id="showcases" aria-labelledby="showcases-title" className="scroll-mt-16">
+        <section id="showcases" aria-labelledby="showcases-title" data-tone="showcases" className="scroll-mt-16">
           <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-16 pb-20 sm:px-6 lg:pt-20 lg:pb-28">
             <div className="flex max-w-2xl flex-col gap-3">
               <h2 id="showcases-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -100,7 +102,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
-        <section id="services" aria-labelledby="services-title" className="scroll-mt-16 border-t border-border bg-card">
+        <section id="services" aria-labelledby="services-title" data-tone="services" className="scroll-mt-16 border-t border-border">
           <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:py-28">
             <div className="flex max-w-2xl flex-col gap-3">
               <h2 id="services-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -114,7 +116,7 @@ export default async function PortalPage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
-        <section aria-labelledby="process-title">
+        <section aria-labelledby="process-title" data-tone="process">
           <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:py-28">
             <h2 id="process-title" data-split className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
               {t.process.title}

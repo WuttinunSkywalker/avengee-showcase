@@ -1148,6 +1148,49 @@ main[data-motion] [data-split]:not([data-shown]) .split-line {
 }
 
 /*
+ * Portal section tones: each light section has a faint tint of its own (the
+ * page, a breath of brand blue, of the live-status green, then a deeper grey before
+ * the dark contact band). With motion, features/portal/section-tones.tsx
+ * marks the page (data-tones) and names the tone under the middle of the
+ * screen (data-tone); the sections go see-through and the page eases from
+ * tint to tint. Otherwise each section just keeps its own.
+ */
+.portal-tones {
+  --tone-hero: var(--background);
+  --tone-showcases: color-mix(in oklab, var(--primary) 6%, var(--background));
+  --tone-services: color-mix(in oklab, var(--online) 7%, var(--background));
+  --tone-process: color-mix(in oklab, var(--foreground) 5%, var(--background));
+}
+.portal-tones > [data-tone="hero"] {
+  background-color: var(--tone-hero);
+}
+.portal-tones > [data-tone="showcases"] {
+  background-color: var(--tone-showcases);
+}
+.portal-tones > [data-tone="services"] {
+  background-color: var(--tone-services);
+}
+.portal-tones > [data-tone="process"] {
+  background-color: var(--tone-process);
+}
+.portal-tones[data-tones] {
+  background-color: var(--tone-hero);
+  transition: background-color 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.portal-tones[data-tones] > [data-tone] {
+  background-color: transparent;
+}
+.portal-tones[data-tones][data-tone="showcases"] {
+  background-color: var(--tone-showcases);
+}
+.portal-tones[data-tones][data-tone="services"] {
+  background-color: var(--tone-services);
+}
+.portal-tones[data-tones][data-tone="process"] {
+  background-color: var(--tone-process);
+}
+
+/*
  * The portal's contact band: three soft pools of the brand blue and signal
  * yellow drifting slowly (transform only) low in the band, under the email
  * button, never behind the heading. Still for reduced motion.

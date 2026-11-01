@@ -209,6 +209,27 @@ test.describe("showcase portal", () => {
     await expect(page.getByText("คัดลอกอีเมลแล้ว")).toBeVisible()
   })
 
+  test("the page's colour eases from section to section, and keeps its place after a reload", async ({ page }) => {
+    await page.goto("/en")
+    const main = page.locator("main")
+    await expect(main).toHaveAttribute("data-tones", "")
+    await expect(main).toHaveAttribute("data-tone", "hero")
+    const colour = () => main.evaluate((element) => getComputedStyle(element).backgroundColor)
+    const hero = await colour()
+    for (const [id, tone] of [["showcases", "showcases"], ["services", "services"], ["process-title", "process"]]) {
+      await page.locator(`#${id}`).evaluate((element) => window.scrollTo(0, element.getBoundingClientRect().top + window.scrollY - 150))
+      await expect(main).toHaveAttribute("data-tone", tone)
+    }
+    await expect.poll(colour).not.toBe(hero)
+    // The sections let the page's tone through
+    expect(await page.locator("#services").evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgba(0, 0, 0, 0)")
+    // Back up the page the tone follows
+    await page.locator("#services").evaluate((element) => window.scrollTo(0, element.getBoundingClientRect().top + window.scrollY - 150))
+    await expect(main).toHaveAttribute("data-tone", "services")
+    await page.reload()
+    await expect(main).toHaveAttribute("data-tone", "services")
+  })
+
   test("filter chips sit apart, not touching", async ({ page }) => {
     await page.goto("/th")
     const [first, second] = await page.locator("#showcases").getByRole("radio").evaluateAll((els) =>
@@ -417,6 +438,9 @@ test.describe("showcase portal", () => {
     await page.locator("#contact").getByRole("link", { name: "Email avengee.team@gmail.com" }).focus()
     await page.waitForTimeout(200)
     await expect(address).toHaveText("avengee.team@gmail.com")
+    // Each section keeps its own tint; nothing eases between them
+    await expect(page.locator("main")).not.toHaveAttribute("data-tones")
+    expect(await page.locator("#services").evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)")
     // Nothing floats beside "What we build"
     await expect(page.getByTestId("service-preview")).toBeHidden()
     // The marquee becomes a still, wrapped list without its duplicate
