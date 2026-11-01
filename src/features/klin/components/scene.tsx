@@ -15,6 +15,7 @@ import { bulbStrings } from "../lib/bulbs"
 import { grainFor, stir } from "../lib/speed"
 import { NOTE_MS, noteEnvelope, type NoteEffect } from "../lib/notes"
 import { causticStrength } from "../lib/caustics"
+import { DROP_RUN, gathered, pourDrops } from "../lib/pour"
 import { coastBoard, type BottleSlot, type SpinBoard } from "../lib/spin"
 import { CAMERA_SHOTS, cameraShot, isSoftwareRenderer, lightning, mixHex, lineupFraming, nearestTurn, nextTier, pickedLensShift, stalling, type CameraShot, type SceneState, type Tier } from "../lib/story"
 
@@ -364,12 +365,13 @@ function Story({
       stage.current.scale.setScalar(THREE.MathUtils.lerp(narrow ? 0.6 : 1, narrow ? 0.9 : 1.45, lineup))
     }
 
-    // The other two bottles join for the line-up, monsoon on the left and jasmine in the middle
+    // The other two bottles join for the line-up, monsoon on the left and jasmine in the middle, each
+    // gathering where it stands as the drops poured from the main bottle arrive (see Pour)
     for (const [group, slot, name] of [[left, -1, "left"], [middle, 0, "middle"]] as const) {
       if (!group.current) continue
-      const k = THREE.MathUtils.smoothstep(lineup, 0.15 + (slot + 1) * 0.2, 0.75 + (slot + 1) * 0.1)
+      const k = gathered(lineup, slot === -1 ? 0 : 1)
       group.current.visible = k > 0.001
-      group.current.position.set(slot * SLOT * spread, LINEUP_Y - (1 - k) * 1.5, 0)
+      group.current.position.set(slot * SLOT * spread, LINEUP_Y, 0)
       group.current.scale.setScalar(lineupScale * k)
       if (showing(name)) group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, nearestTurn(group.current.rotation.y, path.azimuth), 6, dt)
       else group.current.rotation.y += (still ? 0 : dt * 0.25) + board[name].angle - spun.current[name]
@@ -433,6 +435,7 @@ function Story({
         </Suspense>
         <Caustics state={state} still={still} />
       </group>
+      <Pour state={state} from={shape} still={still} />
       <Rain state={state} still={still} motion={motion} />
       <Mist state={state} still={still} />
       <Petals state={state} still={still} motion={motion} />
@@ -442,6 +445,129 @@ function Story({
       <NoteFlourish hero={hero} liquid={heroLiquid} motion={motion} still={still} />
     </>
   )
+}
+
+const POUR_VERTEX = /* glsl */ `
+  uniform float uLineup;
+  uniform float uRun;
+  uniform float uScale;
+  uniform mat4 uFrom;
+  uniform mat4 uLeft;
+  uniform mat4 uMiddle;
+  attribute vec3 aTo;
+  attribute float aSlot;
+  attribute float aDelay;
+  attribute vec3 aArc;
+  attribute float aSize;
+  varying float vAlpha;
+  varying float vSlot;
+  void main() {
+    // Each drop leaves the main bottle's juice on its own moment and bows on its way to its place
+    float t = clamp((uLineup - aDelay) / uRun, 0.0, 1.0);
+    float e = t * t * (3.0 - 2.0 * t);
+    vec3 a = (uFrom * vec4(position, 1.0)).xyz;
+    vec3 b = ((aSlot < 0.5 ? uLeft : uMiddle) * vec4(aTo, 1.0)).xyz;
+    vec3 c = mix(a, b, 0.5) + aArc;
+    vec3 p = mix(mix(a, c, e), mix(c, b, e), e);
+    vAlpha = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.85, 1.0, t));
+    vSlot = aSlot;
+    vec4 view = viewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * view;
+    gl_PointSize = aSize * uScale / -view.z;
+  }
+`
+const POUR_FRAGMENT = /* glsl */ `
+  uniform vec3 uLeftColour;
+  uniform vec3 uMiddleColour;
+  varying float vAlpha;
+  varying float vSlot;
+  void main() {
+    vec2 c = gl_PointCoord - 0.5;
+    float d = length(c);
+    if (d > 0.5) discard;
+    // A round drop of juice with a bright glint up on one side
+    float body = smoothstep(0.5, 0.34, d);
+    float glint = smoothstep(0.17, 0.0, length(c - vec2(-0.12, -0.14)));
+    vec3 juice = mix(uLeftColour, uMiddleColour, vSlot);
+    gl_FragColor = vec4(juice * (0.85 + 0.5 * glint) + glint * 0.4, body * vAlpha * 0.92);
+  }
+`
+
+/**
+ * As the line-up forms, the main bottle pours drops of juice that bow
+ * through the air and gather into the other two bottles where they stand,
+ * so one bottle becomes three in one move. Every position is worked out in
+ * the shader from the line-up's progress; nothing on still frames.
+ */
+function Pour({ state, from, still }: { state: RefObject<SceneState>; from: RefObject<THREE.Group | null>; still: boolean }) {
+  const { size: viewport, gl } = useThree()
+  const narrow = viewport.width < 768
+  const points = useRef<THREE.Points>(null)
+  const geometry = useMemo(() => {
+    const drops = pourDrops(narrow ? 160 : 320)
+    const shape = new THREE.BufferGeometry()
+    shape.setAttribute("position", new THREE.Float32BufferAttribute(drops.flatMap((drop) => drop.from), 3))
+    shape.setAttribute("aTo", new THREE.Float32BufferAttribute(drops.flatMap((drop) => drop.to), 3))
+    shape.setAttribute("aSlot", new THREE.Float32BufferAttribute(drops.map((drop) => drop.slot), 1))
+    shape.setAttribute("aDelay", new THREE.Float32BufferAttribute(drops.map((drop) => drop.delay), 1))
+    shape.setAttribute("aArc", new THREE.Float32BufferAttribute(drops.flatMap((drop) => drop.arc), 3))
+    shape.setAttribute("aSize", new THREE.Float32BufferAttribute(drops.map((drop) => drop.size), 1))
+    return shape
+  }, [narrow])
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: POUR_VERTEX,
+        fragmentShader: POUR_FRAGMENT,
+        uniforms: {
+          uLineup: { value: 0 },
+          uRun: { value: DROP_RUN },
+          uScale: { value: 1 },
+          uFrom: { value: new THREE.Matrix4() },
+          uLeft: { value: new THREE.Matrix4() },
+          uMiddle: { value: new THREE.Matrix4() },
+          uLeftColour: { value: new THREE.Color(scents[0].liquid) },
+          uMiddleColour: { value: new THREE.Color(scents[1].liquid) },
+        },
+        transparent: true,
+        depthWrite: false,
+      }),
+    [],
+  )
+  useFrame(() => {
+    const s = state.current
+    if (s) pourDrops3D(points.current, material, from.current, s.lineup, still, viewport, gl.getPixelRatio())
+  })
+  return <points ref={points} geometry={geometry} material={material} frustumCulled={false} visible={false} renderOrder={4} />
+}
+
+const BOTTLE_BASE = new THREE.Matrix4().makeTranslation(0, -0.6, 0)
+const AT_REST = new THREE.Quaternion()
+const place = new THREE.Vector3()
+const sized = new THREE.Vector3()
+
+function pourDrops3D(
+  points: THREE.Points | null,
+  material: THREE.ShaderMaterial,
+  from: THREE.Group | null,
+  lineup: number,
+  still: boolean,
+  viewport: { width: number; height: number },
+  pixelRatio: number,
+) {
+  if (!points || !from) return
+  // Only while some drop is in the air
+  points.visible = !still && lineup > 0.02 && lineup < 0.99
+  if (!points.visible) return
+  const { spread, scale } = lineupFraming(viewport.width, viewport.height)
+  const u = material.uniforms
+  u.uLineup.value = lineup
+  // Projected size: a world-sized drop over its depth, for this field of view (32°) and screen
+  u.uScale.value = (viewport.height * pixelRatio) / (2 * Math.tan(THREE.MathUtils.degToRad(16)))
+  u.uFrom.value.multiplyMatrices(from.matrixWorld, BOTTLE_BASE)
+  for (const [uniform, slot] of [[u.uLeft, -1], [u.uMiddle, 0]] as const) {
+    uniform.value.compose(place.set(slot * SLOT * spread, LINEUP_Y, 0), AT_REST, sized.setScalar(scale)).multiply(BOTTLE_BASE)
+  }
 }
 
 const CAUSTIC_SHADER = {
